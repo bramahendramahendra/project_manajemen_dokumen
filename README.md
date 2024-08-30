@@ -37,8 +37,16 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/deploym
 
 
 ## Install Next JS
-
 ```bash
 npx create-next-app@latest
 ```
 
+## Install Next JS
+```bash
+npm i @nextui-org/react framer-motion
+```
+
+## Install Plugin Tailwindcss 
+```bash
+npm install -D prettier prettier-plugin-tailwindcss
+```
