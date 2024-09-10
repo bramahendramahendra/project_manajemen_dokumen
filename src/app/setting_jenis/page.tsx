@@ -10,7 +10,7 @@ const Dashboard = () => {
   return (
     <DefaultLayout>
       <div className="mx-auto max-w-7xl">
-        Dashboard
+        Setting Jenis
       </div>
     </DefaultLayout>
   );
