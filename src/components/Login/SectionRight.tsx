@@ -26,7 +26,7 @@ const SectionRight = () => {
           <div className="font-poppins font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
             Masuk ke Manajemen Dokumen
           </div>
-          <div className="pt-1 leading-normal font-inter font-normal text-[#0C479F] md:text-[13px] lg:text-[14px] xl:text-[14px]">
+          <div className="pt-1 font-inter font-normal leading-normal text-[#0C479F] md:text-[13px] lg:text-[14px] xl:text-[14px]">
             Silahkan masuk untuk melakukan aktifitas anda
           </div>
           <section>
@@ -58,7 +58,7 @@ const SectionRight = () => {
 
               <button
                 type="submit"
-                className="w-full font-poppins mt-[5px] rounded-[7px] bg-[#0C479F]  lg:py-[18px] md:py-[16px] xl:text-[20px] lg:text-[18px] font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                className="mt-[5px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[18px] lg:text-[18px] xl:text-[20px]"
               >
                 Masuk
               </button>

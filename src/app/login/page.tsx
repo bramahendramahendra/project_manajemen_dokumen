@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import React from "react";
 import { useRouter } from "next/navigation";
 import SectionLeft from "@/components/Login/SectionLeft";
@@ -12,15 +12,13 @@ export default function Login() {
   // };
 
   return (
-      <main 
-        className="flex h-screen bg-[#ffffff] relative"
-      >
-        <section className="w-1/2 md:w-1/2 2xsm:w-full sm:w-full bg-gradient-to-b from-[#0C479F] to-[#1D92F9] relative overflow-hidden">
-          <SectionLeft/>
-        </section>
-        <section className="w-1/2 md:block sm:hidden 2xsm:hidden bg-white flex">
-          <SectionRight/>
-        </section>
-      </main>
+    <main className="relative flex h-screen bg-[#ffffff]">
+      <section className="relative w-1/2 overflow-hidden bg-gradient-to-b from-[#0C479F] to-[#1D92F9] 2xsm:w-full sm:w-full md:w-1/2">
+        <SectionLeft />
+      </section>
+      <section className="flex w-1/2 bg-white 2xsm:hidden sm:hidden md:block">
+        <SectionRight />
+      </section>
+    </main>
   );
 }
