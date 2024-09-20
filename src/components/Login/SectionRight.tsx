@@ -3,6 +3,7 @@ import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 const SectionRight = () => {
   const [username, setUsername] = useState<string>("");
@@ -11,11 +12,7 @@ const SectionRight = () => {
 
   const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Here, you would typically send a request to your server to authenticate
     console.log({ username, password });
-
-    // For demo purposes, redirect to the home page after "login"
     router.push("/");
   };
 
@@ -58,7 +55,7 @@ const SectionRight = () => {
 
               <button
                 type="submit"
-                className="mt-[5px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[18px] lg:text-[18px] xl:text-[20px]"
+                className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[18px] lg:text-[18px] xl:text-[20px]"
               >
                 Masuk
               </button>
@@ -66,14 +63,19 @@ const SectionRight = () => {
           </section>
         </div>
 
-        <div className="margin absolute right-0 top-0 z-[1] overflow-hidden">
+        <motion.div 
+          className="margin absolute right-0 top-0 z-[1] overflow-hidden"
+          initial={{ x: "100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
           <Image
             className="pointer-events-none relative top-0 max-h-full max-w-full select-none object-cover md:right-[-50px] md:top-[-60px] lg:right-[-10px] lg:top-[-50px]"
             src={Background1}
             alt=""
             priority
           />
-        </div>
+        </motion.div>
       </div>
     </>
   );
