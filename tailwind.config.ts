@@ -14,9 +14,11 @@ const config: Config = {
   theme: {
     fontFamily: {
       satoshi: ["Satoshi", "sans-serif"],
+      poppins: ["var(--font-poppins)", "sans-serif"],
+      inter: ["var(--font-inter)", "sans-serif"],
     },
     screens: {
-      "2xsm": "375px",
+      "2xsm": "320px",
       xsm: "425px",
       "3xl": "2000px",
       ...defaultTheme.screens,
