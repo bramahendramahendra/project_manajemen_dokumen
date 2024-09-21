@@ -3,6 +3,7 @@ import Background1 from "../../../public/assets/login-left2.svg";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion } from "framer-motion";
 
 const SectionLeft = () => {
   const [username, setUsername] = useState<string>("");
@@ -11,28 +12,36 @@ const SectionLeft = () => {
 
   const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    // Here, you would typically send a request to your server to authenticate
     console.log({ username, password });
-
-    // For demo purposes, redirect to the home page after "login"
     router.push("/");
   };
+
   return (
     <>
       <div className="relative z-[2] mt-[100px] 2xsm:mx-[32px] md:mx-[30px] lg:mx-[58px]">
-        <h1 className="font-poppins text-[42px] font-bold leading-[15px] text-white 2xsm:text-[28px] xl:text-[42px]">
-          Manajemen Dokumen
-          <span className="ml-1 font-poppins text-[72px] text-[#1D92F9]">
-            .
-          </span>
-        </h1>
-        <h2 className="pt-4 font-poppins text-white 2xsm:pt-2 2xsm:text-[15px] 2xsm:font-medium md:pr-7 md:text-[14px] lg:text-[14px] lg:font-bold xl:pt-4 xl:text-[21px]">
-          Tertibkan & Arsipkan Dokumen Anda{" "}
-        </h2>
+        <motion.div
+          initial={{ x: "-100%", opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h1 className="font-poppins text-[42px] font-bold leading-[15px] text-white 2xsm:text-[28px] xl:text-[42px]">
+            Manajemen Dokumen
+            <span className="ml-1 font-poppins text-[72px] text-[#1D92F9]">
+              .
+            </span>
+          </h1>
+          <h2 className="pt-4 font-poppins text-white 2xsm:pt-2 2xsm:text-[15px] 2xsm:font-medium md:pr-7 md:text-[14px] lg:text-[14px] lg:font-bold xl:pt-4 xl:text-[21px]">
+            Tertibkan & Arsipkan Dokumen Anda{" "}
+          </h2>
+        </motion.div>
 
         <div className="pt-[40px] sm:block md:hidden">
-          <div className="rounded-[8px] bg-white p-[15px] shadow-md">
+          <motion.div
+            className="rounded-[8px] bg-white p-[15px] shadow-md"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, delay: 0.3 }}
+          >
             <div className="font-poppins text-[20px] font-bold leading-none text-[#1D92F9]">
               Masuk ke Manajemen Dokumen
             </div>
@@ -66,23 +75,28 @@ const SectionLeft = () => {
                 </div>
                 <button
                   type="submit"
-                  className="mt-[5px] w-full rounded-[7px] bg-[#0C479F] py-[10px] font-poppins text-[14px] font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] py-[10px] font-poppins text-[14px] font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
                   Masuk
                 </button>
               </form>
             </section>
-          </div>
+          </motion.div>
         </div>
       </div>
-      <div className="absolute bottom-[0px] left-[0px] z-[1] block overflow-hidden sm:block md:block lg:block lg:w-[98%] xl:block xl:w-[100%]">
+      <motion.div
+        className="absolute bottom-[0px] left-[0px] z-[1] block overflow-hidden sm:block md:block lg:block lg:w-[98%] xl:block xl:w-[100%]"
+        initial={{ x: "-100%", opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         <Image
           className="pointer-events-none relative max-h-full max-w-full select-none object-contain"
           src={Background1}
           alt=""
           priority
         />
-      </div>
+      </motion.div>
     </>
   );
 };
