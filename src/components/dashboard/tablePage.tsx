@@ -3,7 +3,7 @@ import Image from "next/image";
 
 const brandData: BRAND[] = [
   {
-    logo: "/images/brand/brand-01.svg",
+    logo: "/images/profile.png",
     name: "Google",
     visitors: 3.5,
     revenues: "5,768",
@@ -11,7 +11,7 @@ const brandData: BRAND[] = [
     conversion: 4.8,
   },
   {
-    logo: "/images/brand/brand-02.svg",
+    logo: "/images/profile.png",
     name: "X.com",
     visitors: 2.2,
     revenues: "4,635",
