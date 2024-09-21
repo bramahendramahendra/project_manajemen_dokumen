@@ -3,7 +3,7 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "Titel Tab",
+  title: "Dashboard",
   description: "This is Next.js Home page for NextAdmin Dashboard Kit",
 };
 

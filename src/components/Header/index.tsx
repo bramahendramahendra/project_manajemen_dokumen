@@ -63,10 +63,10 @@ const Header = (props: {
 
         <div className="hidden xl:block">
           <div>
-            <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
+            {/* <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
               Mahenz
             </h1>
-            <p className="font-medium font-poppins">Aplikasi .......</p>
+            <p className="font-medium font-poppins">Aplikasi .......</p> */}
           </div>
         </div>
 
