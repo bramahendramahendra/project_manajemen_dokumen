@@ -41,6 +41,14 @@
     .inbox-height {
         @apply h-[calc(100vh_-_8.125rem)] lg:h-[calc(100vh_-_5.625rem)];
     }
+
+    .shadow-right {
+        box-shadow: 4px 0px 10px -2px rgba(0, 0, 0, 0.1);
+    }
+
+    .dark .shadow-right-dark {
+        box-shadow: 4px 0px 10px -2px rgba(255, 255, 255, 0.1);
+    }
 }
 
 /* third-party libraries CSS */

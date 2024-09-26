@@ -65,8 +65,8 @@ const Header = (props: {
           <div>
             {/* <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
               Mahenz
-            </h1>
-            <p className="font-medium font-poppins">Aplikasi .......</p> */}
+            </h1> */}
+            {/* <p className="font-medium font-poppins">Aplikasi .......</p>  */}
           </div>
         </div>
 
