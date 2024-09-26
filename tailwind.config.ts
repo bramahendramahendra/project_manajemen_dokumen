@@ -1,5 +1,6 @@
 import type { Config } from "tailwindcss";
 import defaultTheme from "tailwindcss/defaultTheme";
+const {nextui} = require("@nextui-org/react");
 
 /** @type {import('tailwindcss').Config} */
 const config: Config = {
@@ -386,6 +387,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [nextui()],
 };
 export default config;

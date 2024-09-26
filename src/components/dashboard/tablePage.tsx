@@ -20,7 +20,7 @@ const formatDate = (date: Date): string => {
 
 const dashboardData: DASHBOARD[] = [
   {
-    logo: "/images/brand/brand-01.svg",
+    logo: "/images/profile.png",
     name: "Google",
     nameDocument: "Anual_Report_2023",
     status: "success",
@@ -28,7 +28,7 @@ const dashboardData: DASHBOARD[] = [
     link: "#",
   },
   {
-    logo: "/images/brand/brand-02.svg",
+    logo: "/images/profile.png",
     name: "X.com",
     nameDocument: "Product_Catalogue_Q1",
     status: "success",
