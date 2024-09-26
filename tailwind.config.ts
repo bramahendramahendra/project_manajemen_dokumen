@@ -278,6 +278,7 @@ const config: Config = {
       },
       backgroundImage: {
         video: "url('../images/video/video.png')",
+        'custom-gradient-right': 'linear-gradient(to right, #ffffff 0%, #ffffff 99%, #0C479F 100%)',
       },
       content: {
         "icon-copy": 'url("../images/icon/icon-copy-alt.svg")',

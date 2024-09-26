@@ -1,4 +1,4 @@
-export type Status = 'success' | 'error';
+export type Status = 'complete' | 'uncomplete';
 
 export type DASHBOARD = {
     logo: string;
