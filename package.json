@@ -12,6 +12,7 @@
     "@next/font": "^14.2.7",
     "@nextui-org/react": "^2.4.6",
     "@reduxjs/toolkit": "^2.2.7",
+    "axios": "^1.7.7",
     "framer-motion": "^11.3.30",
     "next": "^14.2.7",
     "react": "^18",

@@ -13,7 +13,7 @@ const UnduhDokumen = () => {
   return (
     <DefaultLayout>
       <Breadcrumb pageName="Unduh Dokumen" />
-      <div className="mx-auto max-w-7xl">
+      <div className="col-span-12 xl:col-span-12">
         <MainPage />
       </div>
     </DefaultLayout>
