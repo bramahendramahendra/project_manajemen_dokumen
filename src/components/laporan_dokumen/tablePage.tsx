@@ -1,49 +1,37 @@
-import { User } from "@/types/user";
+import { Jenis } from "@/types/jenis";
 
-const userData: User[] = [
+const jenisData: Jenis[] = [
   {
-    userid: "M00001",
-    name: "Free package",
-    username: "freepackage",
+    id: 1,
+    jenis: "LPK",
     levelId: 1,
     levelUser: "Admin",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
   {
-    userid: "M00002",
-    name: "Standard Package",
-    username: "standardackage",
+    id: 1,
+    jenis: "LPK",
     levelId: 2,
     levelUser: "Dinas",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
   {
-    userid: "M00003",
-    name: "Business Package",
-    username: "usinessackage",
-    levelId: 2,
+    id: 1,
+    jenis: "LPK",
+    levelId: 3,
     levelUser: "Dinas",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
   {
-    userid: "M00004",
-    name: "Standard Package",
-    username: "tandardackage",
-    levelId: 2,
+    id: 1,
+    jenis: "LPK",
+    levelId: 4,
     levelUser: "Dinas",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
 ];
 
@@ -55,16 +43,16 @@ const TablePage = () => {
           <thead>
             <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2">
               <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
-                User
+                Jenis
               </th>
               <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                Username
-              </th>
-              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                Level User
+                Accesss User
               </th>
               <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
                 Created
+              </th>
+              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                Updated
               </th>
               <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                 Actions
@@ -72,49 +60,46 @@ const TablePage = () => {
             </tr>
           </thead>
           <tbody>
-            {userData.map((userItem, index) => (
+            {jenisData.map((jenisItem, index) => (
               <tr key={index}>
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <h5 className="text-dark dark:text-white">
-                    {userItem.name}
-                  </h5>
-                  <p className="mt-[3px] text-body-sm font-medium">
-                    No ID. {userItem.userid}
-                  </p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === jenisData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <p className="text-dark dark:text-white">
-                    {userItem.username}
+                    {jenisItem.jenis}
                   </p>
                 </td>
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === jenisData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <p
                     className={`inline-flex rounded-full px-3.5 py-1 text-body-sm font-medium ${
-                      userItem.levelId === 2
+                      jenisItem.levelId === 2
                         ? "bg-[#219653]/[0.08] text-[#219653]"
-                        : userItem.levelId === 1
+                        : jenisItem.levelId === 1
                           ? "bg-[#D34053]/[0.08] text-[#D34053]"
                           : "bg-[#FFA70B]/[0.08] text-[#FFA70B]"
                     }`}
                   >
-                    {userItem.levelUser}
+                    {jenisItem.levelUser}
                   </p>
                 </td>
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === jenisData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <p className="text-dark dark:text-white">
-                    {userItem.createdDate}
+                    {jenisItem.createdDate}
                   </p>
                 </td>
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === jenisData.length - 1 ? "border-b-0" : "border-b"}`}
+                >
+                  <p className="text-dark dark:text-white">
+                    {jenisItem.updatedDate}
+                  </p>
+                </td>
+                <td
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === jenisData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <div className="flex items-center justify-end space-x-3.5">
                     <button className="hover:text-primary">

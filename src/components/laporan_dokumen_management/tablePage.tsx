@@ -1,49 +1,53 @@
-import { User } from "@/types/user";
+import { LaporanDokumenManagement } from "@/types/laporanDokumenManagement";
 
-const userData: User[] = [
+const laporanDokumenManagementData: LaporanDokumenManagement[] = [
   {
-    userid: "M00001",
-    name: "Free package",
-    username: "freepackage",
-    levelId: 1,
-    levelUser: "Admin",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    id: 1,
+    user: "Erick Thohir",
+    tanggal: "13 Januari 2023",
+    jenis: "Anggaran",
+    subjenis: "RKA",
+    tahun: 2019,
+    kodeStatus: 1,
+    status: "unvalidasi",
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
   {
-    userid: "M00002",
-    name: "Standard Package",
-    username: "standardackage",
-    levelId: 2,
-    levelUser: "Dinas",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    id: 2,
+    user: "Erick Thohir",
+    tanggal: "13 Januari 2023",
+    jenis: "Anggaran",
+    subjenis: "RKA",
+    tahun: 2019,
+    kodeStatus: 1,
+    status: "unvalidasi",
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
   {
-    userid: "M00003",
-    name: "Business Package",
-    username: "usinessackage",
-    levelId: 2,
-    levelUser: "Dinas",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    id: 3,
+    user: "Erick Thohir",
+    tanggal: "13 Januari 2023",
+    jenis: "Anggaran",
+    subjenis: "RKA",
+    tahun: 2019,
+    kodeStatus: 1,
+    status: "unvalidasi",
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
   {
-    userid: "M00004",
-    name: "Standard Package",
-    username: "tandardackage",
-    levelId: 2,
-    levelUser: "Dinas",
-    email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
+    id: 4,
+    user: "Erick Thohir",
+    tanggal: "13 Januari 2023",
+    jenis: "Anggaran",
+    subjenis: "RKA",
+    tahun: 2019,
+    kodeStatus: 1,
+    status: "unvalidasi",
+    createdDate: "13 Januari 2023",
+    updatedDate: "14 Januari 2023",
   },
 ];
 
@@ -58,13 +62,19 @@ const TablePage = () => {
                 User
               </th>
               <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                Username
-              </th>
-              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                Level User
+                Tanggal
               </th>
               <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
-                Created
+                Jenis
+              </th>
+              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                Subjenis
+              </th>
+              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                Tahun
+              </th>
+              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                Status
               </th>
               <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                 Actions
@@ -72,49 +82,61 @@ const TablePage = () => {
             </tr>
           </thead>
           <tbody>
-            {userData.map((userItem, index) => (
+            {laporanDokumenManagementData.map((laporanDokumenManagementItem, index) => (
               <tr key={index}>
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <h5 className="text-dark dark:text-white">
-                    {userItem.name}
-                  </h5>
-                  <p className="mt-[3px] text-body-sm font-medium">
-                    No ID. {userItem.userid}
-                  </p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === laporanDokumenManagementData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <p className="text-dark dark:text-white">
-                    {userItem.username}
+                    {laporanDokumenManagementItem.user}
                   </p>
                 </td>
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === laporanDokumenManagementData.length - 1 ? "border-b-0" : "border-b"}`}
+                >
+                  <p className="text-dark dark:text-white">
+                    {laporanDokumenManagementItem.tanggal}
+                  </p>
+                </td>
+                <td
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === laporanDokumenManagementData.length - 1 ? "border-b-0" : "border-b"}`}
+                >
+                  <p className="text-dark dark:text-white">
+                    {laporanDokumenManagementItem.jenis}
+                  </p>
+                </td>
+                <td
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === laporanDokumenManagementData.length - 1 ? "border-b-0" : "border-b"}`}
+                >
+                  <p className="text-dark dark:text-white">
+                    {laporanDokumenManagementItem.subjenis}
+                  </p>
+                </td>
+                <td
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === laporanDokumenManagementData.length - 1 ? "border-b-0" : "border-b"}`}
+                >
+                  <p className="text-dark dark:text-white">
+                    {laporanDokumenManagementItem.tahun}
+                  </p>
+                </td>
+                <td
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === laporanDokumenManagementData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <p
                     className={`inline-flex rounded-full px-3.5 py-1 text-body-sm font-medium ${
-                      userItem.levelId === 2
+                      laporanDokumenManagementItem.kodeStatus === 2
                         ? "bg-[#219653]/[0.08] text-[#219653]"
-                        : userItem.levelId === 1
+                        : laporanDokumenManagementItem.kodeStatus === 1
                           ? "bg-[#D34053]/[0.08] text-[#D34053]"
                           : "bg-[#FFA70B]/[0.08] text-[#FFA70B]"
                     }`}
                   >
-                    {userItem.levelUser}
+                    {laporanDokumenManagementItem.status}
                   </p>
                 </td>
+               
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <p className="text-dark dark:text-white">
-                    {userItem.createdDate}
-                  </p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === laporanDokumenManagementData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <div className="flex items-center justify-end space-x-3.5">
                     <button className="hover:text-primary">
