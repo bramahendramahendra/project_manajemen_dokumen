@@ -72,9 +72,9 @@ const TableOne = () => {
       <div className="overflow-x-auto">
         <table className="w-full min-w-max table-auto">
           <thead>
-            <tr>
+            <tr className="">
               {/* Uraian Column (sticky) */}
-              <th className="shadow-right sticky left-0 z-10 bg-white px-2 pb-3.5 text-left dark:bg-gray-dark">
+              <th className="bg-custom-gradient-right sticky left-0 z-10  px-2 pb-3.5 text-left dark:bg-gray-dark ">
                 Uraian
               </th>
               {/* Other Year Columns */}
@@ -100,7 +100,7 @@ const TableOne = () => {
                 key={key}
               >
                 {/* Uraian column data (fixed) */}
-                <td className="sticky left-0 z-10 bg-white px-2 py-4 dark:bg-gray-dark w-full 2xsm:w-7 shadow-right sm:w-60 md:w-auto">
+                <td className="bg-custom-gradient-right sticky left-0 z-10 bg-white px-2 py-4 dark:bg-gray-dark w-full 2xsm:w-7 shadow-right sm:w-60 md:w-auto">
                   <div className="flex items-center gap-3.5">
                     <p className="font-medium text-dark dark:text-white">
                       {brand.nameDocument.replace(/_/g, " ")}
