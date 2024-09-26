@@ -2,8 +2,8 @@ import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/settingJenis";
-import TablePage from "@/components/settingJenis/tablePage";
+import MainPage from "@/components/settingSubjenis";
+import TablePage from "@/components/settingSubjenis/tablePage";
 
 
 export const metadata: Metadata = {
@@ -11,10 +11,10 @@ export const metadata: Metadata = {
     description: "This is Next.js Home page for NextAdmin Dashboard Kit",
 };
 
-const SettingJenis = () => {
+const SettingSubJenis = () => {
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Setting Jenis" />
+      <Breadcrumb pageName="Setting Sub Jenis" />
       <div className="mx-auto max-w-7xl">
         <TablePage />
       </div>
@@ -22,4 +22,4 @@ const SettingJenis = () => {
   );
 };
 
-export default SettingJenis;
+export default SettingSubJenis;
