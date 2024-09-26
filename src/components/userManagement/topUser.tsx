@@ -1,3 +1,4 @@
+import { HiEllipsisVertical } from "react-icons/hi2";
 import { BRAND } from "@/types//brand";
 import Image from "next/image";
 
@@ -44,45 +45,55 @@ const brandData: BRAND[] = [
   },
 ];
 
-const TableOne = () => {
+const TopUser = () => {
   return (
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
       <h4 className="mb-5.5 text-body-2xlg font-bold text-dark dark:text-white">
-        Top Channels
+        Top User Contribution
       </h4>
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-3 sm:grid-cols-5">
-          <div className="px-2 pb-3.5">
+        <div className="grid grid-cols-3 sm:grid-cols-6">
+          <div className="px-2 pb-3.5 text-center">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Source
+              Name
             </h5>
           </div>
           <div className="px-2 pb-3.5 text-center">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Visitors
-            </h5>
-          </div>
-          <div className="px-2 pb-3.5 text-center">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Revenues
+              Username
             </h5>
           </div>
           <div className="hidden px-2 pb-3.5 text-center sm:block">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Sales
+              Email
+            </h5>
+          </div>
+          {/* <div className="hidden px-2 pb-3.5 text-center sm:block">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              responsible person
+            </h5>
+          </div> */}
+          <div className="hidden px-2 pb-3.5 text-center sm:block">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              No.Phone
             </h5>
           </div>
           <div className="hidden px-2 pb-3.5 text-center sm:block">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Conversion
+              Status
             </h5>
+          </div>
+          <div className="hidden justify-self-center px-2 pb-3.5 text-center sm:block">
+            <p className="text-[25px] font-medium uppercase">
+              <HiEllipsisVertical />
+            </p>
           </div>
         </div>
 
         {brandData.map((brand, key) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-5 ${
+            className={`grid grid-cols-3 sm:grid-cols-6 ${
               key === brandData.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-dark-3"
@@ -121,11 +132,22 @@ const TableOne = () => {
                 {brand.conversion}%
               </p>
             </div>
+
+            {/* <div className="hidden items-center justify-center px-2 py-4 sm:flex">
+              <p className="font-medium text-dark dark:text-white">
+                {brand.conversion}%
+              </p>
+            </div> */}
+
+            <div className="hidden items-center justify-center px-2 py-4 sm:flex">
+              <p className="font-medium text-dark dark:text-white">
+                {brand.conversion}%
+              </p>
+            </div>
           </div>
         ))}
       </div>
     </div>
   );
 };
-
-export default TableOne;
+export default TopUser;
