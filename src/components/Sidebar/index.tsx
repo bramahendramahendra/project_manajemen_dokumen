@@ -64,7 +64,7 @@ const menuGroups = [
             />
           </svg>
         ),
-        label: "Upload dan Pengelolaan",
+        label: "Upload & Pengelolaan",
         route: "/upload_dan_pengelolaan",
       },
       {

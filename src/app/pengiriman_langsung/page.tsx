@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/settingSubjenis";
+// import MainPage from "@/components/settingSubjenis";
 
 export const metadata: Metadata = {
     title: "Titel Tab",
@@ -10,11 +10,16 @@ export const metadata: Metadata = {
 };
 
 const PengirimanLangsung = () => {
+  const breadcrumbs = [
+    { name: "Dashboard", href: "/" },
+    { name: "Pengiriman Langsung"},
+  ];
+
   return (
     <DefaultLayout>
-        <Breadcrumb pageName="Pengiriman Langsung" />
+        <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mx-auto max-w-7xl">
-        <MainPage />
+        {/* <MainPage /> */}
       </div>
     </DefaultLayout>
   );

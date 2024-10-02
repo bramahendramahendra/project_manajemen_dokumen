@@ -10,9 +10,14 @@ export const metadata: Metadata = {
 };
 
 const UploadDanPengelolaan = () => {
+  const breadcrumbs = [
+    { name: "Dashboard", href: "/" },
+    { name: "Upload & Pengelolaan"},
+  ];
+
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Upload Dan Pengelolaan" />
+      <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mx-auto max-w-7xl">
         <MainPage />
       </div>

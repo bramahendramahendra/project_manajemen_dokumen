@@ -2,8 +2,7 @@ import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/settingSubjenis";
-import TablePage from "@/components/settingSubjenis/tablePage";
+import TablePage from "@/components/settingSubJenis/tablePage";
 
 
 export const metadata: Metadata = {
@@ -12,9 +11,14 @@ export const metadata: Metadata = {
 };
 
 const SettingSubJenis = () => {
+  const breadcrumbs = [
+    { name: "Dashboard", href: "/" },
+    { name: "Setting Sub Jenis"},
+  ];
+
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Setting Sub Jenis" />
+      <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mx-auto max-w-7xl">
         <TablePage />
       </div>

@@ -12,9 +12,14 @@ export const metadata: Metadata = {
 };
 
 const SettingJenis = () => {
+  const breadcrumbs = [
+    { name: "Dashboard", href: "/" },
+    { name: "Setting Jenis"},
+  ];
+  
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Setting Jenis" />
+      <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mx-auto max-w-7xl">
         <TablePage />
       </div>

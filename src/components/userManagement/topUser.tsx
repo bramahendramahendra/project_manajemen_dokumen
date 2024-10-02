@@ -8,7 +8,7 @@ const userData: User[] = [
     levelId: 1,
     levelUser: "Admin",
     email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
+    skpd: "Dinas Kabupaten",
     notelp: "082130599678",
     createdDate: `13 Januari 2023`,
   },
@@ -19,7 +19,7 @@ const userData: User[] = [
     levelId: 2,
     levelUser: "Dinas",
     email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
+    skpd: "Dinas Kabupaten",
     notelp: "082130599678",
     createdDate: `13 Januari 2023`,
   },
@@ -30,7 +30,7 @@ const userData: User[] = [
     levelId: 2,
     levelUser: "Dinas",
     email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
+    skpd: "Dinas pendidikan",
     notelp: "082130599678",
     createdDate: `13 Januari 2023`,
   },
@@ -41,7 +41,7 @@ const userData: User[] = [
     levelId: 2,
     levelUser: "Dinas",
     email: "atesting@example.com",
-    skdp: "Dinas Kabupaten",
+    skpd: "Dinas Kabupaten",
     notelp: "082130599678",
     createdDate: `13 Januari 2023`,
   },
@@ -75,7 +75,7 @@ const TablePage = () => {
             {userData.map((userItem, index) => (
               <tr key={index}>
                 <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
+                  className={`sticky border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
                 >
                   <h5 className="text-dark dark:text-white">
                     {userItem.name}

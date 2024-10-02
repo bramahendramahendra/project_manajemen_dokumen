@@ -10,9 +10,14 @@ export const metadata: Metadata = {
 };
 
 const UnduhDokumen = () => {
+  const breadcrumbs = [
+    { name: "Dashboard", href: "/" },
+    { name: "Unduh Dokumen"},
+  ];
+
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Unduh Dokumen" />
+      <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="col-span-12 xl:col-span-12">
         <MainPage />
       </div>

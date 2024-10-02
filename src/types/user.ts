@@ -3,7 +3,7 @@ export type User = {
   name: string;
   username: string;
   email: string;
-  skdp: string;
+  skpd: string;
   notelp: string;
   levelId: number;
   levelUser: string;

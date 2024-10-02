@@ -13,7 +13,7 @@ const SectionRight = () => {
   const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log({ username, password });
-    router.push("/");
+    router.push("/dashboard");
   };
 
   return (
@@ -35,7 +35,7 @@ const SectionRight = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 placeholder="Masukkan Username..."
-                className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
+                className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
               />
 
               <input
@@ -55,7 +55,7 @@ const SectionRight = () => {
 
               <button
                 type="submit"
-                className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[18px] lg:text-[18px] xl:text-[20px]"
+                className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
               >
                 Masuk
               </button>
@@ -63,7 +63,7 @@ const SectionRight = () => {
           </section>
         </div>
 
-        <motion.div 
+        <motion.div
           className="margin absolute right-0 top-0 z-[1] overflow-hidden"
           initial={{ x: "100%", opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
