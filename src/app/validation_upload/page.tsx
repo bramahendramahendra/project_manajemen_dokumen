@@ -11,9 +11,14 @@ import MainPage from "@/components/validationUpload";
 // };
 
 const ValidationUpload = () => {
+  const breadcrumbs = [
+    { name: "Dashboard", href: "/" },
+    { name: "Validation Upload"},
+  ];
+
   return (
     <DefaultLayout>
-      <Breadcrumb pageName="Validation Upload" />
+      <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mx-auto max-w-7xl">
         <MainPage />
       </div>

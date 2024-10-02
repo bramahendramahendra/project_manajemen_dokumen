@@ -59,6 +59,14 @@ const dashboardData: DASHBOARD[] = [
     dateTime: new Date("2022-01-01T11:30:00Z"),
     link: "#",
   },
+  {
+    logo: "/images/brand/brand-05.svg",
+    name: "Facebook",
+    nameDocument: ".....",
+    status: "uncomplete",
+    dateTime: new Date("2022-01-01T11:30:00Z"),
+    link: "#",
+  },
 ];
 
 const TableOne = () => {
@@ -72,20 +80,20 @@ const TableOne = () => {
       <div className="overflow-x-auto">
         <table className="w-full min-w-max table-auto">
           <thead>
-            <tr className="">
+            <tr className="bg-[#F7F9FC]">
               {/* Uraian Column (sticky) */}
-              <th className="bg-custom-gradient-right sticky left-0 z-10  px-2 pb-3.5 text-left dark:bg-gray-dark ">
+              <th className="px-2 py-4 xl:pl-7.5 text-left text-dark dark:bg-gray-dark ">
                 Uraian
               </th>
               {/* Other Year Columns */}
-              <th className="px-2 pb-3.5">2018</th>
-              <th className="px-2 pb-3.5">2019</th>
-              <th className="px-2 pb-3.5">2020</th>
-              <th className="px-2 pb-3.5">2021</th>
-              <th className="px-2 pb-3.5">2022</th>
-              <th className="px-2 pb-3.5">2023</th>
-              <th className="px-2 pb-3.5">2024</th>
-              <th className="px-2 pb-3.5">2025</th>
+              <th className="px-4 font-medium py-4 pb-3.5">2018</th>
+              <th className="px-4 font-medium py-4 pb-3.5">2019</th>
+              <th className="px-4 font-medium py-4 pb-3.5">2020</th>
+              <th className="px-4 font-medium py-4 pb-3.5">2021</th>
+              <th className="px-4 font-medium py-4 pb-3.5">2022</th>
+              <th className="px-4 font-medium py-4 pb-3.5">2023</th>
+              <th className="px-4 font-medium py-4 pb-3.5">2024</th>
+              <th className="px-4 font-medium py-4 pb-3.5 xl:pr-7.5">2025</th>
             </tr>
           </thead>
 
@@ -100,7 +108,7 @@ const TableOne = () => {
                 key={key}
               >
                 {/* Uraian column data (fixed) */}
-                <td className="bg-custom-gradient-right sticky left-0 z-10 bg-white px-2 py-4 dark:bg-gray-dark w-full 2xsm:w-7 shadow-right sm:w-60 md:w-auto">
+                <td className="xl:pl-7.5 px-2 py-4 dark:bg-gray-dark 2xsm:w-7  sm:w-60 md:w-90">
                   <div className="flex items-center gap-3.5">
                     <p className="font-medium text-dark dark:text-white">
                       {brand.nameDocument.replace(/_/g, " ")}
@@ -116,7 +124,7 @@ const TableOne = () => {
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>
@@ -129,7 +137,7 @@ const TableOne = () => {
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>
@@ -142,7 +150,7 @@ const TableOne = () => {
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>
@@ -155,7 +163,7 @@ const TableOne = () => {
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>
@@ -168,7 +176,7 @@ const TableOne = () => {
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>
@@ -181,7 +189,7 @@ const TableOne = () => {
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>
@@ -194,20 +202,20 @@ const TableOne = () => {
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>
                 </td>
 
-                <td className="px-3 py-4">
+                <td className="px-3 py-4 xl:pr-7.5">
                   <div className="flex items-center">
                     <div
                       className={`${statuses[brand.status]} flex-none rounded-full p-1`}
                     >
                       <div className="h-2 w-2 rounded-full bg-current" />
                     </div>
-                    <div className="pl-1 font-medium capitalize text-dark dark:text-white">
+                    <div className="pl-1 capitalize text-dark dark:text-white">
                       {brand.status}
                     </div>
                   </div>

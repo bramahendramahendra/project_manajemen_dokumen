@@ -1,3 +1,4 @@
+// "use client"
 const MainPage = () => {
     return (
       <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
