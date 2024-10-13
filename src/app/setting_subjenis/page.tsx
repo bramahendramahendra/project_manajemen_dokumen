@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 import Breadcrumb from "@/components/breadcrumbs";
-import TablePage from "@/components/settingSubJenis/tablePage";
+import TablePage from "@/components/settingSubjenis/tablePage";
 
 
 export const metadata: Metadata = {
