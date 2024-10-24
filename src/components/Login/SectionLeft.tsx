@@ -25,13 +25,13 @@ const SectionLeft = () => {
           transition={{ duration: 0.3 }}
         >
           <h1 className="font-poppins text-[42px] font-bold leading-[15px] text-white 2xsm:text-[28px] xl:text-[42px]">
-            Manajemen Dokumen
+            Simfoni
             <span className="ml-1 font-poppins text-[72px] text-[#1D92F9]">
               .
             </span>
           </h1>
           <h2 className="pt-4 font-poppins text-white 2xsm:pt-2 2xsm:text-[15px] 2xsm:font-medium md:pr-7 md:text-[14px] lg:text-[14px] lg:font-bold xl:pt-4 xl:text-[21px]">
-            Tertibkan & Arsipkan Dokumen Anda{" "}
+            Sistem Manajemen File dan Dokumentasi{" "}
           </h2>
         </motion.div>
 
@@ -43,7 +43,7 @@ const SectionLeft = () => {
             transition={{ duration: 0.3, delay: 0.3 }}
           >
             <div className="font-poppins text-[20px] font-bold leading-none text-[#1D92F9]">
-              Masuk ke Manajemen Dokumen
+              Masuk ke dalam Simfoni
             </div>
             <div className="mt-2 font-inter text-[14px] font-normal leading-none text-[#0C479F]">
               Silahkan masuk untuk melakukan aktifitas anda
