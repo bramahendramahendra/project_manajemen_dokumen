@@ -15,7 +15,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Manajemen Dokumen - Login",
+  title: "Simfoni - Login",
   description:
     "menertibkan dan mengarsipkan dokumen kamu bisa lakukan login terlebih dahulu",
   themeColor: "#0C479F",

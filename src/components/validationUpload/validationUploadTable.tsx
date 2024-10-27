@@ -1,6 +1,10 @@
 import { ValidationUploadUraian } from "@/types/validationUploadUraian";
-import { useState } from "react";
-import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
+import { useEffect, useState } from "react";
+import {
+  HiOutlineClipboardDocumentCheck,
+  HiOutlineDocumentMagnifyingGlass,
+  HiOutlineTrash,
+} from "react-icons/hi2";
 import Pagination from "../pagination.tsx/Pagination";
 
 const formatDate = (date: Date): string => {
@@ -52,52 +56,113 @@ const validationUploadUraianData: ValidationUploadUraian[] = [
     uraian: "Kegiatan pemberdayaan komunitas adat terpencil",
     tanggal: new Date("2024-10-28T08:15:00Z"),
   },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Pelatihan keterampilan untuk penyandang disabilitas",
+    tanggal: new Date("2024-11-05T14:20:00Z"),
+  },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Program bantuan sosial tunai",
+    tanggal: new Date("2024-12-19T16:45:00Z"),
+  },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Pembagian bantuan sembako untuk lansia",
+    tanggal: new Date("2024-05-10T13:00:00Z"),
+  },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Kegiatan pemberdayaan komunitas adat terpencil",
+    tanggal: new Date("2024-10-28T08:15:00Z"),
+  },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Pelatihan keterampilan untuk penyandang disabilitas",
+    tanggal: new Date("2024-11-05T14:20:00Z"),
+  },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Program bantuan sosial tunai",
+    tanggal: new Date("2024-12-19T16:45:00Z"),
+  },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Pembagian bantuan sembako untuk lansia",
+    tanggal: new Date("2024-05-10T13:00:00Z"),
+  },
+  {
+    skpd: "Dinas Sosial",
+    uraian: "Kegiatan pemberdayaan komunitas adat terpencil",
+    tanggal: new Date("2024-10-28T08:15:00Z"),
+  },
 ];
 
 const ValidationUploadTable = () => {
-  const [checkedItems, setCheckedItems] = useState<boolean[]>([]);
+  const [checkedItems, setCheckedItems] = useState<boolean[]>(
+    new Array(validationUploadUraianData.length).fill(false),
+  );
   const [isAllChecked, setIsAllChecked] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [itemsPerPage, setItemsPerPage] = useState(5);
 
-  // Calculate total pages
-  const totalPages = Math.ceil(validationUploadUraianData.length / itemsPerPage);
-
-  // Get current items to display based on pagination
-  const currentItems = validationUploadUraianData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+  const totalPages = Math.ceil(
+    validationUploadUraianData.length / itemsPerPage,
   );
 
+  const currentItems = validationUploadUraianData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  // Fungsi untuk memilih semua item
   const handleSelectAll = () => {
-    const newCheckedItems = new Array(validationUploadUraianData.length).fill(
-      !isAllChecked,
-    );
-    setCheckedItems(newCheckedItems);
-    setIsAllChecked(!isAllChecked);
-  };
-
-  const handleItemCheck = (index: number) => {
     const newCheckedItems = [...checkedItems];
-    newCheckedItems[index] = !newCheckedItems[index];
+    const allChecked = currentItems.every(
+      (_, index) => newCheckedItems[(currentPage - 1) * itemsPerPage + index],
+    );
+
+    currentItems.forEach((_, index) => {
+      const globalIndex = (currentPage - 1) * itemsPerPage + index;
+      newCheckedItems[globalIndex] = !allChecked;
+    });
+
     setCheckedItems(newCheckedItems);
-    setIsAllChecked(newCheckedItems.every((item) => item));
+    setIsAllChecked(!allChecked);
   };
 
+  // Fungsi untuk memilih item individual
+  const handleItemCheck = (index: number) => {
+    const globalIndex = (currentPage - 1) * itemsPerPage + index;
+    const newCheckedItems = [...checkedItems];
+    newCheckedItems[globalIndex] = !newCheckedItems[globalIndex];
+
+    setCheckedItems(newCheckedItems);
+    const allCheckedInPage = currentItems.every(
+      (_, idx) =>
+        newCheckedItems[(currentPage - 1) * itemsPerPage + idx] === true,
+    );
+    setIsAllChecked(allCheckedInPage);
+  };
+
+  // Fungsi untuk membuka dan menutup modal
+  const handleOpenModal = () => setIsModalOpen(true);
+  const handleCloseModal = () => setIsModalOpen(false);
+
+  // Fungsi untuk validasi semua
   const handleValidateAll = () => {
+    console.log("Validasi semua item berhasil!");
     setIsModalOpen(false);
   };
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-  };
+  useEffect(() => {
+    const allCheckedInPage = currentItems.every(
+      (_, index) =>
+        checkedItems[(currentPage - 1) * itemsPerPage + index] === true,
+    );
+    setIsAllChecked(allCheckedInPage);
+  }, [currentPage, checkedItems]);
 
   return (
     <div>
@@ -113,7 +178,7 @@ const ValidationUploadTable = () => {
         </div>
       )}
 
-      <div className="rounded-[10px] mt-4 border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <div className="mt-4 rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
@@ -144,7 +209,11 @@ const ValidationUploadTable = () => {
                   >
                     <input
                       type="checkbox"
-                      checked={checkedItems[index] || false}
+                      checked={
+                        checkedItems[
+                          (currentPage - 1) * itemsPerPage + index
+                        ] || false
+                      }
                       onChange={() => handleItemCheck(index)}
                     />
                   </td>
@@ -161,34 +230,45 @@ const ValidationUploadTable = () => {
                     </p>
                   </td>
                   <td className="px-3 py-4 xl:pr-7.5">
-  <div className="flex items-center justify-end">
-    {/* Tombol Validasi */}
-    <div className="pl-1 capitalize text-dark dark:text-white">
-      <button className="active:scale-[.97]">
-        <div className="flex items-center justify-center space-x-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white hover:from-[#0C479F] hover:to-[#0C479F]">
-          <span className="text-[20px]">
-            <HiOutlineClipboardDocumentList />
-          </span>
-          <span>Validasi</span>
-        </div>
-      </button>
-    </div>
+                    <div className="flex items-center justify-end">
+                      {/* Tombol Validasi */}
+                      <div className="pl-1 capitalize text-dark dark:text-white">
+                        <button className="active:scale-[.97]">
+                          <div className="flex items-center justify-center space-x-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white hover:from-[#0C479F] hover:to-[#0C479F]">
+                            <span className="text-[20px]">
+                              <HiOutlineClipboardDocumentCheck />
+                            </span>
+                            <span>Validasi</span>
+                          </div>
+                        </button>
+                      </div>
 
-    {/* Link Review Document */}
-    <div className="pl-4 capitalize text-dark dark:text-white">
-      <a
-        href={`/review-document/${userItem.skpd}`} // URL berdasarkan data yang dipilih
-        className="flex items-center justify-center space-x-2 rounded-[7px]  px-4 py-[10px] text-[16px] text-dark"
-      >
-        
-        <span>Review Document</span>
-        <span className="text-[20px]">
-          <HiOutlineClipboardDocumentList />
-        </span>
-      </a>
-    </div>
-  </div>
-</td>
+                      
+                      <div className="pl-4 capitalize text-dark dark:text-white">
+                        <button className="active:scale-[.97]">
+                          <div className="flex items-center justify-center space-x-2 rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white hover:bg-red-600">
+                            <span className="text-[20px]">
+                              <HiOutlineTrash />
+                            </span>
+                            <span>Hapus</span>
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* Link Review Document */}
+                      <div className="pl-4 capitalize text-dark dark:text-white">
+                        <a
+                          href={`/review-document/${userItem.skpd}`} // URL berdasarkan data yang dipilih
+                          className="flex items-center justify-center space-x-2 rounded-[7px] px-4 py-[10px] text-[16px] text-dark"
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineDocumentMagnifyingGlass />
+                          </span>
+                          <span>Review</span>
+                        </a>
+                      </div>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -197,6 +277,8 @@ const ValidationUploadTable = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
           />
         </div>
       </div>
@@ -213,6 +295,28 @@ const ValidationUploadTable = () => {
           <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
               <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                {/* Tombol X untuk Close */}
+                <button
+                  type="button"
+                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  onClick={handleCloseModal}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+
                 <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="sm:flex sm:items-start">
                     <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -220,13 +324,13 @@ const ValidationUploadTable = () => {
                         className="h-6 w-6 text-red-600"
                         fill="none"
                         viewBox="0 0 24 24"
-                        stroke-width="1.5"
+                        strokeWidth="1.5"
                         stroke="currentColor"
                         aria-hidden="true"
                       >
                         <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
                           d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
                         />
                       </svg>
@@ -247,6 +351,23 @@ const ValidationUploadTable = () => {
                             : "Apakah Anda yakin ingin membatalkan validasi semua item yang dicentang?"}
                         </p>
                       </div>
+
+                      {/* Form untuk Catatan / Keterangan */}
+                      <form className="mt-4">
+                        <label
+                          htmlFor="catatan"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Catatan / Keterangan (Opsional)
+                        </label>
+                        <textarea
+                          id="catatan"
+                          name="catatan"
+                          rows={3}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          placeholder="Tambahkan catatan atau keterangan..."
+                        ></textarea>
+                      </form>
                     </div>
                   </div>
                 </div>
@@ -257,13 +378,6 @@ const ValidationUploadTable = () => {
                     onClick={handleValidateAll}
                   >
                     {isAllChecked ? "Validasi Semua" : "Batal Validasi Semua"}
-                  </button>
-                  <button
-                    type="button"
-                    className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
-                    onClick={handleCloseModal}
-                  >
-                    Cancel
                   </button>
                 </div>
               </div>

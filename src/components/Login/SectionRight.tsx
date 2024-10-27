@@ -21,7 +21,7 @@ const SectionRight = () => {
       <div className="block sm:hidden md:block">
         <div className="relative z-[2] mt-[250px] md:mt-[220px] md:px-12 lg:mt-[230px] lg:px-[100px] xl:mt-[250px] xl:px-[120px] 2xl:px-[200px]">
           <div className="font-poppins font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
-            Masuk ke Manajemen Dokumen
+            Masuk ke dalam Simfoni
           </div>
           <div className="pt-1 font-inter font-normal leading-normal text-[#0C479F] md:text-[13px] lg:text-[14px] xl:text-[14px]">
             Silahkan masuk untuk melakukan aktifitas anda

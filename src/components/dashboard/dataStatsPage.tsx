@@ -24,7 +24,7 @@ const dataStatsList = [
       </svg>
     ),
     color: "#3FD97F",
-    title: "Total Views",
+    title: "Total Dokumen",
     value: "3.456K",
     growthRate: 0.43,
   },
@@ -46,7 +46,7 @@ const dataStatsList = [
       </svg>
     ),
     color: "#FF9C55",
-    title: "Total Profit",
+    title: "Belum Divalidasi",
     value: "$42.2K",
     growthRate: 4.35,
   },
@@ -74,7 +74,7 @@ const dataStatsList = [
       </svg>
     ),
     color: "#8155FF",
-    title: "Total Product",
+    title: "Dokumen Terhapus",
     value: "2.450",
     growthRate: 2.59,
   },

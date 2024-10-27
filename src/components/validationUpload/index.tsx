@@ -21,17 +21,16 @@ const itemsPerPage = 5;
 const MainPage = () => {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   const totalPages = Math.ceil(validationUpload.length / itemsPerPage);
 
-  // Get current items to display based on the current page
   const currentItems = validationUpload.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
-  const formatSkpdForUrl = (skpd: string) => {
-    return skpd.toLowerCase().replace(/\s+/g, "-");
-  };
+  const formatSkpdForUrl = (skpd: string) =>
+    skpd.toLowerCase().replace(/\s+/g, "-");
 
   const handleDetailsClick = (skpd: string) => {
     const formattedSkpd = formatSkpdForUrl(skpd);
@@ -112,6 +111,8 @@ const MainPage = () => {
             currentPage={currentPage}
             totalPages={totalPages}
             onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={setItemsPerPage}
           />
         </div>
       </div>
