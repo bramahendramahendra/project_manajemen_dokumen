@@ -50,3 +50,9 @@ npm i @nextui-org/react framer-motion
 ```bash
 npm install -D prettier prettier-plugin-tailwindcss
 ```
+
+## Install loader lottie
+```bash
+npm install lottie-react
+npm install @lottiefiles/react-lottie-player
+```

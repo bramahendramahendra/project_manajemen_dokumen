@@ -1,9 +1,16 @@
-const Loader = () => {
+import React from 'react';
+import { Player } from '@lottiefiles/react-lottie-player'; // Komponen untuk Lottie
+import loaderAnimation from './loader.json'; // Impor Lottie JSON
+
+const Loader: React.FC = () => {
   return (
     <div className="flex h-screen items-center justify-center bg-white dark:bg-dark">
-      {/* <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div> */}
-      <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-[#0C479F] border-t-transparent"></div>
-      {/* <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid bg-gradient-to-r from-[#0C479F] to-[#1D92F9] border-t-transparent"></div> */}
+      <Player
+        autoplay
+        loop
+        src={loaderAnimation}
+        className="h-40 w-40"
+      />
     </div>
   );
 };
