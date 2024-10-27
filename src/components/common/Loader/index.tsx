@@ -1,16 +1,16 @@
-// components/Loader.js
 import React from 'react';
-import styles from './Loader.module.css';
+import { Player } from '@lottiefiles/react-lottie-player'; // Komponen untuk Lottie
+import loaderAnimation from './loader.json'; // Impor Lottie JSON
 
-const Loader = () => {
+const Loader: React.FC = () => {
   return (
     <div className="flex h-screen items-center justify-center bg-white dark:bg-dark">
-      <div className={`${styles.book} relative h-40 w-32`}>
-        <div className={`${styles.page} absolute w-full h-full bg-white border border-solid border-[#0C479F] animate-flip delay-0`}></div>
-        <div className={`${styles.page} absolute w-full h-full bg-white border border-solid border-[#0C479F] animate-flip delay-200`}></div>
-        <div className={`${styles.page} absolute w-full h-full bg-white border border-solid border-[#0C479F] animate-flip delay-400`}></div>
-        <div className={`${styles.page} absolute w-full h-full bg-white border border-solid border-[#0C479F] animate-flip delay-600`}></div>
-      </div>
+      <Player
+        autoplay
+        loop
+        src={loaderAnimation}
+        className="h-40 w-40"
+      />
     </div>
   );
 };
