@@ -65,9 +65,9 @@ const Header = (props: {
         <div className="hidden xl:block">
           <div>
             <h1 className="mb-0.5 text-heading-5 font-bold text-dark dark:text-white">
-              Simfoni
+              Sipaduke
             </h1>
-            <p className="font-medium font-poppins">Sistem Manajemen File dan Dokumentasi</p> 
+            <p className="font-medium font-poppins">Sistem Penyimpanan Dokumen Keuangan Daerah</p> 
           </div>
         </div>
 
