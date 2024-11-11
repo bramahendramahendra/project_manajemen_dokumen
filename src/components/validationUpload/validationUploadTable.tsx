@@ -182,15 +182,15 @@ const ValidationUploadTable = () => {
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2">
-                <th className="px-4 py-4">
+              <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2 ">
+                <th className="px-4 py-4 xl:pl-7.5">
                   <input
                     type="checkbox"
                     checked={isAllChecked}
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
+                <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white ">
                   Uraian
                 </th>
                 <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
@@ -205,7 +205,7 @@ const ValidationUploadTable = () => {
               {currentItems.map((userItem, index) => (
                 <tr key={index}>
                   <td
-                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
+                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
                   >
                     <input
                       type="checkbox"
@@ -229,29 +229,31 @@ const ValidationUploadTable = () => {
                       {formatDate(new Date(userItem.tanggal))}
                     </p>
                   </td>
-                  <td className="px-3 py-4 xl:pr-7.5">
+                  <td
+                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
+                  >
                     <div className="flex items-center justify-end">
-                      {/* Tombol Validasi */}
                       <div className="pl-1 capitalize text-dark dark:text-white">
-                        <button className="active:scale-[.97]">
-                          <div className="flex items-center justify-center space-x-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white hover:from-[#0C479F] hover:to-[#0C479F]">
-                            <span className="text-[20px]">
-                              <HiOutlineClipboardDocumentCheck />
-                            </span>
-                            <span>Validasi</span>
-                          </div>
+                        <button className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6">
+                          <span className="text-[20px]">
+                            <HiOutlineClipboardDocumentCheck />
+                          </span>
+                          {/* Teks Validasi yang muncul saat hover */}
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Validasi
+                          </span>
                         </button>
                       </div>
 
-                      
                       <div className="pl-4 capitalize text-dark dark:text-white">
-                        <button className="active:scale-[.97]">
-                          <div className="flex items-center justify-center space-x-2 rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white hover:bg-red-600">
-                            <span className="text-[20px]">
-                              <HiOutlineTrash />
-                            </span>
-                            <span>Hapus</span>
-                          </div>
+                        <button className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6">
+                          <span className="text-[20px]">
+                            <HiOutlineTrash />
+                          </span>
+                          {/* Teks Hapus yang muncul saat hover */}
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Hapus
+                          </span>
                         </button>
                       </div>
 
@@ -259,12 +261,15 @@ const ValidationUploadTable = () => {
                       <div className="pl-4 capitalize text-dark dark:text-white">
                         <a
                           href={`/review-document/${userItem.skpd}`} // URL berdasarkan data yang dipilih
-                          className="flex items-center justify-center space-x-2 rounded-[7px] px-4 py-[10px] text-[16px] text-dark"
+                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] border border-black px-4 py-[10px] text-[16px] text-dark transition-all duration-300 ease-in-out hover:pr-6"
                         >
                           <span className="text-[20px]">
                             <HiOutlineDocumentMagnifyingGlass />
                           </span>
-                          <span>Review</span>
+                          {/* Teks Review yang muncul saat hover */}
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Review
+                          </span>
                         </a>
                       </div>
                     </div>

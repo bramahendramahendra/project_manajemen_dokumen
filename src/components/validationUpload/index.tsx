@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { ValidationUpload } from "@/types/validationUpload";
 import Pagination from "../pagination.tsx/Pagination";
-import { HiOutlineClipboardDocumentList } from "react-icons/hi2";
+import { HiOutlineArrowTopRightOnSquare} from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 
 const validationUpload: ValidationUpload[] = [
@@ -26,7 +26,7 @@ const MainPage = () => {
 
   const currentItems = validationUpload.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   const formatSkpdForUrl = (skpd: string) =>
@@ -88,15 +88,18 @@ const MainPage = () => {
                   <td className="px-3 py-4 xl:pr-7.5">
                     <div className="flex items-center justify-end">
                       <div className="pl-1 capitalize text-dark dark:text-white">
-                        <button className="active:scale-[.97] 2xsm:col-span-12 md:col-span-3 md:col-start-10 lg:col-span-3 lg:col-start-10 xl:col-span-2 xl:col-start-11">
+                        <button className="group active:scale-[.97] 2xsm:col-span-12 md:col-span-3 md:col-start-10 lg:col-span-3 lg:col-start-10 xl:col-span-2 xl:col-start-11">
                           <div
-                            className="flex items-center justify-center space-x-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white hover:from-[#0C479F] hover:to-[#0C479F]"
+                            className="flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
                             onClick={() => handleDetailsClick(brand.skpd)}
                           >
                             <span className="text-[20px]">
-                              <HiOutlineClipboardDocumentList />
+                              <HiOutlineArrowTopRightOnSquare />
                             </span>
-                            <span>Detail</span>
+                            {/* Teks Detail yang muncul saat hover */}
+                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                              Detail
+                            </span>
                           </div>
                         </button>
                       </div>

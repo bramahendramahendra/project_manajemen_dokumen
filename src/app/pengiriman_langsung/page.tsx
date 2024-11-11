@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import MainPage from "@/components/pengirimanLangsung";
 
 import Breadcrumb from "@/components/breadcrumbs";
 // import MainPage from "@/components/settingSubjenis";
@@ -18,9 +19,9 @@ const PengirimanLangsung = () => {
   return (
     <DefaultLayout>
         <Breadcrumb breadcrumbs={breadcrumbs} />
-      <div className="mx-auto max-w-7xl">
-        {/* <MainPage /> */}
-      </div>
+        <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
+          <MainPage />
+        </div>
     </DefaultLayout>
   );
 };
