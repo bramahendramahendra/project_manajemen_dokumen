@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
-const SectionRight = () => {
+const SectionLupaPassword = () => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const router = useRouter();
@@ -21,10 +21,10 @@ const SectionRight = () => {
       <div className="block sm:hidden md:block">
         <div className="relative z-[2] mt-[250px] md:mt-[220px] md:px-12 lg:mt-[230px] lg:px-[100px] xl:mt-[250px] xl:px-[120px] 2xl:px-[200px]">
           <div className="font-poppins font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
-            Masuk ke dalam Sipaduke
+            Jika Lupa Password Sipaduke
           </div>
           <div className="pt-1 font-inter font-normal leading-normal text-[#0C479F] md:text-[13px] lg:text-[14px] xl:text-[14px]">
-            Silahkan masuk untuk melakukan aktifitas anda
+            Silahkan inputkan Username anda
           </div>
           <section>
             <form onSubmit={handleSubmitLogin}>
@@ -38,26 +38,11 @@ const SectionRight = () => {
                 className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
               />
 
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Masukkan Password..."
-                className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
-              />
-              <div>
-                <span className="float-right mt-[20px] font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
-                  <Link href={`lupa-password`}>Lupa Password?</Link>
-                </span>
-              </div>
-
               <button
                 type="submit"
                 className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
               >
-                Masuk
+                Lapor Admin
               </button>
             </form>
           </section>
@@ -81,4 +66,4 @@ const SectionRight = () => {
   );
 };
 
-export default SectionRight;
+export default SectionLupaPassword;

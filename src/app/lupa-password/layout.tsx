@@ -15,7 +15,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "Sipaduke - Login",
+  title: "Sipaduke - Lupa Password",
   description:
     "menertibkan dan mengarsipkan dokumen kamu bisa lakukan login terlebih dahulu",
   themeColor: "#0C479F",
