@@ -7,6 +7,7 @@ import ValidationUploadTable from "@/components/validationUpload/validationUploa
 interface Props {
   params: {
     skpd: string;
+    belumValidasi: number; 
   };
 }
 
