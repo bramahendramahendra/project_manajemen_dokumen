@@ -1,83 +1,67 @@
-import { User } from "@/types/user";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   HiOutlineLockClosed,
   HiOutlineLockOpen,
   HiOutlinePencilSquare,
   HiOutlineTrash,
 } from "react-icons/hi2";
-import { useState } from "react";
-
-const userData: User[] = [
-  {
-    userid: "M00001",
-    name: "Free package",
-    username: "freepackage",
-    levelId: 1,
-    levelUser: "Admin",
-    email: "atesting@example.com",
-    skpd: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
-  },
-  {
-    userid: "M00002",
-    name: "Standard Package",
-    username: "standardackage",
-    levelId: 2,
-    levelUser: "Dinas",
-    email: "atesting@example.com",
-    skpd: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
-  },
-  {
-    userid: "M00003",
-    name: "Business Package",
-    username: "usinessackage",
-    levelId: 2,
-    levelUser: "Dinas",
-    email: "atesting@example.com",
-    skpd: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
-  },
-  {
-    userid: "M00004",
-    name: "Standard Package",
-    username: "tandardackage",
-    levelId: 2,
-    levelUser: "Dinas",
-    email: "atesting@example.com",
-    skpd: "Dinas Kabupaten",
-    notelp: "082130599678",
-    createdDate: `13 Januari 2023`,
-  },
-];
+import { useState, useEffect } from "react";
+import { User } from "@/types/user";
 
 const TableAllUser = () => {
   const router = useRouter();
-  const [suspendedStatus, setSuspendedStatus] = useState<{ [key: string]: boolean }>({});
+  const [userData, setUserData] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [suspendedStatus, setSuspendedStatus] = useState<{
+    [key: string]: boolean;
+  }>({});
 
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API}/users`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        // Ambil hanya data yang diperlukan
+        const users: User[] = result.responseData.items.map((item: any) => ({
+          userid: item.userid,
+          username: item.username,
+          name: item.name,
+          level_id: item.level_id,
+          role: item.role,
+        }));
+
+        setUserData(users);
+      } catch (err: any) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleEdit = (userid: string) => {
     router.push(`/user_management/edit_user/${userid}`);
   };
 
   const handleActivate = (userid: string) => {
-    setSuspendedStatus(prevStatus => ({
+    setSuspendedStatus((prevStatus) => ({
       ...prevStatus,
-      [userid]: !prevStatus[userid] // Toggle status hanya untuk pengguna tertentu
+      [userid]: !prevStatus[userid],
     }));
   };
 
+  // if (loading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-      {/* <h4 className="mb-5.5 text-body-2xlg font-bold text-dark dark:text-white">
-        Users
-      </h4> */}
-
       <div className="flex flex-col overflow-x-auto">
         <table className="w-full table-auto">
           <thead>
@@ -86,19 +70,13 @@ const TableAllUser = () => {
                 User
               </th>
               <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                SKPD
+                Username
               </th>
               <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                No HP
+                Role
               </th>
               <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                Email
-              </th>
-              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                Keterangan
-              </th>
-              <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
-                Created
+                Level ID
               </th>
               <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                 Actions
@@ -106,108 +84,104 @@ const TableAllUser = () => {
             </tr>
           </thead>
           <tbody>
-            {userData.map((userItem, index) => (
-              <tr key={index}>
-                <td
-                  className={`sticky border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <h5 className="font-medium text-dark dark:text-white">
-                    {userItem.name}
-                  </h5>
-                  <p className="mt-[3px] text-body-sm font-medium">
-                    No ID. {userItem.userid}
-                  </p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <p className="text-dark dark:text-white">{userItem.skpd}</p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <p className="text-dark dark:text-white">{userItem.notelp}</p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <p className="text-dark dark:text-white">{userItem.email}</p>
-                </td>
-
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <p
-                    className={`inline-flex rounded-full px-3.5 py-1 text-body-sm font-medium ${
-                      userItem.levelId === 2
-                        ? "bg-[#219653]/[0.08] text-[#219653]"
-                        : userItem.levelId === 1
-                          ? "bg-[#D34053]/[0.08] text-[#D34053]"
-                          : "bg-[#FFA70B]/[0.08] text-[#FFA70B]"
-                    }`}
-                  >
-                    {userItem.levelUser}
-                  </p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <p className="text-dark dark:text-white">
-                    {userItem.createdDate}
-                  </p>
-                </td>
-                <td
-                  className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === userData.length - 1 ? "border-b-0" : "border-b"}`}
-                >
-                  <div className="flex items-center justify-end space-x-3.5">
-                  <button
-                      onClick={() => handleActivate(userItem.userid)}
-                      className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
+            {loading
+              ? // Placeholder saat data sedang dimuat
+                Array.from({ length: 5 }).map((_, index) => (
+                  <tr key={index}>
+                    <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
+                      <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                    </td>
+                    <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
+                      <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                    </td>
+                    <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
+                      <div className="h-4 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                    </td>
+                    <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
+                      <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                    </td>
+                    <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
+                      <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                    </td>
+                  </tr>
+                ))
+              : // Data sebenarnya ditampilkan di sini
+                userData.map((userItem, index) => (
+                  <tr key={index}>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5`}
                     >
-                      <span className="text-[20px]">
-                        {suspendedStatus[userItem.userid] ? (
-                          <HiOutlineLockClosed />
-                          
-                        ) : (
-                          <HiOutlineLockOpen />
-                        )}
-                      </span>
-                      
-                      <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                        {suspendedStatus[userItem.userid] ? "Suspend" : "Continue"}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => handleEdit(userItem.userid)}
-                      className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
+                      <p className="mt-[3px] text-body-sm font-medium">
+                        {userItem.userid}
+                      </p>
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
                     >
-                      <span className="text-[20px]">
-                        <HiOutlinePencilSquare />
-                      </span>
-                      
-                      <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                        Edit
-                      </span>
-                    </button>
+                      <p className="text-dark dark:text-white">
+                        {userItem.username}
+                      </p>
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
+                    >
+                      <p className="text-dark dark:text-white">
+                        {userItem.role}
+                      </p>
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
+                    >
+                      <p className="text-dark dark:text-white">
+                        {userItem.level_id}
+                      </p>
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}
+                    >
+                      <div className="flex items-center justify-end space-x-3.5">
+                        <button
+                          onClick={() => handleActivate(userItem.userid)}
+                          className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
+                        >
+                          <span className="text-[20px]">
+                            {suspendedStatus[userItem.userid] ? (
+                              <HiOutlineLockClosed />
+                            ) : (
+                              <HiOutlineLockOpen />
+                            )}
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            {suspendedStatus[userItem.userid]
+                              ? "Suspend"
+                              : "Continue"}
+                          </span>
+                        </button>
 
-                    
+                        <button
+                          onClick={() => handleEdit(userItem.userid)}
+                          className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlinePencilSquare />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Edit
+                          </span>
+                        </button>
 
-                    
-                    <button className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6">
-                      <span className="text-[20px]">
-                        <HiOutlineTrash />
-                      </span>
-                      
-                      <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                        Hapus
-                      </span>
-                    </button>
-                    
-                  </div>
-                </td>
-              </tr>
-            ))}
+                        <button className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6">
+                          <span className="text-[20px]">
+                            <HiOutlineTrash />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Hapus
+                          </span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
           </tbody>
         </table>
       </div>

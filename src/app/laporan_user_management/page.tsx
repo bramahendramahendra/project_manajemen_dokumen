@@ -7,7 +7,7 @@ import TablePage from "@/components/laporan_user_management/tablePage";
 
 export const metadata: Metadata = {
     title: "Titel Tab",
-    description: "This is Next.js Home page for NextAdmin Dashboard Kit",
+    // description: "This is Next.js Home page for NextAdmin Dashboard Kit",
 };
 
 const PengirimanLangsung = () => {
@@ -19,7 +19,7 @@ const PengirimanLangsung = () => {
   return (
     <DefaultLayout>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-      <div className="mx-auto max-w-7xl">
+      <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
         <TablePage />
       </div>
     </DefaultLayout>
