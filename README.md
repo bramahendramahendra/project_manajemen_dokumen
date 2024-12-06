@@ -56,3 +56,9 @@ npm install -D prettier prettier-plugin-tailwindcss
 npm install lottie-react
 npm install @lottiefiles/react-lottie-player
 ```
+
+## Install Cookie
+```bash
+npm install js-cookie
+npm install --save-dev @types/js-cookie
+```

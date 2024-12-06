@@ -38,7 +38,7 @@ const ValidationUploadDetail = ({ params }: Props) => {
   if (!foundSkpd) {
     return (
       <DefaultLayout>
-        <h1>Error 404: SKPD "{skpd}" Data tidak ditemukan</h1>
+        <h1>Error 404: SKPD &quot;{skpd}&quot; Data tidak ditemukan</h1>
         <p>Data ini tidak ada</p>
       </DefaultLayout>
     );

@@ -4,17 +4,50 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Cookies from "js-cookie";
 
 const SectionRight = () => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  // const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   console.log({ username, password });
+  //   router.push("/dashboard");
+  // };
+
+  const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log({ username, password });
-    router.push("/dashboard");
+    setErrorMessage(null);
+  
+    try {
+      const response = await fetch("http://localhost:8080/auths/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+  
+      const data = await response.json();
+  
+      if (response.ok && data.responseCode === 200) {
+        // Simpan token ke cookie
+        Cookies.set("token", data.responseData.token, { expires: 7 });
+  
+        // Redirect ke dashboard
+        router.push("/dashboard");
+      } else {
+        setErrorMessage(data.responseDesc || "Login failed. Please try again.");
+      }
+    } catch (error) {
+      setErrorMessage("An error occurred. Please try again later.");
+    }
   };
+
 
   return (
     <>
@@ -47,6 +80,10 @@ const SectionRight = () => {
                 placeholder="Masukkan Password..."
                 className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
               />
+
+              {errorMessage && (
+                <p className="mt-[10px] text-red-500 text-sm">{errorMessage}</p>
+              )}
               <div>
                 <span className="float-right mt-[20px] font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
                   <Link href={`lupa-password`}>Lupa Password?</Link>
