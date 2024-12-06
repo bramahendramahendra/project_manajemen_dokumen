@@ -1,17 +1,35 @@
-import Image from "next/image";
-import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Image from "next/image";
+import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 
 const SectionRight = () => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [captcha, setCaptcha] = useState<string>("");
+  const [captchaInput, setCaptchaInput] = useState<string>("");
   const router = useRouter();
+
+  // Generate CAPTCHA
+  const generateCaptcha = () => {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let result = "";
+    for (let i = 0; i < 6; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    return result;
+  };
+
+  const [captchaCode, setCaptchaCode] = useState<string>(generateCaptcha);
 
   const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (captchaInput !== captchaCode) {
+      alert("CAPTCHA tidak valid!");
+      return;
+    }
     console.log({ username, password });
     router.push("/dashboard");
   };
@@ -47,6 +65,37 @@ const SectionRight = () => {
                 placeholder="Masukkan Password..."
                 className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
               />
+
+              {/* CAPTCHA */}
+              <div className="mt-[15px]">
+              <label htmlFor="captcha" className="font-inter font-medium text-[#1D92F9]">
+                  Captcha di bawah ini
+                </label>
+                <div className="mt-2 flex items-center">
+                  <div className="flex items-center justify-center w-40 h-15 bg-[#1D92F9] border rounded-[7px]">
+                    <span className="font-mono text-lg font-bold text-white select-none">
+                      {captchaCode}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setCaptchaCode(generateCaptcha())}
+                    className="ml-2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    🔄
+                  </button>
+                </div>
+                <input
+                  id="captcha"
+                  type="text"
+                  value={captchaInput}
+                  onChange={(e) => setCaptchaInput(e.target.value)}
+                  required
+                  placeholder="Masukkan CAPTCHA..."
+                  className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
+                />
+              </div>
+
               <div>
                 <span className="float-right mt-[20px] font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
                   <Link href={`lupa-password`}>Lupa Password?</Link>

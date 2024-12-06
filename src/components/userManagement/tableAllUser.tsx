@@ -7,6 +7,7 @@ import {
 } from "react-icons/hi2";
 import { useState, useEffect } from "react";
 import { User } from "@/types/user";
+import UserManagement from "../404/UserManagement/userManagement";
 
 const TableAllUser = () => {
   const router = useRouter();
@@ -22,6 +23,9 @@ const TableAllUser = () => {
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_API}/users`);
         if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Data tidak ditemukan");
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
@@ -37,7 +41,7 @@ const TableAllUser = () => {
 
         setUserData(users);
       } catch (err: any) {
-        setError(err.message);
+        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
       } finally {
         setLoading(false);
       }
@@ -57,8 +61,12 @@ const TableAllUser = () => {
     }));
   };
 
-  // if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+  
+  if (error) {
+    return (
+      <UserManagement error="Data tidak ditemukan" />
+    );
+  }
 
   return (
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
