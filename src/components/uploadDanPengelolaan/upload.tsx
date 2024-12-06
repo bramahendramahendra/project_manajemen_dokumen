@@ -111,6 +111,17 @@ const UploadDokumen = () => {
                 placeholder="Pilih tahun"
                 options={dataTahun}
               />
+              <div className="mb-4.5">
+                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                  Keterangan
+                </label>
+                <input
+                  type="text"
+                  placeholder="Masukkan Keterangan..."
+                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                  required
+                />
+              </div>
 
               {/* Upload File */}
               <div
