@@ -162,7 +162,7 @@ const ValidationUploadTable = () => {
         checkedItems[(currentPage - 1) * itemsPerPage + index] === true,
     );
     setIsAllChecked(allCheckedInPage);
-  }, [currentPage, checkedItems]);
+  }, [currentPage, checkedItems, currentItems, itemsPerPage]);
 
   return (
     <div>

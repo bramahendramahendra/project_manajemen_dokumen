@@ -7,7 +7,7 @@ import TopUser from "@/components/userManagement/topUser";
 
 import { HiPlus } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
-import FormAddPage from "@/components/settingSubjenis/formAddPage";
+// import FormAddPage from "/components/settingSubjenis/formAddPage";
 
 const AddPage = () => {
   const Router = useRouter();
@@ -22,7 +22,7 @@ const AddPage = () => {
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
         <div className="col-span-12 xl:col-span-6">
-          <FormAddPage />
+          {/* <FormAddPage /> */}
         </div>
       </div>
     </DefaultLayout>
