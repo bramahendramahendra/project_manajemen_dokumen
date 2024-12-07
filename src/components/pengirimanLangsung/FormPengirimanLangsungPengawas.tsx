@@ -49,7 +49,7 @@ const FormPengirimanLangsung = () => {
       <div className="col-span-12 xl:col-span-12">
         <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-            Pengiriman dokumen secara langsung pada Dinas
+            Pengiriman dokumen secara langsung pada Pengawas
           </h4>
           <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
             <form>
@@ -61,7 +61,7 @@ const FormPengirimanLangsung = () => {
                   {/* Kepada Dinas */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Kepada Dinas
+                      Kepada Pengawas
                     </label>
                     <input
                       type="text"

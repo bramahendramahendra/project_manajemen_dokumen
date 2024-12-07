@@ -1,19 +1,16 @@
 import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-
 import Breadcrumb from "@/components/breadcrumbs";
-// import MainPage from "@/components/settingSubjenis";
-import TablePage from "@/components/laporan_user_management/tablePage";
+import TablePage from "@/components/laporan_dokumen_management/tablePage";
 
 export const metadata: Metadata = {
-    title: "Laporan User Manajemen",
-    // description: "This is Next.js Home page for NextAdmin Dashboard Kit",
+  title: "Laporan Dokumen Manajemen",
 };
 
-const LaporanUserManagement = () => {
+const LaporanDokumen = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Laporan User Manajemen"},
+    { name: "Laporan Dokumen Menajemen" },
   ];
 
   return (
@@ -24,6 +21,7 @@ const LaporanUserManagement = () => {
       </div>
     </DefaultLayout>
   );
+  
 };
 
-export default LaporanUserManagement;
+export default LaporanDokumen;

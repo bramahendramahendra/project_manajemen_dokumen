@@ -5,9 +5,6 @@ const nextConfig = {
   },
   basePath: "",
   trailingSlash: false,
-  experimental: {
-    appDir: true, // Pastikan App Router aktif
-  },
 };
 
 export default nextConfig;
