@@ -52,7 +52,7 @@ const MainPage = () => {
 
   const handleDetailsClick = (nama: string) => {
     const formattedNama = formatNamaForUrl(nama);
-    router.push(`/validation_upload/${formattedNama}`);
+    router.push(`/laporan_dokumen/${formattedNama}`);
   };
 
   return (
