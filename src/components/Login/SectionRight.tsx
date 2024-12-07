@@ -1,58 +1,151 @@
-import Image from "next/image";
-import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import Image from "next/image";
+import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import Cookies from "js-cookie";
 
 const SectionRight = () => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [captcha, setCaptcha] = useState<string>("");
+  // const [captchaCode, setCaptchaCode] = useState<string>("");
+  const [captchaInput, setCaptchaInput] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
+  const [captchaID, setCaptchaID] = useState<string>(""); // ID CAPTCHA dari backend
+  const [captchaURL, setCaptchaURL] = useState<string>(""); // URL gambar CAPTCHA
 
-  // const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  // Generate CAPTCHA
+  // const generateCaptcha = () => {
+  //   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  //   let result = "";
+  //   for (let i = 0; i < 6; i++) {
+  //     result += characters.charAt(Math.floor(Math.random() * characters.length));
+  //   }
+  //   return result;
+  // };
+
+
+  // const fetchCaptcha = async () => {
+  //   try {
+  //     const response = await fetch("http://127.0.0.1:8080/auths/generate-captcha");
+  //     console.log("Response status:", response.status); // Debug status response
+  
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+  
+  //     const data = await response.json();
+  //     console.log("CAPTCHA Response Data:", data); // Debug data
+  
+  //     setCaptchaCode(data.captcha); // Simpan CAPTCHA dari API
+  //   } catch (error) {
+  //     console.error("Error fetching CAPTCHA:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchCaptcha();
+  // }, []);
+
+  const fetchCaptcha = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:8080/auths/generate-captcha");
+      const data = await response.json();
+
+      setCaptchaID(data.captcha_id); // Simpan ID CAPTCHA
+      setCaptchaURL(`http://127.0.0.1:8080${data.captcha_url}`); // Simpan URL gambar CAPTCHA
+    } catch (error) {
+      console.error("Error fetching CAPTCHA:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCaptcha();
+  }, []);
+
+  // const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
   //   e.preventDefault();
-  //   console.log({ username, password });
-  //   router.push("/dashboard");
+  //   setErrorMessage(null);
+  
+  //   if (captchaInput !== captchaCode) {
+  //     alert("CAPTCHA tidak valid!");
+  //     return;
+  //   } 
+      
+  //   try {
+  //     const response = await fetch("http://localhost:8080/auths/login", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         accept: "application/json",
+  //       },
+  //       body: JSON.stringify({ username, password }),
+  //     });
+  
+  //     const data = await response.json();
+  
+  //     if (response.ok && data.responseCode === 200) {
+  //       // Simpan token ke cookie
+  //       Cookies.set("token", data.responseData.token, { expires: 7 });
+  
+  //       // Redirect ke dashboard
+  //       router.push("/dashboard");
+  //     } else {
+  //       setErrorMessage(data.responseDesc || "Login failed. Please try again.");
+  //     }
+  //   } catch (error) {
+  //     setErrorMessage("An error occurred. Please try again later.");
+  //   }
   // };
 
   const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage(null);
-  
+    if (!captchaInput) {
+      setErrorMessage("Captcha is required");
+      return;
+    }
     try {
-      const response = await fetch("http://localhost:8080/auths/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          accept: "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-  
-      const data = await response.json();
-  
-      if (response.ok && data.responseCode === 200) {
-        // Simpan token ke cookie
-        Cookies.set("token", data.responseData.token, { expires: 7 });
-  
-        // Redirect ke dashboard
-        router.push("/dashboard");
-      } else {
-        setErrorMessage(data.responseDesc || "Login failed. Please try again.");
-      }
+        const response = await fetch("http://localhost:8080/auths/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                accept: "application/json",
+            },
+            body: JSON.stringify({ 
+                username, 
+                password, 
+                captcha_id: captchaID, 
+                captcha: captchaInput 
+            }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.responseCode === 200) {
+            Cookies.set("token", data.responseData.token, { expires: 7 });
+            router.push("/dashboard");
+        } else {
+            setErrorMessage(data.responseDesc || "Login failed. Please try again.");
+        }
     } catch (error) {
-      setErrorMessage("An error occurred. Please try again later.");
+        setErrorMessage("An error occurred. Please try again later.");
     }
   };
+
+  // const handleError = () => {
+  //     setErrorMessage("Invalid login or CAPTCHA.");
+  //     fetchCaptcha(); // Refresh CAPTCHA
+  // };
 
 
   return (
     <>
       <div className="block sm:hidden md:block">
-        <div className="relative z-[2] mt-[250px] md:mt-[220px] md:px-12 lg:mt-[230px] lg:px-[100px] xl:mt-[250px] xl:px-[120px] 2xl:px-[200px]">
+        <div className="relative z-[2] mt-[250px] md:mt-[220px] md:px-12 lg:mt-[230px] lg:px-[100px] xl:mt-[250px] xl:px-[120px] 2xl:px-[150px]">
           <div className="font-poppins font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
             Masuk ke dalam Sipaduke
           </div>
@@ -84,6 +177,31 @@ const SectionRight = () => {
               {errorMessage && (
                 <p className="mt-[10px] text-red-500 text-sm">{errorMessage}</p>
               )}
+              {/* CAPTCHA */}
+              <div className="mt-[15px]">
+                {/* <label htmlFor="captcha" className="font-inter font-medium text-[#1D92F9]">
+                  Captcha
+                </label> */}
+                <div className="mt-2 flex items-center">
+                  <img src={captchaURL} alt="captcha" style={{ width: "240px", height: "80px" }} />
+                  <button
+                    type="button"
+                    onClick={fetchCaptcha}
+                    className="ml-2 text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    🔄 Refresh
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={captchaInput}
+                  onChange={(e) => setCaptchaInput(e.target.value)}
+                  required
+                  placeholder="Masukkan CAPTCHA..."
+                  className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-[#1D92F9]"
+                />
+              </div>
+
               <div>
                 <span className="float-right mt-[20px] font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
                   <Link href={`lupa-password`}>Lupa Password?</Link>

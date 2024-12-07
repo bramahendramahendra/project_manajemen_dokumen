@@ -4,7 +4,7 @@
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 
 import Breadcrumb from "@/components/breadcrumbs";
-import TablePage from "@/components/settingSubjenis/tablePage";
+// import TablePage from "@/components/settingSubjenis/tablePage";
 import { HiPlus } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 
@@ -38,7 +38,7 @@ const SettingSubJenis = () => {
       </div>
       <div className="grid grid-cols-12 gap-4  md:gap-6 2xl:gap-7.5">
         <div className="col-span-12 xl:col-span-12">
-          <TablePage />
+          {/* <TablePage /> */}
         </div>
       </div>
     </DefaultLayout>
