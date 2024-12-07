@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import FormPengirimanLangsung from "./FormPengirimanLangsung";
-import FormPengirimanLangsungPenilai from "./FormPengirimanLangsungPenilai";
+import FormPengirimanLangsungPenilai from "./FormPengirimanLangsungPengawas";
 
 const MainPage = () => {
   const [activeTab, setActiveTab] = useState("dinas");
@@ -12,7 +12,7 @@ const MainPage = () => {
         <h4 className="mb-5.5 font-medium text-dark dark:text-white">
           Pengiriman dokumen secara langsung
         </h4>
-        <div className="flex space-x-4 mb-5">
+        {/* <div className="flex space-x-4 mb-5">
           <button
             className={`px-4 py-2 rounded ${
               activeTab === "dinas" ? "bg-blue-500 text-white" : "bg-gray-200 text-black"
@@ -29,8 +29,8 @@ const MainPage = () => {
           >
             Pengawas
           </button>
-        </div>
-        {activeTab === "dinas" ? <FormPengirimanLangsung /> : <FormPengirimanLangsungPenilai />}
+        </div> */}
+        {/* {activeTab === "dinas" ? <FormPengirimanLangsung /> : <FormPengirimanLangsungPenilai />} */}
       </div>
     </div>
   );

@@ -4,11 +4,10 @@ import Breadcrumb from "@/components/breadcrumbs";
 import TablePage from "@/components/laporan_dokumen_management/tablePage";
 
 export const metadata: Metadata = {
-  title: "Titel Tab",
-  description: "This is Next.js Home page for NextAdmin Dashboard Kit",
+  title: "Laporan Dokumen Manajemen",
 };
 
-const PengirimanLangsung = () => {
+const LaporanDokumenManagemen = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
     { name: "Laporan Dokumen Menajemen" },
@@ -25,4 +24,4 @@ const PengirimanLangsung = () => {
   
 };
 
-export default PengirimanLangsung;
+export default LaporanDokumenManagemen;

@@ -58,11 +58,11 @@ const menuGroups = [
         children: [
           {
             label: "Dinas",
-            route: "/pengiriman_langsung_dinas",
+            route: "/pengiriman_langsung/dinas",
           },
           {
             label: "Pengawas",
-            route: "/pengiriman_langsung_pengawas",
+            route: "/pengiriman_langsung/pengawas",
           },
         ],
       },
@@ -78,11 +78,11 @@ const menuGroups = [
         children: [
           { label: "Laporan Dokumen", route: "/laporan_dokumen" },
           {
-            label: "Laporan Dokumen Managemnt",
+            label: "Laporan Dokumen Manajemen",
             route: "/laporan_dokumen_management",
           },
           {
-            label: "Laporan User Managemnt",
+            label: "Laporan User Manajemen",
             route: "/laporan_user_management",
           },
         ],
