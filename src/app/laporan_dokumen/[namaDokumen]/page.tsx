@@ -1,27 +1,36 @@
 import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
-import TablePage from "@/components/laporan_dokumen_management/tablePage";
+import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import LaporanDokumenInstansiIndex from "@/components/laporan_dokumen/detail_laporan_dokumen/";
 
-export const metadata: Metadata = {
-  title: "Laporan Dokumen Manajemen",
+const formatTitle = (text: string) => {
+  return text
+    .replace(/-/g, " ") // Ganti '-' dengan spasi
+    .replace(/\b\w/g, (char) => char.toUpperCase()); // Ubah huruf pertama setiap kata menjadi kapital
 };
 
-const LaporanDokumen = () => {
+export async function generateMetadata({ params }: { params: { namaDokumen: string } }): Promise<Metadata> {
+  const detailUraian = formatTitle(params.namaDokumen || "");
+  return {
+    title: `Laporan Dokumen - ${detailUraian}`,
+  };
+}
+
+const LaporanDokumenInstansi = ({ params }: { params: { namaDokumen: string } }) => {
+  const detailUraianString = formatTitle(params.namaDokumen || "");
+
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Laporan Dokumen Menajemen" },
+    { name: "Laporan Dokumen", href: "/laporan_dokumen" },
+    { name: detailUraianString || "Detail Laporan Dokumen" },
   ];
 
   return (
     <DefaultLayout>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-      <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
-        <TablePage />
-      </div>
+      <LaporanDokumenInstansiIndex />
     </DefaultLayout>
   );
-  
 };
 
-export default LaporanDokumen;
+export default LaporanDokumenInstansi;

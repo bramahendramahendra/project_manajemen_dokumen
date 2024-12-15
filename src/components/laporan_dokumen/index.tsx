@@ -24,36 +24,35 @@ const dataLaporanDokumen: LaporanDokumen[] = [
 
 const MainPage = () => {
   const router = useRouter();
-  const [currentPage, setCurrentPage] = useState(1); // Halaman aktif
-  const [itemsPerPage, setItemsPerPage] = useState(5); // Jumlah item per halaman
-  const [searchTerm, setSearchTerm] = useState(""); // Kata kunci pencarian
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Filter data berdasarkan pencarian
   const filteredDokumen = dataLaporanDokumen.filter((item) =>
     item.nama.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Hitung total halaman berdasarkan hasil pencarian
   const totalPages = Math.ceil(filteredDokumen.length / itemsPerPage);
 
-  // Ambil data untuk halaman saat ini
   const currentItems = filteredDokumen.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // Reset ke halaman pertama ketika kata kunci pencarian berubah
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
   const formatNamaForUrl = (nama: string) =>
-    nama.toLowerCase().replace(/\s+/g, "-");
+    encodeURIComponent(nama.toLowerCase().replace(/\s+/g, "-"));
 
   const handleDetailsClick = (nama: string) => {
-    const formattedNama = formatNamaForUrl(nama);
+    const formattedNama = encodeURIComponent(
+      nama.toLowerCase().replace(/\s+/g, "-")
+    );
     router.push(`/laporan_dokumen/${formattedNama}`);
   };
+  
 
   return (
     <div className="col-span-12 xl:col-span-12">
