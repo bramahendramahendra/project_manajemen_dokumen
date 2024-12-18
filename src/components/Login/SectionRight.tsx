@@ -5,58 +5,25 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import Cookies from "js-cookie";
+import { loginRequest } from "@/helpers/apiClient";
 
 const SectionRight = () => {
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [captcha, setCaptcha] = useState<string>("");
-  // const [captchaCode, setCaptchaCode] = useState<string>("");
   const [captchaInput, setCaptchaInput] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const [captchaID, setCaptchaID] = useState<string>(""); // ID CAPTCHA dari backend
-  const [captchaURL, setCaptchaURL] = useState<string>(""); // URL gambar CAPTCHA
+  const [captchaID, setCaptchaID] = useState<string>(""); 
+  const [captchaURL, setCaptchaURL] = useState<string>(""); 
 
   // Generate CAPTCHA
-  // const generateCaptcha = () => {
-  //   const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  //   let result = "";
-  //   for (let i = 0; i < 6; i++) {
-  //     result += characters.charAt(Math.floor(Math.random() * characters.length));
-  //   }
-  //   return result;
-  // };
-
-
-  // const fetchCaptcha = async () => {
-  //   try {
-  //     const response = await fetch("http://127.0.0.1:8080/auths/generate-captcha");
-  //     console.log("Response status:", response.status); // Debug status response
-  
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-  
-  //     const data = await response.json();
-  //     console.log("CAPTCHA Response Data:", data); // Debug data
-  
-  //     setCaptchaCode(data.captcha); // Simpan CAPTCHA dari API
-  //   } catch (error) {
-  //     console.error("Error fetching CAPTCHA:", error);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchCaptcha();
-  // }, []);
-
   const fetchCaptcha = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8080/auths/generate-captcha");
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API}/auths/generate-captcha`);
       const data = await response.json();
 
-      setCaptchaID(data.captcha_id); // Simpan ID CAPTCHA
-      setCaptchaURL(`http://127.0.0.1:8080${data.captcha_url}`); // Simpan URL gambar CAPTCHA
+      setCaptchaID(data.captcha_id);
+      setCaptchaURL(`${process.env.NEXT_PUBLIC_API}${data.captcha_url}`);
     } catch (error) {
       console.error("Error fetching CAPTCHA:", error);
     }
@@ -66,41 +33,6 @@ const SectionRight = () => {
     fetchCaptcha();
   }, []);
 
-  // const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-  //   setErrorMessage(null);
-  
-  //   if (captchaInput !== captchaCode) {
-  //     alert("CAPTCHA tidak valid!");
-  //     return;
-  //   } 
-      
-  //   try {
-  //     const response = await fetch("http://localhost:8080/auths/login", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         accept: "application/json",
-  //       },
-  //       body: JSON.stringify({ username, password }),
-  //     });
-  
-  //     const data = await response.json();
-  
-  //     if (response.ok && data.responseCode === 200) {
-  //       // Simpan token ke cookie
-  //       Cookies.set("token", data.responseData.token, { expires: 7 });
-  
-  //       // Redirect ke dashboard
-  //       router.push("/dashboard");
-  //     } else {
-  //       setErrorMessage(data.responseDesc || "Login failed. Please try again.");
-  //     }
-  //   } catch (error) {
-  //     setErrorMessage("An error occurred. Please try again later.");
-  //   }
-  // };
-
   const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -109,20 +41,13 @@ const SectionRight = () => {
       return;
     }
     try {
-        const response = await fetch("http://localhost:8080/auths/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                accept: "application/json",
-            },
-            body: JSON.stringify({ 
-                username, 
-                password, 
-                captcha_id: captchaID, 
-                captcha: captchaInput 
-            }),
-        });
-
+        const payload = {
+          username: username,
+          password: password,
+          captcha_id: captchaID,
+          captcha: captchaInput,
+        };
+        const response = await loginRequest("/auths/login", "POST", payload);
         const data = await response.json();
 
         if (response.ok && data.responseCode === 200) {
@@ -135,12 +60,6 @@ const SectionRight = () => {
         setErrorMessage("An error occurred. Please try again later.");
     }
   };
-
-  // const handleError = () => {
-  //     setErrorMessage("Invalid login or CAPTCHA.");
-  //     fetchCaptcha(); // Refresh CAPTCHA
-  // };
-
 
   return (
     <>
