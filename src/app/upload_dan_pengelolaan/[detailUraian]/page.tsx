@@ -20,6 +20,16 @@ const dokumenPerTahun: DokumenPerTahun[] = [
   { uraian: "Anggaran Kas", tahun: 2022, data: "Data Anggaran Kas for 2022" },
   { uraian: "Anggaran Kas", tahun: 2023, data: "Data Anggaran Kas for 2023" },
   { uraian: "Anggaran Kas", tahun: 2024, data: "Data Anggaran Kas for 2024" },
+  { uraian: "Anggaran Kas", tahun: 2025, data: "Data Anggaran Kas for 2021" },
+  { uraian: "Anggaran Kas", tahun: 2026, data: "Data Anggaran Kas for 2021" },
+  { uraian: "Anggaran Kas", tahun: 2027, data: "Data Anggaran Kas for 2022" },
+  { uraian: "Anggaran Kas", tahun: 2028, data: "Data Anggaran Kas for 2023" },
+  { uraian: "Anggaran Kas", tahun: 2028, data: "Data Anggaran Kas for 2024" },
+  { uraian: "Anggaran Kas", tahun: 2029, data: "Data Anggaran Kas for 2021" },
+  { uraian: "Anggaran Kas", tahun: 2030, data: "Data Anggaran Kas for 2021" },
+  { uraian: "Anggaran Kas", tahun: 2031, data: "Data Anggaran Kas for 2022" },
+  { uraian: "Anggaran Kas", tahun: 2032, data: "Data Anggaran Kas for 2023" },
+  { uraian: "Anggaran Kas", tahun: 2033, data: "Data Anggaran Kas for 2024" },
   
 ];
 

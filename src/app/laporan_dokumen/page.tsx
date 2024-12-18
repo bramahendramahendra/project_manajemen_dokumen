@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 
-const PengirimanLangsung = () => {
+const LaporanDokumen = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
     { name: "Laporan Dokumen"},
@@ -25,4 +25,4 @@ const PengirimanLangsung = () => {
   );
 };
 
-export default PengirimanLangsung;
+export default LaporanDokumen;
