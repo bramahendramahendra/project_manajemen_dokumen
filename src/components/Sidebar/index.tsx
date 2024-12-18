@@ -168,6 +168,7 @@ const menuGroups = [
         ),
         label: "Pergeseran",
         route: "#",
+        pro: true,
       },
     ],
   },
@@ -194,7 +195,8 @@ const menuGroups = [
           </svg>
         ),
         label: "Pesan Masuk",
-        route: "#",
+        route: "/pesan_masuk",
+        message: 5,
       },
       {
         icon: (
@@ -217,6 +219,7 @@ const menuGroups = [
         ),
         label: "Dokumen Masuk",
         route: "#",
+        message: 9,
       },
     ],
   },

@@ -88,7 +88,7 @@ const dokumenPerTahun: DokumenPerTahun[] = [
   }
 ];
 
-const index = () => {
+const Index = () => {
   const params = useParams();
 
   const detailUraian = params?.detailUraian;
@@ -108,4 +108,4 @@ const index = () => {
 };
 
 
-export default index;
+export default Index;
