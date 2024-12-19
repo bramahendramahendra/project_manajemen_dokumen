@@ -50,92 +50,117 @@ const SectionRight = () => {
         const response = await loginRequest("/auths/login", "POST", payload);
         const data = await response.json();
 
-        if (response.ok && data.responseCode === 200) {
-            Cookies.set("token", data.responseData.token, { expires: 7 });
-            router.push("/dashboard");
-        } else {
-            setErrorMessage(data.responseDesc || "Login failed. Please try again.");
-        }
+      if (response.ok && data.responseCode === 200) {
+        Cookies.set("token", data.responseData.token, { expires: 7 });
+        router.push("/dashboard");
+      } else {
+        setErrorMessage(data.responseDesc || "Login failed. Please try again.");
+      }
     } catch (error) {
-        setErrorMessage("An error occurred. Please try again later.");
+      setErrorMessage("An error occurred. Please try again later.");
     }
   };
 
   return (
     <>
       <div className="block sm:hidden md:block">
-      <div className="relative z-[2] flex flex-col items-center justify-center h-screen px-12 lg:px-[100px] xl:px-[120px] 2xl:px-[150px]">
-        {/* <div className="relative z-[2] mt-[250px] md:mt-[220px] md:px-12 lg:mt-[230px] lg:px-[100px] 2xl:mt-[250px] xl:mt-[170px] xl:px-[120px] 2xl:px-[150px]"> */}
-          <div className="font-poppins w-full font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
-            Masuk ke dalam Sipaduke
-          </div>
-          <div className="pt-1 font-inter w-full font-normal leading-normal text-[#0C479F] md:text-[13px] lg:text-[14px] xl:text-[14px]">
-            Silahkan masuk untuk melakukan aktifitas anda
-          </div>
-          <section className="w-full">
-            <form onSubmit={handleSubmitLogin}>
-              <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                placeholder="Masukkan Username..."
-                className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
-              />
+        <div className="relative z-[2] flex h-screen flex-col items-center justify-center px-12 lg:px-[100px] xl:px-[120px] 2xl:px-[150px]">
+          <div className="2xl:w-full">
+            {/* <div className="relative z-[2] mt-[250px] md:mt-[220px] md:px-12 lg:mt-[230px] lg:px-[100px] 2xl:mt-[250px] xl:mt-[170px] xl:px-[120px] 2xl:px-[150px]"> */}
+            <div className="w-full font-poppins font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
+              Masuk ke dalam Sipaduke
+            </div>
+            <div className="w-full pt-1 font-inter font-normal leading-normal text-[#0C479F] md:text-[13px] lg:text-[14px] xl:text-[14px]">
+              Silahkan masuk untuk melakukan aktifitas anda
+            </div>
+            <section className="w-full">
+              <form onSubmit={handleSubmitLogin}>
+                <input
+                  id="username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  placeholder="Masukkan Username..."
+                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
+                />
 
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Masukkan Password..."
-                className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
-              />
+                <input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Masukkan Password..."
+                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
+                />
 
-              {errorMessage && (
-                <p className="mt-[10px] text-red-500 text-sm">{errorMessage}</p>
-              )}
-              {/* CAPTCHA */}
-              <div className="mt-[15px]">
-                {/* <label htmlFor="captcha" className="font-inter font-medium text-[#1D92F9]">
+                {errorMessage && (
+                  <p className="mt-[10px] text-sm text-red-500">
+                    {errorMessage}
+                  </p>
+                )}
+                {/* CAPTCHA */}
+                <div className="mt-[15px]">
+                  {/* <label htmlFor="captcha" className="font-inter font-medium text-[#1D92F9]">
                   Captcha
                 </label> */}
-                <div className="mt-2 flex items-center">
-                  <img src={captchaURL} alt="captcha" style={{ width: "240px", height: "80px" }} />
-                  <button
-                    type="button"
-                    onClick={fetchCaptcha}
-                    className="ml-2 text-sm text-blue-600 hover:text-blue-800"
-                  >
-                    🔄 Refresh
-                  </button>
+                  <div className="mt-2 flex items-center">
+                    <img
+                      src={captchaURL}
+                      alt="captcha"
+                      style={{ width: "240px", height: "80px" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={fetchCaptcha}
+                      className="ml-2 md:text-[15px] lg:text-[16px] font-poppins text-blue-600 hover:text-blue-800"
+                    >
+                      🔄 Refresh
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    value={captchaInput}
+                    onChange={(e) => setCaptchaInput(e.target.value)}
+                    required
+                    placeholder="Masukkan CAPTCHA..."
+                    className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-[#1D92F9]"
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={captchaInput}
-                  onChange={(e) => setCaptchaInput(e.target.value)}
-                  required
-                  placeholder="Masukkan CAPTCHA..."
-                  className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-[#1D92F9]"
-                />
-              </div>
 
-              <div>
-                <span className="float-right mt-[20px] font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
-                  <Link href={`lupa-password`}>Lupa Password?</Link>
-                </span>
-              </div>
+                <div>
+                  <span className="float-right mt-[20px] font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
+                    <Link href={`lupa-password`}>Lupa Password?</Link>
+                  </span>
+                </div>
 
-              <button
-                type="submit"
-                className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
+                <button
+                  type="submit"
+                  className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
+                >
+                  Masuk
+                </button>
+              </form>
+
+
+
+
+
+              {/* Tombol Bypass Login */}
+              {/* <button
+                type="button"
+                onClick={handleBypassLogin}
+                className="mt-[20px] w-full rounded-[7px] bg-green-500 font-poppins font-normal text-white shadow-sm hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
               >
-                Masuk
-              </button>
-            </form>
-          </section>
+                Bypass Login
+              </button> */}
+
+
+
+
+            </section>
+          </div>
         </div>
 
         <motion.div

@@ -8,6 +8,8 @@ import {
 import { useState, useEffect } from "react";
 import { User } from "@/types/user";
 import UserManagement from "../404/UserManagement/userManagement";
+import { apiRequest } from "@/helpers/apiClient";
+
 
 const TableAllUser = () => {
   const router = useRouter();
@@ -21,7 +23,8 @@ const TableAllUser = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API}/users`);
+        // const response = await fetch(`${process.env.NEXT_PUBLIC_API}/users`);
+        const response = await apiRequest("/users", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Data tidak ditemukan");
@@ -29,6 +32,9 @@ const TableAllUser = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
+
+        console.log(result);
+        
 
         // Ambil hanya data yang diperlukan
         const users: User[] = result.responseData.items.map((item: any) => ({

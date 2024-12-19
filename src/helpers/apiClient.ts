@@ -10,11 +10,12 @@ import Cookies from "js-cookie";
 export const apiRequest = async (endpoint: string, method: string = "GET", body?: any) => {
   try {
     // Ambil token dari cookies
-    const token = Cookies.get("token"); // Mengambil token dengan js-cookie
+    const token = Cookies.get("token");
     if (!token) {
       console.error("Token is missing");
       throw new Error("Token is missing");
     }
+    
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API}${endpoint}`, {
       method,
@@ -22,6 +23,7 @@ export const apiRequest = async (endpoint: string, method: string = "GET", body?
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
+      // mode: "cors",
       body: body ? JSON.stringify(body) : undefined,
     });
 
