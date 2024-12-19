@@ -7,7 +7,7 @@ import TablePage from "@/components/laporan_dokumen/tablePage";
 import MainPage from "@/components/pesanMasuk";
 
 export const metadata: Metadata = {
-    title: "Kotak Masuk",
+    title: "Pesan Masuk",
     // description: "This is Next.js Home page for NextAdmin Dashboard Kit",
 };
 
@@ -21,10 +21,10 @@ const KotakMasuk = () => {
   return (
     <DefaultLayout>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-      <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
+      {/* <div className="gap-4 md:gap-6 2xl:gap-7.5"> */}
         {/* <MainPage /> */}
         <MainPage/>
-      </div>
+      {/* </div> */}
     </DefaultLayout>
   );
 };
