@@ -49,9 +49,12 @@ const SectionRight = () => {
         };
         const response = await loginRequest("/auths/login", "POST", payload);
         const data = await response.json();
+        // console.log(data);
+        
 
       if (response.ok && data.responseCode === 200) {
         Cookies.set("token", data.responseData.token, { expires: 7 });
+        Cookies.set("user", JSON.stringify(data.responseData.user), { expires: 7 });
         router.push("/dashboard");
       } else {
         setErrorMessage(data.responseDesc || "Login failed. Please try again.");
