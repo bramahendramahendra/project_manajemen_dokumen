@@ -138,14 +138,20 @@ const menuGroups = [
         label: "Laporan",
         route: "#",
         children: [
-          { label: "Laporan Dokumen", route: "/laporan_dokumen" },
-          {
-            label: "Laporan Dokumen Manajemen",
-            route: "/laporan_dokumen_management",
+          { label: "Laporan Dokumen", 
+            route: "/laporan_dokumen" 
           },
+          // {
+          //   label: "Laporan Dokumen Manajemen",
+          //   route: "/laporan_dokumen_management",
+          // },
           {
             label: "Laporan User Manajemen",
             route: "/laporan_user_management",
+          },
+          {
+            label: "Laporan Pergeseran",
+            route: "#",
           },
         ],
       },
@@ -218,7 +224,7 @@ const menuGroups = [
           </svg>
         ),
         label: "Dokumen Masuk",
-        route: "#",
+        route: "/dokumen_masuk",
         message: 9,
       },
     ],

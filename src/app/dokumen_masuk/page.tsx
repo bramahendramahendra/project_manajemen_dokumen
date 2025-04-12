@@ -4,7 +4,7 @@ import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 // import MainPage from "@/components/settingSubjenis";
 import TablePage from "@/components/laporan_dokumen/tablePage";
-import MainPage from "@/components/pesanMasuk";
+import MainPage from "@/components/dokumen_masuk";
 
 export const metadata: Metadata = {
     title: "Pesan Masuk",
@@ -12,21 +12,18 @@ export const metadata: Metadata = {
 };
 
 
-const KotakMasuk = () => {
+const DokumenMasuk = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Pesan Masuk"},
+    { name: "Dokumen Masuk"},
   ];
 
   return (
     <DefaultLayout>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-      {/* <div className="gap-4 md:gap-6 2xl:gap-7.5"> */}
-        {/* <MainPage /> */}
         <MainPage/>
-      {/* </div> */}
     </DefaultLayout>
   );
 };
 
-export default KotakMasuk;
+export default DokumenMasuk;
