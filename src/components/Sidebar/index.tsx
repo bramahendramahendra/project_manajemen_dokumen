@@ -106,6 +106,10 @@ const menuGroups = [
         route: "#",
         children: [
           {
+            label: "Admin",
+            route: "/pengiriman_langsung/admin",
+          },
+          {
             label: "Dinas",
             route: "/pengiriman_langsung/dinas",
           },
