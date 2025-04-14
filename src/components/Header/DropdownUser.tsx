@@ -13,6 +13,8 @@ const DropdownUser = () => {
     try {
       const response = await logoutRequest("/auths/logout");
       if (response.ok) {
+        localStorage.setItem("hasVisited", "false");
+
         router.push("/login");
       } else {
         console.error("Logout failed");

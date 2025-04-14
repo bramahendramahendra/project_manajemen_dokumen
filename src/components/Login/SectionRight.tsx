@@ -6,6 +6,7 @@ import Image from "next/image";
 import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import Cookies from "js-cookie";
 import { loginRequest } from "@/helpers/apiClient";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const SectionRight = () => {
   const [username, setUsername] = useState<string>("");
@@ -13,13 +14,16 @@ const SectionRight = () => {
   const [captchaInput, setCaptchaInput] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const router = useRouter();
-  const [captchaID, setCaptchaID] = useState<string>(""); 
-  const [captchaURL, setCaptchaURL] = useState<string>(""); 
+  const [captchaID, setCaptchaID] = useState<string>("");
+  const [captchaURL, setCaptchaURL] = useState<string>("");
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   // Generate CAPTCHA
   const fetchCaptcha = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API}/auths/generate-captcha`);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API}/auths/generate-captcha`,
+      );
       const data = await response.json();
 
       setCaptchaID(data.captcha_id);
@@ -53,6 +57,7 @@ const SectionRight = () => {
         
 
       if (response.ok && data.responseCode === 200) {
+        localStorage.setItem("hasVisited", "true");
         Cookies.set("token", data.responseData.token, { expires: 7 });
         Cookies.set("user", JSON.stringify(data.responseData.user), { expires: 7 });
         router.push("/dashboard");
@@ -94,15 +99,28 @@ const SectionRight = () => {
                   className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
                 />
 
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="Masukkan Password..."
-                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
-                />
+                <div className="relative mt-[15px]">
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Masukkan Password..."
+                    className="block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? (
+                      <FaEyeSlash size={20} />
+                    ) : (
+                      <FaEye size={20} />
+                    )}
+                  </button>
+                </div>
 
                 {errorMessage && (
                   <p className="mt-[10px] text-sm text-red-500">
@@ -125,7 +143,7 @@ const SectionRight = () => {
                     <button
                       type="button"
                       onClick={fetchCaptcha}
-                      className="ml-2 md:text-[15px] lg:text-[16px] font-poppins text-blue-600 hover:text-blue-800"
+                      className="ml-2 font-poppins text-blue-600 hover:text-blue-800 md:text-[15px] lg:text-[16px]"
                     >
                       🔄 Refresh
                     </button>
@@ -154,10 +172,6 @@ const SectionRight = () => {
                 </button>
               </form>
 
-
-
-
-
               {/* Tombol Bypass Login */}
               <button
                 type="button"
@@ -166,10 +180,6 @@ const SectionRight = () => {
               >
                 Bypass Login
               </button>
-
-
-
-
             </section>
           </div>
         </div>
