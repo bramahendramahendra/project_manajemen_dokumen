@@ -115,10 +115,12 @@ const SectionRight = () => {
                   Captcha
                 </label> */}
                   <div className="mt-2 flex items-center">
-                    <img
+                    <Image
                       src={captchaURL}
                       alt="captcha"
-                      style={{ width: "240px", height: "80px" }}
+                      width={240}
+                      height={80}
+                      unoptimized
                     />
                     <button
                       type="button"

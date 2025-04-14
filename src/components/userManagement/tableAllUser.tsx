@@ -23,19 +23,15 @@ const TableAllUser = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // const response = await fetch(`${process.env.NEXT_PUBLIC_API}/users`);
-        const response = await apiRequest("/users", "GET");
+        const response = await apiRequest("/users/", "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Data tidak ditemukan");
+            throw new Error("User data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-
-        console.log(result);
         
-
         // Ambil hanya data yang diperlukan
         const users: User[] = result.responseData.items.map((item: any) => ({
           userid: item.userid,
@@ -81,16 +77,16 @@ const TableAllUser = () => {
           <thead>
             <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2">
               <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
-                User
+                User ID
+              </th>
+              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                Name
               </th>
               <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                 Username
               </th>
               <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                 Role
-              </th>
-              <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                Level ID
               </th>
               <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                 Actions
@@ -99,7 +95,7 @@ const TableAllUser = () => {
           </thead>
           <tbody>
             {loading
-              ? // Placeholder saat data sedang dimuat
+              ?
                 Array.from({ length: 5 }).map((_, index) => (
                   <tr key={index}>
                     <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
@@ -133,6 +129,13 @@ const TableAllUser = () => {
                       className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
                     >
                       <p className="text-dark dark:text-white">
+                        {userItem.name}
+                      </p>
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
+                    >
+                      <p className="text-dark dark:text-white">
                         {userItem.username}
                       </p>
                     </td>
@@ -141,13 +144,6 @@ const TableAllUser = () => {
                     >
                       <p className="text-dark dark:text-white">
                         {userItem.role}
-                      </p>
-                    </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
-                    >
-                      <p className="text-dark dark:text-white">
-                        {userItem.level_id}
                       </p>
                     </td>
                     <td

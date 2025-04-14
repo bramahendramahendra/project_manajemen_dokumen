@@ -16,6 +16,7 @@ import PergeseranIcon from "@/components/Icons/PergeseranIcon";
 import PesanMasukIcon from "@/components/Icons/PesanMasukIcon";
 import DokumenMasukIcon from "@/components/Icons/DokumenMasukIcon";
 import UserIcon from "@/components/Icons/UserIcon";
+import MenuIcon from "@/components/Icons/MenuIcon";
 import SettingIcon from "@/components/Icons/SettingIcon";
 
 interface SidebarProps {
@@ -33,6 +34,7 @@ const iconMap: Record<string, JSX.Element> = {
   PesanMasukIcon: <PesanMasukIcon />,
   DokumenMasukIcon: <DokumenMasukIcon />,
   UserIcon: <UserIcon />,
+  MenuIcon: <MenuIcon />,
   SettingIcon: <SettingIcon />,
 };
 

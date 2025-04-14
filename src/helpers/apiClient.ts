@@ -1,5 +1,5 @@
 import Cookies from "js-cookie";
-import { useRouter } from "next/navigation";
+// import { useRouter } from "next/navigation";
 
 /**
  * Helper function untuk request API dengan token
@@ -30,14 +30,11 @@ export const apiRequest = async (endpoint: string, method: string = "GET", body?
 
     // Periksa jika token expired (status 401)
     if (response.status === 401) {
-      // Hapus token dan data pengguna jika token sudah expired
       Cookies.remove("token");
       Cookies.remove("user");
 
-      // Jika Anda ingin mengarahkan pengguna kembali ke halaman login
-      const router = useRouter();
-      router.push("/login");  // Arahkan ke halaman login
-
+      window.location.href = "/login";
+      // return;
       throw new Error("Token expired, please log in again.");
     }
 
