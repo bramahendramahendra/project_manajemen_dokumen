@@ -1,4 +1,5 @@
 import Cookies from "js-cookie";
+// import { useRouter } from "next/navigation";
 
 /**
  * Helper function untuk request API dengan token
@@ -21,11 +22,21 @@ export const apiRequest = async (endpoint: string, method: string = "GET", body?
       method,
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+        Authorization: `${token}`,
       },
       // mode: "cors",
       body: body ? JSON.stringify(body) : undefined,
     });
+
+    // Periksa jika token expired (status 401)
+    if (response.status === 401) {
+      Cookies.remove("token");
+      Cookies.remove("user");
+
+      window.location.href = "/login";
+      // return;
+      throw new Error("Token expired, please log in again.");
+    }
 
     return response;
   } catch (error) {
@@ -57,7 +68,7 @@ export const loginRequest = async (endpoint: string, method: string = "POST", bo
       console.error("LOGIN request error:", error);
       throw error;
     }
-  };
+};
 
 /**
  * Helper function untuk logout

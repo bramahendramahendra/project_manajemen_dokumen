@@ -1,26 +1,61 @@
 import { useState, useEffect } from 'react';
+import { apiRequest } from "@/helpers/apiClient";
 
 const FormEditUser = ({ user }: { user?: any }) => {
-  const [password, setPassword] = useState('');
-  const [isDefaultPassword, setIsDefaultPassword] = useState(false);
-
-  // Form field states, initialized with user data if available
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [skpd, setSkpd] = useState('');
-  const [penanggungJawab, setPenanggungJawab] = useState('');
+  const [departmentName, setDepartmentName] = useState('');
+  const [responsiblePerson, setResponsiblePerson] = useState('');
+  const [accessUser, setAccessUser] = useState('');
+  const [password, setPassword] = useState('');
 
-  // When the component mounts, populate fields with user data
+  const [isDefaultPassword, setIsDefaultPassword] = useState(false);
+  const [roles, setRoles] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+
+   useEffect(() => {
+      const fetchRoles = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+          const response = await apiRequest("/user_roles/", "GET");
+          if (!response.ok) {
+            if (response.status === 404) {
+              throw new Error("Roles data not found");
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const result = await response.json();
+  
+          const fetchedRoles = result.responseData.items.map((item: any) => ({
+            level_id: item.level_id,
+            role: item.role,
+          }));
+  
+          setRoles(fetchedRoles);
+        } catch (err: any) {
+          setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchRoles();
+    }, []);
+
   useEffect(() => {
     if (user) {
-      setFirstName(user.name.split(' ')[0]); // Assuming first part of name is firstName
-      setLastName(user.name.split(' ')[1] || ''); // Assuming second part of name is lastName
+      setFirstName(user.firstname || user.name?.split(' ')[0] || '');
+      setLastName(user.lastname || user.name?.split(' ')[1] || '');
       setUsername(user.username);
-      setEmail(user.email);
-      setSkpd(user.skpd);
-      setPenanggungJawab(user.penanggungJawab || '');
+      setEmail(user.email || '');
+      setDepartmentName(user.department_name || '');
+      setResponsiblePerson(user.responsible_person || '');
+      setAccessUser(user.level_id || '');
     }
   }, [user]);
 
@@ -38,6 +73,7 @@ const FormEditUser = ({ user }: { user?: any }) => {
         <form action="#">
           <div className="p-6.5">
             <div className="mb-4.5 flex flex-col gap-4.5 xl:flex-row">
+              {/* Nama Depan */}
               <div className="w-full xl:w-1/2">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Nama Depan
@@ -50,6 +86,7 @@ const FormEditUser = ({ user }: { user?: any }) => {
                   className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 />
               </div>
+              {/* Nama Belakang */}
               <div className="w-full xl:w-1/2">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Nama Belakang
@@ -63,7 +100,7 @@ const FormEditUser = ({ user }: { user?: any }) => {
                 />
               </div>
             </div>
-
+            {/* Username */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Username
@@ -78,7 +115,7 @@ const FormEditUser = ({ user }: { user?: any }) => {
                 disabled
               />
             </div>
-
+            {/* Email */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Email
@@ -92,33 +129,55 @@ const FormEditUser = ({ user }: { user?: any }) => {
                 required
               />
             </div>
-
+            {/* Nama Dinas */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Nama Dinas
               </label>
               <input
                 type="text"
-                value={skpd}
-                onChange={(e) => setSkpd(e.target.value)}
+                value={departmentName}
+                onChange={(e) => setDepartmentName(e.target.value)}
                 placeholder="Enter your subject"
                 className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
               />
             </div>
-
+            {/* Penanggung Jawab */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Penanggung Jawab
               </label>
               <input
                 type="text"
-                value={penanggungJawab}
-                onChange={(e) => setPenanggungJawab(e.target.value)}
+                value={responsiblePerson}
+                onChange={(e) => setResponsiblePerson(e.target.value)}
                 placeholder="Enter your subject"
                 className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
               />
             </div>
-
+            {/* Access User */}
+            <div className="mb-4.5">
+              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                Access User
+              </label>
+              <select
+                value={accessUser}
+                onChange={(e) => setAccessUser(e.target.value)}
+                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                required
+              >
+                <option value="" disabled>Pilih Access User</option> 
+                {roles.length > 0 ? (
+                  roles.map((role, index) => (
+                    <option key={index} value={role.level_id}>
+                      {role.role}
+                    </option>
+                  ))
+                ) : (
+                  <option value="all" disabled>Loading roles...</option>
+                )}
+              </select>
+            </div>
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Password
@@ -147,9 +206,18 @@ const FormEditUser = ({ user }: { user?: any }) => {
               </div>
             </div>
 
-            <button className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90">
-              Simpan Perubahan
+            <button 
+              type="submit"
+              className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
+              disabled={loading}
+            >
+              {/* Update User */}
+              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
             </button>
+
+            {/* Error and Success Messages */}
+            {error && <p className="text-red-500 mt-2">{error}</p>}
+            {success && <p className="text-green-500 mt-2">User berhasil ditambahkan!</p>}  
           </div>
         </form>
       </div>

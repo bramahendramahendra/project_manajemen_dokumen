@@ -45,18 +45,21 @@ const SectionRight = () => {
       return;
     }
     try {
-      const payload = {
-        username: username,
-        password: password,
-        captcha_id: captchaID,
-        captcha: captchaInput,
-      };
-      const response = await loginRequest("/auths/login", "POST", payload);
-      const data = await response.json();
+        const payload = {
+          username: username,
+          password: password,
+          captcha_id: captchaID,
+          captcha: captchaInput,
+        };
+        const response = await loginRequest("/auths/login", "POST", payload);
+        const data = await response.json();
+        // console.log(data);
+        
 
       if (response.ok && data.responseCode === 200) {
         localStorage.setItem("hasVisited", "true");
         Cookies.set("token", data.responseData.token, { expires: 7 });
+        Cookies.set("user", JSON.stringify(data.responseData.user), { expires: 7 });
         router.push("/dashboard");
       } else {
         setErrorMessage(data.responseDesc || "Login failed. Please try again.");
@@ -130,10 +133,12 @@ const SectionRight = () => {
                   Captcha
                 </label> */}
                   <div className="mt-2 flex items-center">
-                    <img
+                    <Image
                       src={captchaURL}
                       alt="captcha"
-                      style={{ width: "240px", height: "80px" }}
+                      width={240}
+                      height={80}
+                      unoptimized
                     />
                     <button
                       type="button"
