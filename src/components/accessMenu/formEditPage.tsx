@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 
-const FormAddPage = () => {
+const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-  
+
   const [codeMenu, setCodeMenu] = useState('');
   const [accessUser, setAccessUser] = useState('');
 
   const [optionRoles, setOptionRoles] = useState<any[]>([]);
-  
 
   useEffect(() => {
     const fetchDataOptions = async () => {
@@ -42,7 +41,13 @@ const FormAddPage = () => {
     fetchDataOptions();
   }, []);
 
-  
+  useEffect(() => {
+    if (dataEdit) {
+      setCodeMenu(dataEdit.code_menu || '');
+      setAccessUser(dataEdit.level_id || '');
+    }
+  }, [dataEdit]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -55,18 +60,16 @@ const FormAddPage = () => {
     };
 
     try {
-      const response = await apiRequest('/access_menus/', 'POST', payload);
+      const response = await apiRequest(`/access_menus/${dataEdit.level_id}/${dataEdit.code_menu}`, 'PUT', payload);
+      const result = await response.json();
 
-      if (response.ok) {
-        setSuccess(true);
-        setCodeMenu('');
-        setAccessUser('');
-      } else {
-        const result = await response.json();
-        setError(result.message || 'Terjadi kesalahan saat menambahkan access menu');
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan');
       }
-    } catch (error) {
-      setError('Terjadi kesalahan saat mengirim data');
+
+      setSuccess(true);
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
       setLoading(false);
     }
@@ -75,7 +78,7 @@ const FormAddPage = () => {
   return (
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
       <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-        Untuk menambahkan Access Menu, lakukan inputan data dengan benar dibawah ini
+        Untuk Edit Menu, silahkan edit berdasarkan form dibawah ini
       </h4>
       <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
         <form onSubmit={handleSubmit}>
@@ -117,19 +120,19 @@ const FormAddPage = () => {
                 )}
               </select>
             </div>
-            
+
             <button 
               type="submit"
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Tambah Access Menu Baru */}
-              {loading ? 'Menambahkan...' : 'Tambah Access Menu Baru'}
+              {/* Update User */}
+              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
             </button>
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">Access Menu berhasil ditambahkan!</p>}  
+            {success && <p className="text-green-500 mt-2">User berhasil update!</p>}  
           </div>
         </form>
       </div>
@@ -137,4 +140,4 @@ const FormAddPage = () => {
   );
 };
 
-export default FormAddPage;
+export default FormEditPage;

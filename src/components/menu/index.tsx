@@ -1,18 +1,22 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { apiRequest } from "@/helpers/apiClient";
+import { encryptObject } from "@/utils/crypto";
 import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
 } from "react-icons/hi2";
 import { Menu } from "@/types/menu";
-import { apiRequest } from "@/helpers/apiClient";
 
 const MainPage = () => {
-  const [menuData, setMenuData] = useState<Menu[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataList, setDataList] = useState<Menu[]>([]);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         const response = await apiRequest("/menus/", "GET");
         if (!response.ok) {
@@ -31,7 +35,7 @@ const MainPage = () => {
           icon: item.icon,
         }));
 
-        setMenuData(menus);
+        setDataList(menus);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
       } finally {
@@ -39,8 +43,18 @@ const MainPage = () => {
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, []);
+
+  const handleEdit = (code: string, menu: string) => {
+    const key = process.env.NEXT_PUBLIC_APP_KEY;
+    const token = Cookies.get("token");
+    if (!token) return alert("Token tidak ditemukan!");
+
+    const encrypted = encryptObject({ code, menu }, token);
+    
+    router.push(`/menu/edit_menu/mz?${key}=${encrypted}`);
+  };
 
   return (
     <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
@@ -99,7 +113,7 @@ const MainPage = () => {
                     {error}
                   </td>
                 </tr>
-              ) :  menuData.map((item, index) => (
+              ) :  dataList.map((item, index) => (
                 <tr key={index}>
                   <td
                     className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
@@ -141,7 +155,7 @@ const MainPage = () => {
                   >
                     <div className="flex items-center justify-end space-x-3.5">
                       <button
-                        // onClick={() => handleEdit(userItem.userid)}
+                        onClick={() => handleEdit(item.code, item.menu)}
                         className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
                       >
                         <span className="text-[20px]">

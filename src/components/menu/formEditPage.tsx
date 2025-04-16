@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import { Jenis, Status } from "@/utils/enums";
 
-const FormAddPage = () => {
+const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-  
+
   const [code, setCode] = useState('');
   const [codeParent, setCodeParent] = useState('');
   const [icon, setIcon] = useState('');
@@ -14,8 +14,8 @@ const FormAddPage = () => {
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [urutan, setUrutan] = useState('');
-  const [type, setType] = useState('0');
-  const [status, setStatus] = useState('1');
+  const [type, setType] = useState('');
+  const [status, setStatus] = useState('');
 
   const options = {
     jenis: [
@@ -29,6 +29,20 @@ const FormAddPage = () => {
     ],
   };
 
+  useEffect(() => {
+    if (dataEdit) {
+      setCode(dataEdit.firstname || '');
+      setCodeParent(dataEdit.lastname || '');
+      setIcon(dataEdit.username || '');
+      setMenu(dataEdit.email || '');
+      setUrl(dataEdit.department_name || '');
+      setDescription(dataEdit.responsible_person || '');
+      setUrutan(dataEdit.level_id || '');
+      setType(dataEdit.level_id || '');
+      setStatus(dataEdit.level_id || '');
+    }
+  }, [dataEdit]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -36,36 +50,28 @@ const FormAddPage = () => {
     setSuccess(false);
 
     const payload = {
-      code: code,
+      code,
       code_parent: codeParent,
-      icon: icon,
-      menu: menu,
-      url: url,
-      description: description,
-      urutan: urutan,
-      type: type,
-      status: status,
+      icon,
+      menu,
+      url,
+      description,
+      urutan,
+      type,
+      status
     };
 
     try {
-      const response = await apiRequest('/menus/', 'POST', payload);
+      const response = await apiRequest(`/menus/${dataEdit.code}`, 'PUT', payload);
+      const result = await response.json();
 
-      if (response.ok) {
-        setSuccess(true);
-        setCode('');
-        setCodeParent('');
-        setMenu('');
-        setUrl('');
-        setDescription('');
-        setUrutan('');
-        setType('');
-        setStatus('');
-      } else {
-        const result = await response.json();
-        setError(result.message || 'Terjadi kesalahan saat menambahkan menu');
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan');
       }
-    } catch (error) {
-      setError('Terjadi kesalahan saat mengirim data');
+
+      setSuccess(true);
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
       setLoading(false);
     }
@@ -74,13 +80,13 @@ const FormAddPage = () => {
   return (
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
       <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-        Untuk menambahkan Menu, lakukan inputan data dengan benar dibawah ini
+        Untuk Edit Menu, silahkan edit berdasarkan form dibawah ini
       </h4>
       <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
         <form onSubmit={handleSubmit}>
           <div className="p-6.5">
             <div className="mb-4.5 flex flex-col gap-4.5 xl:flex-row">
-              {/* Code  */}
+              {/* Code */}
               <div className="w-full xl:w-1/2">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Code
@@ -90,11 +96,10 @@ const FormAddPage = () => {
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   placeholder="Enter your code"
-                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                  required
+                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 />
               </div>
-              {/* Code Parent  */}
+              {/* Code Parent */}
               <div className="w-full xl:w-1/2">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Code Parent
@@ -104,50 +109,49 @@ const FormAddPage = () => {
                   value={codeParent}
                   onChange={(e) => setCodeParent(e.target.value)}
                   placeholder="Enter your code parent"
-                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                  required
+                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 />
               </div>
             </div>
-            {/* Icon  */}
+            {/* Icon */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Icon 
+                Icon
               </label>
               <input
                 type="text"
                 value={icon}
                 onChange={(e) => setIcon(e.target.value)}
                 placeholder="Enter your icon"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
+                required
+                disabled
               />
             </div>
-            {/* Menu  */}
+            {/* Menu */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Menu 
+                Menu
               </label>
               <input
                 type="text"
                 value={menu}
                 onChange={(e) => setMenu(e.target.value)}
                 placeholder="Enter your menu"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                required
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
               />
             </div>
-            {/* URL  */}
+            {/* URL */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                URL 
+                URL
               </label>
               <input
                 type="text"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="Enter your url"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                required
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
               />
             </div>
             {/* Desc  */}
@@ -222,13 +226,13 @@ const FormAddPage = () => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Tambah Menu Baru */}
-              {loading ? 'Menambahkan...' : 'Tambah Menu Baru'}
+              {/* Update User */}
+              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
             </button>
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">Menu berhasil ditambahkan!</p>}  
+            {success && <p className="text-green-500 mt-2">User berhasil update!</p>}  
           </div>
         </form>
       </div>
@@ -236,4 +240,4 @@ const FormAddPage = () => {
   );
 };
 
-export default FormAddPage;
+export default FormEditUser;

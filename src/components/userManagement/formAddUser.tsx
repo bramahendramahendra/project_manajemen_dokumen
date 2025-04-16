@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 
 const FormAddUser = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+  
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
@@ -13,9 +17,7 @@ const FormAddUser = () => {
 
   const [isDefaultPassword, setIsDefaultPassword] = useState(false);
   const [roles, setRoles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
+ 
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -62,7 +64,7 @@ const FormAddUser = () => {
       firstname: firstName,
       lastname: lastName,
       username: username,
-      email: email,
+      email,
       department_name: departmentName,
       responsible_person: responsiblePerson,
       level_id: accessUser,
@@ -86,8 +88,8 @@ const FormAddUser = () => {
         const result = await response.json();
         setError(result.message || 'Terjadi kesalahan saat menambahkan user');
       }
-    } catch (error) {
-      setError('Terjadi kesalahan saat mengirim data');
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
       setLoading(false);
     }
@@ -206,7 +208,7 @@ const FormAddUser = () => {
                 )}
               </select>
             </div>
-
+            {/* Password */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Password
@@ -234,17 +236,6 @@ const FormAddUser = () => {
                 </label>
               </div>
             </div>
-
-            {/* <div className="mb-6">
-              <label className="mb-3 block text-body-sm font-medium text-dark dark:text-white">
-                Message
-              </label>
-              <textarea
-                rows={6}
-                placeholder="Type your message"
-                className="w-full rounded-[7px] border-[1.5px] border-stroke bg-transparent px-5 py-3 text-dark outline-none transition placeholder:text-dark-6 focus:border-primary active:border-primary disabled:cursor-default dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-              ></textarea>
-            </div> */}
 
             {/* Submit Button */}
             <button 

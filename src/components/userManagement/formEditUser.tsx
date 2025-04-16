@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 
-const FormEditUser = ({ user }: { user?: any }) => {
+const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
@@ -48,20 +48,53 @@ const FormEditUser = ({ user }: { user?: any }) => {
     }, []);
 
   useEffect(() => {
-    if (user) {
-      setFirstName(user.firstname || user.name?.split(' ')[0] || '');
-      setLastName(user.lastname || user.name?.split(' ')[1] || '');
-      setUsername(user.username);
-      setEmail(user.email || '');
-      setDepartmentName(user.department_name || '');
-      setResponsiblePerson(user.responsible_person || '');
-      setAccessUser(user.level_id || '');
+    if (dataEdit) {
+      setFirstName(dataEdit.firstname || dataEdit.name?.split(' ')[0] || '');
+      setLastName(dataEdit.lastname || dataEdit.name?.split(' ')[1] || '');
+      setUsername(dataEdit.username);
+      setEmail(dataEdit.email || '');
+      setDepartmentName(dataEdit.department_name || '');
+      setResponsiblePerson(dataEdit.responsible_person || '');
+      setAccessUser(dataEdit.level_id || '');
     }
-  }, [user]);
+  }, [dataEdit]);
 
   const handleCheckboxChange = () => {
     setIsDefaultPassword(!isDefaultPassword);
     setPassword(!isDefaultPassword ? 'm@nAj3mendokumen' : '');
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    const payload = {
+      firstname: firstName,
+      lastname: lastName,
+      username,
+      email,
+      department_name: departmentName,
+      responsible_person: responsiblePerson,
+      level_id: accessUser,
+      password
+    };
+
+    try {
+      const response = await apiRequest(`/users/${dataEdit.id}`, 'PUT', payload);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan');
+      }
+
+      setSuccess(true);
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat mengirim data');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -70,7 +103,7 @@ const FormEditUser = ({ user }: { user?: any }) => {
         Untuk Edit User, silahkan edit berdasarkan form dibawah ini
       </h4>
       <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-        <form action="#">
+        <form onSubmit={handleSubmit}>
           <div className="p-6.5">
             <div className="mb-4.5 flex flex-col gap-4.5 xl:flex-row">
               {/* Nama Depan */}
@@ -178,6 +211,7 @@ const FormEditUser = ({ user }: { user?: any }) => {
                 )}
               </select>
             </div>
+            {/* Password */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Password
@@ -217,7 +251,7 @@ const FormEditUser = ({ user }: { user?: any }) => {
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">User berhasil ditambahkan!</p>}  
+            {success && <p className="text-green-500 mt-2">User berhasil update!</p>}  
           </div>
         </form>
       </div>

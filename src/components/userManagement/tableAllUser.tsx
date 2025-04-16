@@ -1,27 +1,28 @@
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { apiRequest } from "@/helpers/apiClient";
+import { encryptObject } from "@/utils/crypto";
 import {
   HiOutlineLockClosed,
   HiOutlineLockOpen,
   HiOutlinePencilSquare,
   HiOutlineTrash,
 } from "react-icons/hi2";
-import { useState, useEffect } from "react";
 import { User } from "@/types/user";
 import UserManagement from "../404/UserManagement/userManagement";
-import { apiRequest } from "@/helpers/apiClient";
 
-
-const TableAllUser = () => {
+const MainPage = () => {
   const router = useRouter();
-  const [userData, setUserData] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userData, setUserData] = useState<User[]>([]);
   const [suspendedStatus, setSuspendedStatus] = useState<{
     [key: string]: boolean;
   }>({});
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       try {
         const response = await apiRequest("/users/", "GET");
         if (!response.ok) {
@@ -32,7 +33,6 @@ const TableAllUser = () => {
         }
         const result = await response.json();
         
-        // Ambil hanya data yang diperlukan
         const users: User[] = result.responseData.items.map((item: any) => ({
           userid: item.userid,
           username: item.username,
@@ -49,11 +49,17 @@ const TableAllUser = () => {
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, []);
 
   const handleEdit = (userid: string) => {
-    router.push(`/user_management/edit_user/${userid}`);
+    const key = process.env.NEXT_PUBLIC_APP_KEY;
+    const token = Cookies.get("token");
+    if (!token) return alert("Token tidak ditemukan!");
+
+    const encrypted = encryptObject({ userid }, token);
+
+    router.push(`/user_management/edit_user/mz?${key}=${encrypted}`);
   };
 
   const handleActivate = (userid: string) => {
@@ -199,4 +205,4 @@ const TableAllUser = () => {
   );
 };
 
-export default TableAllUser;
+export default MainPage;
