@@ -86,7 +86,7 @@ const MainPage = () => {
           <tbody>
             {
               loading ? (
-                Array.from({ length: 6 }).map((_, index) => (
+                Array.from({ length: 5 }).map((_, index) => (
                   <tr key={index}>
                     <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                       <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>

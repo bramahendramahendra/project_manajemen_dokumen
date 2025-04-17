@@ -6,18 +6,18 @@ import { apiRequest } from "@/helpers/apiClient";
 import { decryptObject } from "@/utils/crypto";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
-import { Jenis } from "@/types/jenis";
-import FormEditPage from "@/components/settingJenis/formEditPage";
+import { Subjenis } from "@/types/subjenis";
+import FormEditPage from "@/components/settingSubjenis/formEditPage";
 
 const EditPage = () => {
   const searchParams = useSearchParams();
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [id, setID] = useState<number | null>(null);
-  const [jenis, setJenis] = useState<string | null>(null);
-  const [dataEdit, setDataEdit] = useState<Jenis | null>(null);
+  const [subjenis, setSubjenis] = useState<string | null>(null);
+  const [dataEdit, setDataEdit] = useState<Subjenis | null>(null);
 
   const key = process.env.NEXT_PUBLIC_APP_KEY;
   const encrypted = searchParams.get(`${key}`);
@@ -36,20 +36,20 @@ const EditPage = () => {
       return;
     }
 
-    const { id: decryptedID, jenis: decryptedJenis } = result;
+    const { id: decryptedID, subjenis: decryptedSubjenis } = result;
    
     setID(decryptedID);
-    setJenis(decryptedJenis);
+    setSubjenis(decryptedSubjenis);
   }, [encrypted, token]);
 
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await apiRequest(`/setting_types/${id}`, "GET");
+        const response = await apiRequest(`/setting_subtypes/${id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Jenis data not found");
+            throw new Error("Subjenis data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -67,8 +67,8 @@ const EditPage = () => {
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Setting Jenis", href: "/setting_jenis" },
-    { name: `Edit Jenis ${jenis}` },
+    { name: "Setting Subjenis", href: "/setting_subjenis" },
+    { name: `Edit Subjenis ${subjenis}` },
   ];
 
   return (
@@ -84,7 +84,7 @@ const EditPage = () => {
             <FormEditPage dataEdit={dataEdit} />
           ) : (
             <div className="text-left text-red-500">
-              Data untuk menu dengan jenis <strong>{jenis}</strong> tidak ada.
+              Data untuk menu dengan subjenis <strong>{subjenis}</strong> tidak ada.
             </div>
           )}
         </div>

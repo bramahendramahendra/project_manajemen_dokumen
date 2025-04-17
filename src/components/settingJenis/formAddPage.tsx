@@ -166,13 +166,17 @@ const FormAddPage = () => {
               </button>
             </div>
 
-            <button className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90">
+            <button 
+              type="submit"
+              className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
+              disabled={loading}
+            >
               {loading ? 'Menambahkan...' : 'Tambah Jenis Baru'}
             </button>
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">User berhasil ditambahkan!</p>}  
+            {success && <p className="text-green-500 mt-2">Setting jenis berhasil ditambahkan!</p>}  
           </div>
         </form>
       </div>
