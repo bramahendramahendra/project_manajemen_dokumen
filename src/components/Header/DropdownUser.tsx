@@ -14,7 +14,8 @@ const DropdownUser = () => {
       const response = await logoutRequest("/auths/logout");
       if (response.ok) {
         localStorage.setItem("hasVisited", "false");
-
+        localStorage.clear();
+        localStorage.removeItem("selectedMenu");
         router.push("/login");
       } else {
         console.error("Logout failed");
