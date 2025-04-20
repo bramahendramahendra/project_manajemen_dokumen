@@ -4,12 +4,33 @@ import React, { useState } from "react";
 interface ElementComboboxProps {
   label: string;
   placeholder: string;
-  options: { name: string | number }[];
+  // options: { name: string | number }[];
+  options: { name: string | number; id?: string | number }[];
+  onChange?: (value: string | number) => void;
 }
 
-const ElementCombobox: React.FC<ElementComboboxProps> = ({ label, placeholder, options }) => {
+const ElementCombobox: React.FC<ElementComboboxProps> = ({ 
+  label, 
+  placeholder, 
+  options,
+  onChange,
+}) => {
   const [selectedOption, setSelectedOption] = useState<string | number>("");
   const [isOptionSelected, setIsOptionSelected] = useState<boolean>(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const rawValue = e.target.value;
+
+    // Try to convert to number if it's a number, else keep string
+    const parsedValue = isNaN(Number(rawValue)) ? rawValue : Number(rawValue);
+
+    setSelectedOption(parsedValue);
+    setIsOptionSelected(true);
+
+    if (onChange) {
+      onChange(parsedValue);
+    }
+  };
 
   const changeTextColor = () => {
     setIsOptionSelected(true);
@@ -24,10 +45,11 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({ label, placeholder, o
       <div className="relative z-20 bg-transparent dark:bg-dark-2">
         <select
           value={selectedOption}
-          onChange={(e) => {
-            setSelectedOption(e.target.value);
-            changeTextColor();
-          }}
+          // onChange={(e) => {
+          //   setSelectedOption(e.target.value);
+          //   changeTextColor();
+          // }}
+          onChange={handleChange}
           className={`relative z-20 appearance-none w-full rounded-[7px] bg-transparent px-5 py-3 transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary ${
             isOptionSelected ? "text-dark dark:text-white" : "text-[#9ca3af]"
           }`}
@@ -36,7 +58,7 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({ label, placeholder, o
             {placeholder}
           </option>
           {options.map((option, index) => (
-            <option key={index} value={option.name} className="text-dark-6">
+            <option key={index} value={option.id ?? option.name} className="text-dark-6">
               {option.name}
             </option>
           ))}

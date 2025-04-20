@@ -15,7 +15,7 @@ const FormAddPage = () => {
   const [maxRoles, setMaxRoles] = useState(0);
 
   useEffect(() => {
-    const fetchSettingTypes = async () => {
+    const fetchOptionTypes = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -41,7 +41,7 @@ const FormAddPage = () => {
       }
     };
 
-    fetchSettingTypes();
+    fetchOptionTypes();
   }, []);
 
   useEffect(() => {
