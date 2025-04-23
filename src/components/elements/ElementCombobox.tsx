@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 interface ElementComboboxProps {
   label: string;
@@ -7,6 +7,7 @@ interface ElementComboboxProps {
   // options: { name: string | number }[];
   options: { name: string | number; id?: string | number }[];
   onChange?: (value: string | number) => void;
+  resetKey?: number;
 }
 
 const ElementCombobox: React.FC<ElementComboboxProps> = ({ 
@@ -14,9 +15,16 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
   placeholder, 
   options,
   onChange,
+  resetKey,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | number>("");
   const [isOptionSelected, setIsOptionSelected] = useState<boolean>(false);
+
+  useEffect(() => {
+    // Reset dropdown saat resetKey berubah
+    setSelectedOption("");
+    setIsOptionSelected(false);
+  }, [resetKey]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const rawValue = e.target.value;

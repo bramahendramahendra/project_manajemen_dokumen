@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import Cookies from "js-cookie";
 import { apiRequest, apiRequestUpload } from "@/helpers/apiClient";
 import ElementCombobox from "../elements/ElementCombobox";
@@ -32,6 +33,7 @@ const UploadDokumen = () => {
 
   const [optionTypes, setOptionTypes] = useState<any[]>([]);
   const [optionSubtypes, setOptionSubtypes] = useState<any[]>([]);
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
     const fetchOptionTypes = async () => {
@@ -126,24 +128,7 @@ const UploadDokumen = () => {
         setIsUploading(false);
       }
     }
-
-      // new Promise((resolve) => {
-      //   const fakeUpload = setInterval(() => {
-      //     setUploadProgress((prev) => {
-      //       const updatedProgress = [...prev];
-      //       updatedProgress[0] += 10; // Simulasi upload progress
-      //       if (updatedProgress[0] >= 100) {
-      //         clearInterval(fakeUpload);
-      //         resolve(true);
-      //       }
-      //       return updatedProgress;
-      //     });
-      //   }, 200); // Simulasi upload setiap 200ms
-      // }).then(() => {
-      //   setIsUploading(false);
-      //   setIsUploadComplete(true); // Upload selesai
-      // });
-    };
+  };
   
   const handleRemoveFile = async () => {
     if (!tempFilePath) {
@@ -169,15 +154,15 @@ const UploadDokumen = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     // Simpan data ke server, lakukan operasi penyimpanan disini
-    console.log("Data siap disimpan ke server...");
+    // console.log("Data siap disimpan ke server...");
 
-    console.log("📝 Data Form:");
-    console.log("Nama Dinas:", namaDinas);
-    console.log("Jenis ID:", type);
-    console.log("Subjenis ID:", subtype);
-    console.log("Tahun:", tahun);
-    console.log("Keterangan:", keterangan);
-    console.log("Files:", tempFilePath);
+    // console.log("📝 Data Form:");
+    // console.log("Nama Dinas:", namaDinas);
+    // console.log("Jenis ID:", type);
+    // console.log("Subjenis ID:", subtype);
+    // console.log("Tahun:", tahun);
+    // console.log("Keterangan:", keterangan);
+    // console.log("Files:", tempFilePath);
 
     e.preventDefault();
     setLoading(true);
@@ -199,7 +184,7 @@ const UploadDokumen = () => {
       tahun: tahun,
       keterangan: keterangan,
       file_name: tempFilePath,
-      maker: user.name || "",
+      maker: user.userid || "",
       maker_role: user.role || "",
     };
 
@@ -217,6 +202,7 @@ const UploadDokumen = () => {
         setUploadProgress([]);
         setTempFilePath('');
         setIsUploadComplete(false);
+        setResetKey(prev => prev + 1);
       } else {
         const result = await response.json();
         setError(result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen");
@@ -235,8 +221,8 @@ const UploadDokumen = () => {
           Upload dokumenmu sekarang juga
         </h4>
         <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-          {/* <form onSubmit={handleSubmit}> */}
-          <form >
+          {/* <form > */}
+          <form onSubmit={handleSubmit}>
             <div className="p-6.5">
               {/* Nama Dinas */}
               <div className="mb-4.5">
@@ -259,6 +245,7 @@ const UploadDokumen = () => {
                 // options={dataJenis}
                 options={optionTypes.map((t) => ({ name: t.jenis, id: t.id }))}
                 onChange={(value) => setType(value)}
+                resetKey={resetKey}
               />
               {type && (
                 <ElementCombobox
@@ -267,13 +254,15 @@ const UploadDokumen = () => {
                   // options={dataSubJenis}
                   options={optionSubtypes.map((t) => ({ name: t.subjenis, id: t.id }))}
                   onChange={(value) => setSubtype(value)}
+                  resetKey={resetKey}
                 />
               )}
               <ElementCombobox
                 label="Tahun"
                 placeholder="Pilih tahun"
                 options={dataTahun}
-                onChange={(value) => setTahun(value)} // ✅
+                onChange={(value) => setTahun(value)}
+                resetKey={resetKey}
               />
               <div className="mb-4.5">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
@@ -281,8 +270,8 @@ const UploadDokumen = () => {
                 </label>
                 <input
                   type="text"
-                  value={keterangan} // ✅
-                  onChange={(e) => setKeterangan(e.target.value)} // ✅
+                  value={keterangan}
+                  onChange={(e) => setKeterangan(e.target.value)}
                   placeholder="Masukkan Keterangan..."
                   className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                   required
@@ -344,10 +333,18 @@ const UploadDokumen = () => {
                     return (
                       <div key={index} className="relative p-3 border rounded-md bg-white dark:bg-dark-2 shadow-sm flex gap-4 items-center">
                         {isImage && (
-                          <img
+                          // <img
+                          //   src={URL.createObjectURL(file)}
+                          //   alt="preview"
+                          //   className="w-12 h-12 object-cover rounded-md border"
+                          // />
+
+                          <Image
                             src={URL.createObjectURL(file)}
                             alt="preview"
-                            className="w-12 h-12 object-cover rounded-md border"
+                            width={48}
+                            height={48}
+                            className="object-cover rounded-md border"
                           />
                         )}
 
@@ -404,11 +401,11 @@ const UploadDokumen = () => {
               )}
 
               <button
-                type="button"
-                // type="submit"
+                // type="button"
+                type="submit"
                 className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 
-                onClick={handleSubmit}
+                // onClick={handleSubmit}
                 disabled={loading || isUploading || !isUploadComplete}
               >
                 {isUploading
@@ -422,7 +419,7 @@ const UploadDokumen = () => {
 
               {/* Error and Success Messages */}
               {error && <p className="text-red-500 mt-2">{error}</p>}
-              {success && <p className="text-green-500 mt-2">Setting subjenis berhasil ditambahkan!</p>}  
+              {success && <p className="text-green-500 mt-2">Upload Dokumen berhasil ditambahkan!</p>}  
             </div>
           </form>
         </div>

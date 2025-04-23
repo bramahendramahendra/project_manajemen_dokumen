@@ -5,7 +5,7 @@ import {
   HiOutlineDocumentMagnifyingGlass,
   HiOutlineTrash,
 } from "react-icons/hi2";
-import Pagination from "../pagination.tsx/Pagination";
+import Pagination from "../pagination/Pagination";
 
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("id-ID", {
@@ -106,6 +106,10 @@ const ValidationUploadTable = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  
+  // State untuk modal konfirmasi hapus
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
   const totalPages = Math.ceil(
     validationUploadUraianData.length / itemsPerPage,
@@ -146,7 +150,7 @@ const ValidationUploadTable = () => {
     setIsAllChecked(allCheckedInPage);
   };
 
-  // Fungsi untuk membuka dan menutup modal
+  // Fungsi untuk membuka dan menutup modal validasi
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
@@ -154,6 +158,33 @@ const ValidationUploadTable = () => {
   const handleValidateAll = () => {
     console.log("Validasi semua item berhasil!");
     setIsModalOpen(false);
+  };
+
+  // Fungsi untuk membuka modal hapus
+  const handleDeleteClick = (index: number) => {
+    const globalIndex = (currentPage - 1) * itemsPerPage + index;
+    setItemToDelete(globalIndex);
+    setShowDeleteModal(true);
+  };
+
+  // Fungsi untuk konfirmasi hapus
+  const handleConfirmDelete = () => {
+    if (itemToDelete !== null) {
+      console.log(`Item dengan index ${itemToDelete} telah dihapus`);
+      // Di sini bisa tambahkan logika untuk menghapus item dari array data
+      // contoh: const newData = [...validationUploadUraianData];
+      // newData.splice(itemToDelete, 1);
+      
+      // Reset state
+      setShowDeleteModal(false);
+      setItemToDelete(null);
+    }
+  };
+
+  // Fungsi untuk membatalkan hapus
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setItemToDelete(null);
   };
 
   useEffect(() => {
@@ -246,7 +277,10 @@ const ValidationUploadTable = () => {
                       </div>
 
                       <div className="pl-4 capitalize text-dark dark:text-white">
-                        <button className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6">
+                        <button 
+                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
+                          onClick={() => handleDeleteClick(index)}
+                        >
                           <span className="text-[20px]">
                             <HiOutlineTrash />
                           </span>
@@ -288,7 +322,7 @@ const ValidationUploadTable = () => {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal Validasi */}
       {isModalOpen && (
         <div
           className="fixed inset-0 z-[1000]"
@@ -386,6 +420,37 @@ const ValidationUploadTable = () => {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black opacity-50"></div>
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+            <div className="mb-4 text-center">
+              <h3 className="text-lg font-medium text-gray-900">
+                Konfirmasi Hapus
+              </h3>
+              <p className="mt-2 text-sm text-gray-500">
+                Apakah anda yakin ingin menghapus?
+              </p>
+            </div>
+            <div className="mt-6 flex justify-center space-x-4">
+              <button
+                onClick={handleCancelDelete}
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300"
+              >
+                Tidak
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Iya
+              </button>
             </div>
           </div>
         </div>

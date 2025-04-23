@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Pagination from "../pagination.tsx/Pagination9";
+import Pagination from "../pagination/Pagination9";
 
 type DataDinas = {
   id: number;

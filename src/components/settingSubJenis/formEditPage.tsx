@@ -159,23 +159,12 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Jenis
               </label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                required
-              >
-                <option value="" disabled>Pilih Jenis</option> 
-                {optionTypes.length > 0 ? (
-                  optionTypes.map((item, index) => (
-                    <option key={index} value={item.id}>
-                      {item.jenis}
-                    </option>
-                  ))
-                ) : (
-                  <option value="all" disabled>Loading roles...</option>
-                )}
-              </select>
+              <input
+                type="text"
+                value={optionTypes.find(item => String(item.id) === String(type))?.jenis || ''}
+                readOnly
+                className="w-full rounded-[7px] bg-gray-100 px-5 py-3 text-gray-500 border border-gray-300 cursor-not-allowed dark:bg-dark-3 dark:text-gray-400 dark:border-dark-4"
+              />
             </div>
             {/* Subjenis */}
             <div className="mb-4.5">

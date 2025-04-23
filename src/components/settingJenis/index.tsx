@@ -9,12 +9,22 @@ import {
 } from "react-icons/hi2";
 import { Jenis } from "@/types/jenis";
 import { formatIndonesianDateTime } from "@/utils/dateFormatter";
+import Pagination from "../pagination/Pagination";
 
 const MainPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dataList, setDataList] = useState<Jenis[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const totalPages = Math.ceil(dataList.length / itemsPerPage);
+  const currentItems = dataList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   useEffect(() => {
     const fetchData = async () => {
@@ -111,7 +121,7 @@ const MainPage = () => {
                     {error}
                   </td>
                 </tr>
-              ) : dataList.map((item, index) => (
+              ) : currentItems.map((item, index) => (
                 <tr key={index}>
                   <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                     <p className="text-dark dark:text-white">
@@ -119,9 +129,10 @@ const MainPage = () => {
                     </p>
                   </td>
                   <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
-                    {item.roles.map((role, idx) => (
+                    {item.roles.map((role) => (
                       <p
-                        key={idx}
+                        // key={idx}
+                        key={`${role.levelId}-${role.role}`}
                         className={`inline-flex rounded-full px-3.5 py-1 text-body-sm font-medium mr-1 ${
                           role.levelId === "DNS"
                             ? "bg-[#219653]/[0.08] text-[#219653]"
@@ -144,34 +155,46 @@ const MainPage = () => {
                       {formatIndonesianDateTime(item.updatedDate)}
                     </p>
                   </td>
-                <td className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}>
-                  <div className="flex items-center justify-end space-x-3.5">
-                    <button
-                      onClick={() => handleEdit(item.id, item.jenis)}
-                      className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
-                    >
-                      <span className="text-[20px]">
-                        <HiOutlinePencilSquare />
-                      </span>
-                      <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                        Edit
-                      </span>
-                    </button>
+                  <td className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}>
+                    <div className="flex items-center justify-end space-x-3.5">
+                      <button
+                        onClick={() => handleEdit(item.id, item.jenis)}
+                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
+                      >
+                        <span className="text-[20px]">
+                          <HiOutlinePencilSquare />
+                        </span>
+                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                          Edit
+                        </span>
+                      </button>
 
-                    <button className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6">
-                      <span className="text-[20px]">
-                        <HiOutlineTrash />
-                      </span>
-                      <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                        Hapus
-                      </span>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                      <button className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6">
+                        <span className="text-[20px]">
+                          <HiOutlineTrash />
+                        </span>
+                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                          Hapus
+                        </span>
+                      </button>
+                    </div>
+                  </td> 
+                </tr>
+              ))
+            }
           </tbody>
         </table>
+        {/* Pagination */}
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          itemsPerPage={itemsPerPage}
+          onItemsPerPageChange={(val) => {
+            setItemsPerPage(val);
+            setCurrentPage(1);
+          }}
+        />
       </div>
     </div>
   );

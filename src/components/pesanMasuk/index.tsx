@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { MessageList } from "./messageList";
 import { MessageDetail } from "./messageDetails";
-import Pagination from "../pagination.tsx/Pagination";
+import Pagination from "../pagination/Pagination";
 
 const dummyMessages = [
   {

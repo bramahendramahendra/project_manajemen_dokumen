@@ -7,39 +7,49 @@ import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
 } from "react-icons/hi2";
-import { Menu } from "@/types/menu";
+import { Dinas } from "@/types/dinas";
+import { formatIndonesianDateTime } from "@/utils/dateFormatter";
+import Pagination from "@/components/pagination/Pagination";
 
 const MainPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dataList, setDataList] = useState<Menu[]>([]);
-  
-  // State untuk modal konfirmasi hapus
+  const [success, setSuccess] = useState<boolean>(false);
+  const [dataList, setDataList] = useState<Dinas[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const totalPages = Math.ceil(dataList.length / itemsPerPage);
+  const currentItems = dataList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const [itemDelete, setItemDelete] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<Menu | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await apiRequest("/menus/", "GET");
+        const response = await apiRequest("/officials/", "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Menu data not found");
+            throw new Error("Setting dinas data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
         
-        const menus: Menu[] = result.responseData.items.map((item: any) => ({
-          code: item.code,
-          codeParent: item.code_parent,
-          menu: item.menu,
-          url: item.url,
-          icon: item.icon,
+        const officials: Dinas[] = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          dinas: item.dinas,
+          createdDate: item.created_at,
+          updatedDate: item.updated_at,
         }));
 
-        setDataList(menus);
+        setDataList(officials);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
       } finally {
@@ -50,72 +60,72 @@ const MainPage = () => {
     fetchData();
   }, []);
 
-  const handleEdit = (code: string, menu: string) => {
+  const handleEdit = (id: number, dinas: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const token = Cookies.get("token");
     if (!token) return alert("Token tidak ditemukan!");
 
-    const encrypted = encryptObject({ code, menu }, token);
+    const encrypted = encryptObject({ id, dinas }, token);
     
-    router.push(`/menu/edit_menu/mz?${key}=${encrypted}`);
+    router.push(`/setting_dinas/edit_setting_dinas/mz?${key}=${encrypted}`);
   };
 
   // Handler untuk membuka modal konfirmasi hapus
-  const handleDeleteClick = (item: Menu) => {
-    setItemToDelete(item);
+  const handleDeleteClick = (id: number) => {
+    setItemDelete(id);
     setShowDeleteModal(true);
   };
 
   // Handler untuk konfirmasi hapus
   const handleConfirmDelete = async () => {
-    if (itemToDelete) {
-      try {
-        // Logika untuk menghapus item
-        // const response = await apiRequest(`/menus/${itemToDelete.code}`, "DELETE");
-        // if (response.ok) {
-        //   // Filter item yang dihapus dari state
-        //   setMenuData(prevItems => prevItems.filter(item => item.code !== itemToDelete.code));
-        // }
-        
-        // Untuk sementara hanya simulasi penghapusan dari state lokal
-        setDataList(prevItems => prevItems.filter(item => item.code !== itemToDelete.code));
-        
-        // Tutup modal setelah selesai
-        setShowDeleteModal(false);
-        setItemToDelete(null);
-      } catch (error) {
-        console.error("Error deleting menu:", error);
+    if (!itemDelete) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await apiRequest(`/officials/${itemDelete}`, 'DELETE');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Gagal menghapus data');
       }
+
+      setSuccess(true);
+      // Bisa tambahkan aksi tambahan seperti refresh data atau notifikasi
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat menghapus data');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Handler untuk membatalkan hapus
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
-    setItemToDelete(null);
+    setItemDelete(null);
   };
+
 
   return (
     <>
+      {/* Error and Success Messages */}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2">
                 <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
-                  Code
+                  Dinas
+                </th>
+                <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white">
+                  Created
                 </th>
                 <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                  Code Parent
-                </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                  Menu
-                </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                  URL
-                </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                  Icon
+                  Updated
                 </th>
                 <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Actions
@@ -125,7 +135,7 @@ const MainPage = () => {
             <tbody>
               {
                 loading ? (
-                  Array.from({ length: 6 }).map((_, index) => (
+                  Array.from({ length: 4 }).map((_, index) => (
                     <tr key={index}>
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
@@ -134,13 +144,7 @@ const MainPage = () => {
                         <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
                       </td>
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
-                        <div className="h-4 w-28 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-                      </td>
-                      <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-                      </td>
-                      <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
-                        <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
                       </td>
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
@@ -149,53 +153,37 @@ const MainPage = () => {
                   ))
                 ) : error ? (
                   <tr>
-                    <td colSpan={5} className="text-center text-red-500 font-semibold py-6">
+                    <td colSpan={4} className="text-center text-red-500 font-semibold py-6">
                       {error}
                     </td>
                   </tr>
-                ) :  dataList.map((item, index) => (
+                ) : currentItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                      Data belum tersedia
+                    </td>
+                  </tr>
+                ) : currentItems.map((item, index) => (
                   <tr key={index}>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
-                    >
+                    <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                       <p className="text-dark dark:text-white">
-                        {item.code}
+                        {item.dinas}
                       </p>
                     </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
-                    >
+                    <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                       <p className="text-dark dark:text-white">
-                        {item.codeParent}
+                        {formatIndonesianDateTime(item.createdDate)}
                       </p>
                     </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
-                    >
+                    <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                       <p className="text-dark dark:text-white">
-                        {item.menu}
+                        {formatIndonesianDateTime(item.updatedDate)}
                       </p>
                     </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
-                    >
-                      <p className="text-dark dark:text-white">
-                        {item.url}
-                      </p>
-                    </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
-                    >
-                      <p className="text-dark dark:text-white">
-                        {item.menu}
-                      </p>
-                    </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}
-                    >
+                    <td className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}>
                       <div className="flex items-center justify-end space-x-3.5">
                         <button
-                          // onClick={() => handleEdit(userItem.userid)}
+                          onClick={() => handleEdit(item.id, item.dinas)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
                         >
                           <span className="text-[20px]">
@@ -207,7 +195,7 @@ const MainPage = () => {
                         </button>
 
                         <button 
-                          onClick={() => handleDeleteClick(item)}
+                          onClick={() => handleDeleteClick(item.id)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
                         >
                           <span className="text-[20px]">
@@ -218,13 +206,23 @@ const MainPage = () => {
                           </span>
                         </button>
                       </div>
-                    </td>
+                    </td> 
                   </tr>
                 ))
               }
-              
             </tbody>
           </table>
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={(val) => {
+              setItemsPerPage(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
 
@@ -238,7 +236,7 @@ const MainPage = () => {
                 Konfirmasi Hapus
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Apakah anda yakin ingin menghapus menu <span className="font-semibold">{itemToDelete?.menu}</span>?
+                Apakah anda yakin ingin menghapus?
               </p>
             </div>
             <div className="mt-6 flex justify-center space-x-4">
