@@ -4,9 +4,10 @@ import SidebarDropdown from "@/components/Sidebar/SidebarDropdown";
 
 const SidebarItem = ({ item, pageName, setPageName }: any) => {
   const handleClick = () => {
-    const updatedPageName =
-      pageName !== item.label.toLowerCase() ? item.label.toLowerCase() : "";
-    return setPageName(updatedPageName);
+    setPageName(item.label.toLowerCase());
+    // const updatedPageName =
+    //   pageName !== item.label.toLowerCase() ? item.label.toLowerCase() : "";
+    // return setPageName(updatedPageName);
   };
 
   return (

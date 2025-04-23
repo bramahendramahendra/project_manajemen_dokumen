@@ -70,10 +70,10 @@ const SectionRight = () => {
   };
 
   // Fungsi Bypass Login
-  const handleBypassLogin = () => {
-    Cookies.set("token", "bypassToken", { expires: 7 }); // Simpan token manual
-    router.push("/dashboard"); // Redirect langsung ke dashboard
-  };
+  // const handleBypassLogin = () => {
+  //   Cookies.set("token", "bypassToken", { expires: 7 }); // Simpan token manual
+  //   router.push("/dashboard"); // Redirect langsung ke dashboard
+  // };
 
   return (
     <>
@@ -173,13 +173,13 @@ const SectionRight = () => {
               </form>
 
               {/* Tombol Bypass Login */}
-              <button
+              {/* <button
                 type="button"
                 onClick={handleBypassLogin}
                 className="mt-[20px] w-full rounded-[7px] bg-green-500 font-poppins font-normal text-white shadow-sm hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
               >
                 Bypass Login
-              </button>
+              </button> */}
             </section>
           </div>
         </div>
