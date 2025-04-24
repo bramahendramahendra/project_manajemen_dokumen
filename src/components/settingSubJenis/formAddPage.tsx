@@ -1,8 +1,141 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { apiRequest } from "@/helpers/apiClient";
 
 const FormAddPage = () => {
-  const [jenis, setJenis] = useState('all');
-  const [accessUser, setAccessUser] = useState('all');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+
+  const [type, setType] = useState('');
+  const [subtype, setSubtype] = useState('');
+  const [accessUsers, setAccessUsers] = useState<string[]>(['']);
+  
+  const [optionTypes, setOptionTypes] = useState<any[]>([]);
+  const [optionRoles, setOptionRoles] = useState<any[]>([]);
+  const [maxRoles, setMaxRoles] = useState(0);
+
+  useEffect(() => {
+    const fetchOptionTypes = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest("/setting_types/", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Setting type data not found");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        const fetchOptionSettingTypes = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          jenis: item.jenis,
+        }));
+
+        setOptionTypes(fetchOptionSettingTypes);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Jenis data not found" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOptionTypes();
+  }, []);
+
+  useEffect(() => {
+    if (!type) return;
+
+    const fetchRoles = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest(`/user_roles/type/${type}`, "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Roles data not found");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        const fetchedRoles = result.responseData.items.map((item: any) => ({
+          level_id: item.level_id,
+          role: item.role,
+        }));
+
+        setOptionRoles(fetchedRoles);
+        setMaxRoles(result.responseMeta.total_records);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoles();
+  }, [type]);
+
+  const addAccessUser = () => {
+    if (accessUsers.length >= maxRoles) {
+      setError(`Jumlah Access User tidak boleh lebih dari ${maxRoles}`);
+      return;
+    }
+    setAccessUsers([...accessUsers, '']);
+  };
+  
+  const removeAccessUser = (index: number) => {
+    const updatedUsers = [...accessUsers];
+    updatedUsers.splice(index, 1);
+    setAccessUsers(updatedUsers);
+  };
+  
+  const handleAccessUserChange = (index: number, value: string) => {
+    const updatedUsers = [...accessUsers];
+    updatedUsers[index] = value;
+    setAccessUsers(updatedUsers);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    const cleanedAccessUsers = accessUsers.filter((id) => id !== '');
+
+    const isDuplicate = new Set(cleanedAccessUsers).size !== cleanedAccessUsers.length;
+    if (isDuplicate) {
+      setError('Terdapat Access User yang sama. Mohon periksa kembali.');
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      setting_jenis_id: type,
+      subjenis: subtype,
+      level_id: cleanedAccessUsers,
+    };
+
+    try {
+      const response = await apiRequest('/setting_subtypes/', 'POST', payload);
+
+      if (response.ok) {
+        setSuccess(true);
+        setType('');
+        setSubtype('');
+        setAccessUsers(['']);
+      } else {
+        const result = await response.json();
+        setError(result.message || 'Terjadi kesalahan saat menambahkan subjenis');
+      }
+    } catch (error) {
+      setError('Terjadi kesalahan saat mengirim data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
@@ -10,57 +143,101 @@ const FormAddPage = () => {
         Untuk menambahkan Subjenis, lakukan inputan data dengan benar dibawah ini
       </h4>
       <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-        
-        <form action="#">
+        <form onSubmit={handleSubmit}>
           <div className="p-6.5">
-
+            {/* Jenis */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Jenis
               </label>
               <select
-                value={accessUser}
-                onChange={(e) => setAccessUser(e.target.value)}
+                value={type}
+                onChange={(e) => setType(e.target.value)}
                 className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               >
-                <option value="all">All Jenis</option>
-                <option value="pengadaan">Pengadaan</option>
-                <option value="anggaran">Anggaran</option>
+                <option value="" disabled>Pilih Jenis</option> 
+                {optionTypes.length > 0 ? (
+                  optionTypes.map((item, index) => (
+                    <option key={index} value={item.id}>
+                      {item.jenis}
+                    </option>
+                  ))
+                ) : (
+                  <option value="all" disabled>Loading roles...</option>
+                )}
               </select>
             </div>
-
+            {/* Subjenis */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Subjenis
               </label>
               <input
                 type="text"
-                placeholder="Enter your Username"
+                value={subtype}
+                onChange={(e) => setSubtype(e.target.value)}
+                placeholder="Enter your subjenis"
                 className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               />
             </div>
+            {/* Access User */}
+            {type && (
+              <div className="mb-4.5">
+                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                  Access User
+                </label>
+                {accessUsers.map((value, index) => (
+                  <div key={index} className="flex items-center gap-2 mb-2">
+                    <select
+                      value={value}
+                      onChange={(e) => handleAccessUserChange(index, e.target.value)}
+                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                      required
+                    >
+                      <option value="" disabled>Pilih Access User</option>
+                      {optionRoles.map((role, idx) => (
+                        <option key={idx} value={role.level_id}>
+                          {role.role}
+                        </option>
+                      ))}
+                    </select>
 
-            <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Access User
-              </label>
-              <select
-                value={accessUser}
-                onChange={(e) => setAccessUser(e.target.value)}
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                required
-              >
-                <option value="all">All Access</option>
-                <option value="admin">Admin</option>
-                <option value="dinas">Dinas</option>
-              </select>
-            </div>
+                    {accessUsers.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeAccessUser(index)}
+                        className="text-red-500 text-sm hover:underline"
+                      >
+                        Hapus
+                      </button>
+                    )}
+                  </div>
+                ))}
 
-            <button className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90">
-              Tambah Subjenis Baru
+                <button
+                  type="button"
+                  onClick={addAccessUser}
+                  className={`mt-2 text-blue-600 text-sm hover:underline ${accessUsers.length >= maxRoles ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={accessUsers.length >= maxRoles}
+                >
+                  + Tambah Access User
+                </button>
+              </div>
+            )}
+
+            <button 
+              type="submit"
+              className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
+              disabled={loading}
+            >
+              {loading ? 'Menambahkan...' : 'Tambah Subjenis Baru'}
             </button>
+
+            {/* Error and Success Messages */}
+            {error && <p className="text-red-500 mt-2">{error}</p>}
+            {success && <p className="text-green-500 mt-2">Setting subjenis berhasil ditambahkan!</p>}  
           </div>
         </form>
       </div>

@@ -1,22 +1,26 @@
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { apiRequest } from "@/helpers/apiClient";
+import { encryptObject } from "@/utils/crypto";
 import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
 } from "react-icons/hi2";
 import { AccessMenu } from "@/types/accessMenu";
-import { apiRequest } from "@/helpers/apiClient";
 
 const MainPage = () => {
-  const [accessMenuData, setMenuData] = useState<AccessMenu[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataList, setDataList] = useState<AccessMenu[]>([]);
   
   // State untuk modal konfirmasi hapus
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<AccessMenu | null>(null);
 
   useEffect(() => {
-    const fetchAccessUsers = async () => {
+    const fetchData = async () => {
       try {
         const response = await apiRequest("/access_menus/", "GET");
         if (!response.ok) {
@@ -34,7 +38,7 @@ const MainPage = () => {
           menu: item.menu,
         }));
 
-        setMenuData(accessMenus);
+        setDataList(accessMenus);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
       } finally {
@@ -42,8 +46,18 @@ const MainPage = () => {
       }
     };
 
-    fetchAccessUsers();
+    fetchData();
   }, []);
+
+  const handleEdit = (levelId: string, codeMenu: string) => {
+    const key = process.env.NEXT_PUBLIC_APP_KEY;
+    const token = Cookies.get("token");
+    if (!token) return alert("Token tidak ditemukan!");
+
+    const encrypted = encryptObject({ levelId, codeMenu }, token);
+    
+    router.push(`/menu/edit_access_menu/mz?${key}=${encrypted}`);
+  };
 
   // Handler untuk membuka modal konfirmasi hapus
   const handleDeleteClick = (item: AccessMenu) => {
@@ -63,7 +77,7 @@ const MainPage = () => {
         // }
         
         // Untuk sementara hanya simulasi penghapusan dari state lokal
-        setMenuData(prevItems => prevItems.filter(item => 
+        setDataList(prevItems => prevItems.filter(item => 
           !(item.codeMenu === itemToDelete.codeMenu && item.levelId === itemToDelete.levelId)
         ));
         
@@ -134,7 +148,7 @@ const MainPage = () => {
                       {error}
                     </td>
                   </tr>
-                ) :  accessMenuData.map((item, index) => (
+                ) :  dataList.map((item, index) => (
                   <tr key={index}>
                     <td
                       className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
@@ -169,7 +183,7 @@ const MainPage = () => {
                     >
                       <div className="flex items-center justify-end space-x-3.5">
                         <button
-                          // onClick={() => handleEdit(item)}
+                          onClick={() => handleEdit(item.levelId, item.codeMenu)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
                         >
                           <span className="text-[20px]">

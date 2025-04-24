@@ -1,7 +1,7 @@
 "use client";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
-import TableAllUser from "@/components/userManagement/tableAllUser";
+import TableAllUser from "@/components/userManagement";
 import UserStats from "@/components/userManagement/userStats";
 import TopUser from "@/components/userManagement/topUser";
 import { HiPlus } from "react-icons/hi2";

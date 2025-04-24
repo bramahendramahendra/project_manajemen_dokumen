@@ -3,8 +3,10 @@ export type Subjenis = {
   idJenis: number;
   jenis: string;
   subjenis: string;
-  levelId: number;
-  levelUser: string;
+  roles: {
+    levelId: string;
+    role: string;
+  }[];
   createdDate: string;
   updatedDate: string;
 };

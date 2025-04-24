@@ -2,42 +2,44 @@ import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 
 const FormAddPage = () => {
-  const [codeMenu, setCodeMenu] = useState('');
-  const [accessUser, setAccessUser] = useState('');
-
-  const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  
+  const [codeMenu, setCodeMenu] = useState('');
+  const [accessUser, setAccessUser] = useState('');
+
+  const [optionRoles, setOptionRoles] = useState<any[]>([]);
+  
 
   useEffect(() => {
-      const fetchRoles = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const response = await apiRequest("/user_roles/", "GET");
-          if (!response.ok) {
-            if (response.status === 404) {
-              throw new Error("Roles data not found");
-            }
-            throw new Error(`HTTP error! status: ${response.status}`);
+    const fetchDataOptions = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest("/user_roles/", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Roles data not found");
           }
-          const result = await response.json();
-  
-          const fetchedRoles = result.responseData.items.map((item: any) => ({
-            level_id: item.level_id,
-            role: item.role,
-          }));
-  
-          setRoles(fetchedRoles);
-        } catch (err: any) {
-          setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
-        } finally {
-          setLoading(false);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      };
-  
-      fetchRoles();
+        const result = await response.json();
+
+        const fetchedRoles = result.responseData.items.map((item: any) => ({
+          level_id: item.level_id,
+          role: item.role,
+        }));
+
+        setOptionRoles(fetchedRoles);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDataOptions();
   }, []);
 
   
@@ -104,10 +106,10 @@ const FormAddPage = () => {
                 required
               >
                 <option value="" disabled>Pilih Access User</option> 
-                {roles.length > 0 ? (
-                  roles.map((role, index) => (
-                    <option key={index} value={role.level_id}>
-                      {role.role}
+                {optionRoles.length > 0 ? (
+                  optionRoles.map((item, index) => (
+                    <option key={index} value={item.level_id}>
+                      {item.role}
                     </option>
                   ))
                 ) : (

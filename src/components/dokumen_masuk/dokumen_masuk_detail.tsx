@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import Pagination from "../pagination.tsx/Pagination";
+import Pagination from "../pagination/Pagination";
 
 const dummyKirimanDokumen = [
     {

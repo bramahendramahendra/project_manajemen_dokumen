@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { ValidationUpload } from "@/types/validationUpload";
-import Pagination from "../pagination.tsx/Pagination";
+import Pagination from "../pagination/Pagination";
 import { HiOutlineArrowTopRightOnSquare} from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 

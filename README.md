@@ -62,3 +62,10 @@ npm install @lottiefiles/react-lottie-player
 npm install js-cookie
 npm install --save-dev @types/js-cookie
 ```
+
+## Install Encryptor
+```bash
+npm install crypto-js
+npm i --save-dev @types/crypto-js
+```
+

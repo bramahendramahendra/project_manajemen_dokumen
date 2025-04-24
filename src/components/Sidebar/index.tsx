@@ -93,7 +93,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   useEffect(() => {
     const fetchMenu = async () => {
       const user = JSON.parse(Cookies.get("user") || "{}");
-      const res = await apiRequest(`/access_menus/${user.level_id}`, "GET");
+      const res = await apiRequest(`/access_menus/menu/${user.level_id}`, "GET");
       const json = await res.json();
       const transformed = transformMenuData(json.responseData.items);
       setMenuGroups(transformed);

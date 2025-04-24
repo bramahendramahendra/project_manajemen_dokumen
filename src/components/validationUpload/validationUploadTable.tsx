@@ -5,7 +5,7 @@ import {
   HiOutlineDocumentMagnifyingGlass,
   HiOutlineTrash,
 } from "react-icons/hi2";
-import Pagination from "../pagination.tsx/Pagination";
+import Pagination from "../pagination/Pagination";
 
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("id-ID", {

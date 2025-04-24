@@ -1,16 +1,9 @@
 "use client";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
-import TableAllUser from "@/components/userManagement/tableAllUser";
-import UserStats from "@/components/userManagement/userStats";
-import TopUser from "@/components/userManagement/topUser";
-
-import { HiPlus } from "react-icons/hi2";
-import { useRouter } from "next/navigation";
 import FormAddPage from "@/components/settingJenis/formAddPage";
 
 const AddPage = () => {
-  const Router = useRouter();
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
     { name: "Setting Jenis", href: "/setting_jenis" },
