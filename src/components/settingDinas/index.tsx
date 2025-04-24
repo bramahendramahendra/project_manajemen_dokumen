@@ -6,6 +6,7 @@ import { encryptObject } from "@/utils/crypto";
 import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
+  HiOutlineArrowTopRightOnSquare,
 } from "react-icons/hi2";
 import { Dinas } from "@/types/dinas";
 import { formatIndonesianDateTime } from "@/utils/dateFormatter";
@@ -70,13 +71,11 @@ const MainPage = () => {
     router.push(`/setting_dinas/edit_setting_dinas/mz?${key}=${encrypted}`);
   };
 
-  // Handler untuk membuka modal konfirmasi hapus
   const handleDeleteClick = (id: number) => {
     setItemDelete(id);
     setShowDeleteModal(true);
   };
 
-  // Handler untuk konfirmasi hapus
   const handleConfirmDelete = async () => {
     if (!itemDelete) return;
 

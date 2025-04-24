@@ -8,16 +8,27 @@ import {
   HiOutlineTrash,
 } from "react-icons/hi2";
 import { Menu } from "@/types/menu";
+import Pagination from "@/components/pagination/Pagination";
 
 const MainPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
   const [dataList, setDataList] = useState<Menu[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const totalPages = Math.ceil(dataList.length / itemsPerPage);
+  const currentItems = dataList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   
   // State untuk modal konfirmasi hapus
+  const [itemDelete, setItemDelete] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<Menu | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -60,43 +71,47 @@ const MainPage = () => {
     router.push(`/menu/edit_menu/mz?${key}=${encrypted}`);
   };
 
-  // Handler untuk membuka modal konfirmasi hapus
-  const handleDeleteClick = (item: Menu) => {
-    setItemToDelete(item);
+  const handleDeleteClick = (code: string) => {
+    setItemDelete(code);
     setShowDeleteModal(true);
   };
 
-  // Handler untuk konfirmasi hapus
   const handleConfirmDelete = async () => {
-    if (itemToDelete) {
-      try {
-        // Logika untuk menghapus item
-        // const response = await apiRequest(`/menus/${itemToDelete.code}`, "DELETE");
-        // if (response.ok) {
-        //   // Filter item yang dihapus dari state
-        //   setMenuData(prevItems => prevItems.filter(item => item.code !== itemToDelete.code));
-        // }
-        
-        // Untuk sementara hanya simulasi penghapusan dari state lokal
-        setDataList(prevItems => prevItems.filter(item => item.code !== itemToDelete.code));
-        
-        // Tutup modal setelah selesai
-        setShowDeleteModal(false);
-        setItemToDelete(null);
-      } catch (error) {
-        console.error("Error deleting menu:", error);
+    if (!itemDelete) return;
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    try {
+      const response = await apiRequest(`/menus/${itemDelete}`, 'DELETE');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Gagal menghapus data');
       }
+
+      setSuccess(true);
+      // Bisa tambahkan aksi tambahan seperti refresh data atau notifikasi
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat menghapus data');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Handler untuk membatalkan hapus
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
-    setItemToDelete(null);
+    setItemDelete(null);
   };
+
 
   return (
     <>
+      {/* Error and Success Messages */}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
+        
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
@@ -113,9 +128,6 @@ const MainPage = () => {
                 </th>
                 <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                   URL
-                </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                  Icon
                 </th>
                 <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Actions
@@ -142,9 +154,6 @@ const MainPage = () => {
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
                       </td>
-                      <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
-                        <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-                      </td>
                     </tr>
                   ))
                 ) : error ? (
@@ -153,7 +162,13 @@ const MainPage = () => {
                       {error}
                     </td>
                   </tr>
-                ) :  dataList.map((item, index) => (
+                ) : currentItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                      Data belum tersedia
+                    </td>
+                  </tr>
+                ) : currentItems.map((item, index) => (
                   <tr key={index}>
                     <td
                       className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
@@ -184,18 +199,11 @@ const MainPage = () => {
                       </p>
                     </td>
                     <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
-                    >
-                      <p className="text-dark dark:text-white">
-                        {item.menu}
-                      </p>
-                    </td>
-                    <td
                       className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}
                     >
                       <div className="flex items-center justify-end space-x-3.5">
                         <button
-                          // onClick={() => handleEdit(userItem.userid)}
+                          onClick={() => handleEdit(item.code, item.menu)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
                         >
                           <span className="text-[20px]">
@@ -207,7 +215,7 @@ const MainPage = () => {
                         </button>
 
                         <button 
-                          onClick={() => handleDeleteClick(item)}
+                          onClick={() => handleDeleteClick(item.code)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
                         >
                           <span className="text-[20px]">
@@ -225,6 +233,17 @@ const MainPage = () => {
               
             </tbody>
           </table>
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={(val) => {
+              setItemsPerPage(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
 
@@ -238,7 +257,7 @@ const MainPage = () => {
                 Konfirmasi Hapus
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Apakah anda yakin ingin menghapus menu <span className="font-semibold">{itemToDelete?.menu}</span>?
+                Apakah anda yakin ingin menghapus menu <span className="font-semibold">{itemDelete}</span>?
               </p>
             </div>
             <div className="mt-6 flex justify-center space-x-4">

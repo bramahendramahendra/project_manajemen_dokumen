@@ -17,6 +17,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [type, setType] = useState('');
   const [status, setStatus] = useState('');
 
+  const [inputIcon, setInputIcon] = useState(false);
+
   const options = {
     jenis: [
       { value: Jenis.Free, label: 'Free' },
@@ -31,15 +33,16 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
 
   useEffect(() => {
     if (dataEdit) {
-      setCode(dataEdit.firstname || '');
-      setCodeParent(dataEdit.lastname || '');
-      setIcon(dataEdit.username || '');
-      setMenu(dataEdit.email || '');
-      setUrl(dataEdit.department_name || '');
-      setDescription(dataEdit.responsible_person || '');
-      setUrutan(dataEdit.level_id || '');
-      setType(dataEdit.level_id || '');
-      setStatus(dataEdit.level_id || '');
+      setCode(dataEdit.code || '');
+      setCodeParent(dataEdit.code_parent || '');
+      setIcon(dataEdit.icon || '');
+      setMenu(dataEdit.menu || '');
+      setUrl(dataEdit.url || '');
+      setDescription(dataEdit.description || '');
+      setUrutan(dataEdit.urutan || '');
+      setType(dataEdit.type || '');
+      setStatus(dataEdit.status || '');
+      setInputIcon(!dataEdit.icon);
     }
   }, [dataEdit]);
 
@@ -118,14 +121,33 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Icon
               </label>
+              <div className="mb-2 flex items-center gap-2">
+                <input
+                  id="tanpa-icon"
+                  type="checkbox"
+                  checked={inputIcon}
+                  onChange={(e) => {
+                    setInputIcon(e.target.checked);
+                    if (e.target.checked) {
+                      setIcon('');
+                    }
+                  }}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-indigo-500"
+                />
+                <label htmlFor="tanpa-icon" className="text-sm font-medium text-dark dark:text-white">
+                  Tanpa Icon
+                </label>
+              </div>
               <input
                 type="text"
                 value={icon}
                 onChange={(e) => setIcon(e.target.value)}
                 placeholder="Enter your icon"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                required
-                disabled
+                className={`w-full rounded-[7px] px-5 py-3 transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary 
+                  ${inputIcon 
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500' 
+                    : 'bg-transparent text-dark dark:text-white'}`}
+                disabled={inputIcon}
               />
             </div>
             {/* Menu */}

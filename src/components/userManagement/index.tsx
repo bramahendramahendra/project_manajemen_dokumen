@@ -11,19 +11,30 @@ import {
   HiOutlineArrowTopRightOnSquare
 } from "react-icons/hi2";
 import { User } from "@/types/user";
-import UserManagement from "../404/UserManagement/userManagement";
+import Pagination from "@/components/pagination/Pagination";
+// import UserManagement from "../404/UserManagement/userManagement";
 
 const MainPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userData, setUserData] = useState<User[]>([]);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [dataList, setDataList] = useState<User[]>([]);
   const [suspendedStatus, setSuspendedStatus] = useState<{
     [key: string]: boolean;
   }>({});
-  // State untuk modal konfirmasi hapus
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const totalPages = Math.ceil(dataList.length / itemsPerPage);
+  const currentItems = dataList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemDelete, setItemDelete] = useState<number | string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,7 +56,7 @@ const MainPage = () => {
           role: item.role,
         }));
 
-        setUserData(users);
+        setDataList(users);
       } catch (err: any) {
         setError(
           err.message === "Failed to fetch"
@@ -84,47 +95,50 @@ const MainPage = () => {
 
   // Handler untuk membuka modal konfirmasi hapus
   const handleDeleteClick = (userid: string) => {
-    setUserToDelete(userid);
+    setItemDelete(userid);
     setShowDeleteModal(true);
   };
 
   // Handler untuk konfirmasi hapus
   const handleConfirmDelete = async () => {
-    if (userToDelete) {
-      try {
-        // Logika untuk menghapus user
-        // const response = await apiRequest(`/users/${userToDelete}`, "DELETE");
-        // if (response.ok) {
-        //   // Filter user yang dihapus dari state
-        //   setUserData(prevUsers => prevUsers.filter(user => user.userid !== userToDelete));
-        // }
+    if (!itemDelete) return;
 
-        // Untuk sementara hanya simulasi penghapusan dari state lokal
-        setUserData((prevUsers) =>
-          prevUsers.filter((user) => user.userid !== userToDelete),
-        );
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
-        // Tutup modal setelah selesai
-        setShowDeleteModal(false);
-        setUserToDelete(null);
-      } catch (error) {
-        console.error("Error deleting user:", error);
+    try {
+      const response = await apiRequest(`/setting_types/${itemDelete}`, 'DELETE');
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Gagal menghapus data');
       }
+
+      setSuccess(true);
+      // Bisa tambahkan aksi tambahan seperti refresh data atau notifikasi
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat menghapus data');
+    } finally {
+      setLoading(false);
     }
   };
 
   // Handler untuk membatalkan hapus
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
-    setUserToDelete(null);
+    setItemDelete(null);
   };
 
-  if (error) {
-    return <UserManagement error="Data tidak ditemukan" />;
-  }
+  // if (error) {
+  //   return <UserManagement error="Data tidak ditemukan" />;
+  // }
 
   return (
     <>
+      {/* Error and Success Messages */}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
       <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <div className="flex flex-col overflow-x-auto">
           <table className="w-full table-auto">
@@ -167,36 +181,41 @@ const MainPage = () => {
                         <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
                       </td>
                     </tr>
-                  ))
-                : // Data sebenarnya ditampilkan di sini
-                  userData.map((userItem, index) => (
+                  )
+                ) : currentItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                      Data belum tersedia
+                    </td>
+                  </tr>
+                ) : currentItems.map((item, index) => (
                     <tr key={index}>
                       <td
                         className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5`}
                       >
                         <p className="mt-[3px] text-body-sm font-medium">
-                          {userItem.userid}
+                          {item.userid}
                         </p>
                       </td>
                       <td
                         className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
                       >
                         <p className="text-dark dark:text-white">
-                          {userItem.name}
+                          {item.name}
                         </p>
                       </td>
                       <td
                         className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
                       >
                         <p className="text-dark dark:text-white">
-                          {userItem.username}
+                          {item.username}
                         </p>
                       </td>
                       <td
                         className={`border-[#eee] px-4 py-4 dark:border-dark-3`}
                       >
                         <p className="text-dark dark:text-white">
-                          {userItem.role}
+                          {item.role}
                         </p>
                       </td>
                       <td
@@ -204,7 +223,24 @@ const MainPage = () => {
                       >
                         <div className="flex items-center justify-end space-x-3.5">
                           <button
-                            onClick={() => handleDetailsClick(userItem.userid)}
+                            onClick={() => handleActivate(item.userid)}
+                            className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
+                          >
+                            <span className="text-[20px]">
+                              {suspendedStatus[item.userid] ? (
+                                <HiOutlineLockClosed />
+                              ) : (
+                                <HiOutlineLockOpen />
+                              )}
+                            </span>
+                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                              {suspendedStatus[item.userid]
+                                ? "Suspend"
+                                : "Continue"}
+                            </span>
+                          </button>
+                          <button
+                            onClick={() => handleDetailsClick(item.userid)}
                             className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
                           >
                             <span className="text-[20px]">
@@ -214,28 +250,9 @@ const MainPage = () => {
                               Detail
                             </span>
                           </button>
-                          
                           <button
-                            onClick={() => handleActivate(userItem.userid)}
-                            className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
-                          >
-                            <span className="text-[20px]">
-                              {suspendedStatus[userItem.userid] ? (
-                                <HiOutlineLockClosed />
-                              ) : (
-                                <HiOutlineLockOpen />
-                              )}
-                            </span>
-                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                              {suspendedStatus[userItem.userid]
-                                ? "Suspend"
-                                : "Continue"}
-                            </span>
-                          </button>
-
-                          <button
-                            onClick={() => handleEdit(userItem.userid)}
-                            className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
+                            onClick={() => handleEdit(item.userid)}
+                            className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
                           >
                             <span className="text-[20px]">
                               <HiOutlinePencilSquare />
@@ -244,9 +261,8 @@ const MainPage = () => {
                               Edit
                             </span>
                           </button>
-
                           <button
-                            onClick={() => handleDeleteClick(userItem.userid)}
+                            onClick={() => handleDeleteClick(item.userid)}
                             className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
                           >
                             <span className="text-[20px]">
@@ -262,6 +278,17 @@ const MainPage = () => {
                   ))}
             </tbody>
           </table>
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={(val) => {
+              setItemsPerPage(val);
+              setCurrentPage(1);
+            }}
+          />
         </div>
       </div>
 
