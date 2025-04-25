@@ -19,21 +19,52 @@ const UploadDokumen = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
-  const [namaDinas, setNamaDinas] = useState('');
-  const [type, setType] = useState<string | number>('');
-  const [subtype, setSubtype] = useState<string | number>('');
+  const [dinas, setDinas] = useState<number>(0);
+  const [type, setType] = useState<number>(0);
+  const [subtype, setSubtype] = useState<number>(0);
   const [tahun, setTahun] = useState<string | number>('');
   const [keterangan, setKeterangan] = useState('');
-  const [tempFilePath, setTempFilePath] = useState<string>('');
+  const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadComplete, setIsUploadComplete] = useState(false);
 
+  const [optionOfficials, setOptionOfficials] = useState<any[]>([]);
   const [optionTypes, setOptionTypes] = useState<any[]>([]);
   const [optionSubtypes, setOptionSubtypes] = useState<any[]>([]);
   const [resetKey, setResetKey] = useState(0);
+
+  useEffect(() => {
+    const fetchOfficials = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest("/officials/", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Officials data not found");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        const fetchedOfficials = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          dinas: item.dinas,
+        }));
+
+        setOptionOfficials(fetchedOfficials);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOfficials();
+  }, []);
 
   useEffect(() => {
     const fetchOptionTypes = async () => {
@@ -100,56 +131,138 @@ const UploadDokumen = () => {
     fetchOptionSubtypes();
   }, [type]);
 
+  // const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   if (event.target.files && event.target.files.length > 0) {
+  //     // const selectedFile = event.target.files[0];
+  //     const selectedFiles = Array.from(event.target.files);
+  //     // setFiles([selectedFile]);
+  //     setFiles(selectedFiles);
+  //     // setUploadProgress([0]);
+  //     setUploadProgress(new Array(selectedFiles.length).fill(0));
+  //     setIsUploading(true);
+  //     setIsUploadComplete(false);
+
+  //     const uploadedPaths: string[] = [];
+  //     const progresses: number[] = [];
+
+  //     for (let i = 0; i < selectedFiles.length; i++) {
+  //       const file = selectedFiles[i];
+  //       try {
+  //         const { response, status } = await apiRequestUpload(
+  //           "/document_managements/upload-file",
+  //           // selectedFile,
+  //           file,
+  //           // (progress) => setUploadProgress([progress])
+  //           (progress) => {
+  //             progresses[i] = progress;
+  //             setUploadProgress([...progresses]);
+  //           }
+  //         );
+    
+  //         if (status === 200 && response.responseData?.temp_file_path) {
+  //           // setTempFilePath(response.responseData.temp_file_path);
+  //           uploadedPaths.push(response.responseData.temp_file_path);
+  //           // setIsUploadComplete(true);
+  //         } else {
+  //           throw new Error(response.responseDesc || "Upload gagal.");
+  //         }
+  //       } catch (error: any) {
+  //         setError(error.message);
+  //         // setUploadProgress([0]);
+  //         setUploadProgress([]);
+  //         // setIsUploading(false);
+  //         return;
+  //       } finally {
+  //         setIsUploading(false);
+  //         return;
+  //       }
+  //     }
+  //     setTempFilePaths(uploadedPaths);
+  //     setIsUploadComplete(true);
+  //     setIsUploading(false);
+
+  //   }
+  // };
+
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      const selectedFile = event.target.files[0];
-      setFiles([selectedFile]);
-      setUploadProgress([0]);
+      const selectedFiles = Array.from(event.target.files);
+      setFiles(selectedFiles);
+      setUploadProgress(new Array(selectedFiles.length).fill(0));
       setIsUploading(true);
       setIsUploadComplete(false);
-
-      try {
-        const { response, status } = await apiRequestUpload(
-          "/document_managements/upload-file",
-          selectedFile,
-          (progress) => setUploadProgress([progress])
-        );
   
-        if (status === 200 && response.responseData?.temp_file_path) {
-          setTempFilePath(response.responseData.temp_file_path);
-          setIsUploadComplete(true);
-        } else {
-          throw new Error(response.responseDesc || "Upload gagal.");
+      const uploadedPaths: string[] = [];
+      const progresses: number[] = [];
+  
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        try {
+          const { response, status } = await apiRequestUpload(
+            "/document_managements/upload-file",
+            file,
+            (progress) => {
+              progresses[i] = progress;
+              setUploadProgress([...progresses]);
+            }
+          );
+  
+          if (status === 200 && response.responseData?.temp_file_path) {
+            uploadedPaths.push(response.responseData.temp_file_path);
+          } else {
+            throw new Error(response.responseDesc || "Upload gagal.");
+          }
+        } catch (error: any) {
+          setError(error.message);
+          setUploadProgress([]);
+          setIsUploading(false);
+          return;
         }
-      } catch (error: any) {
-        setError(error.message);
-        setUploadProgress([0]);
-      } finally {
-        setIsUploading(false);
       }
+  
+      setTempFilePaths(uploadedPaths);
+      setIsUploadComplete(true);
+      setIsUploading(false);
     }
   };
   
-  const handleRemoveFile = async () => {
-    if (!tempFilePath) {
-      setFiles([]);
-      setUploadProgress([]);
-      return;
-    }
+  // const handleRemoveFile = async () => {
+  //   if (!tempFilePath) {
+  //     setFiles([]);
+  //     setUploadProgress([]);
+  //     return;
+  //   }
   
-    try {
-      await apiRequest("/document_managements/delete-file", "POST", {
-        file_path: tempFilePath,
-      });
-    } catch (error) {
-      console.warn("File mungkin sudah terhapus atau gagal dihapus:", error);
-    } finally {
-      setFiles([]);
-      setUploadProgress([]);
-      setTempFilePath("");
-      setIsUploading(false);
-      setIsUploadComplete(false);
+  //   try {
+  //     await apiRequest("/document_managements/delete-file", "POST", {
+  //       file_path: tempFilePath,
+  //     });
+  //   } catch (error) {
+  //     console.warn("File mungkin sudah terhapus atau gagal dihapus:", error);
+  //   } finally {
+  //     setFiles([]);
+  //     setUploadProgress([]);
+  //     setTempFilePath("");
+  //     setIsUploading(false);
+  //     setIsUploadComplete(false);
+  //   }
+  // };
+
+  const handleRemoveFile = async () => {
+    if (tempFilePaths.length > 0) {
+      for (const path of tempFilePaths) {
+        try {
+          await apiRequest("/document_managements/delete-file", "POST", { file_path: path });
+        } catch (error) {
+          console.warn("Gagal hapus file:", error);
+        }
+      }
     }
+    setFiles([]);
+    setUploadProgress([]);
+    setTempFilePaths([]);
+    setIsUploading(false);
+    setIsUploadComplete(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -169,8 +282,14 @@ const UploadDokumen = () => {
     setError(null);
     setSuccess(false);
 
-    if (!isUploadComplete || !tempFilePath) {
-      setError("File belum diupload atau masih diproses.");
+    // if (!isUploadComplete || !tempFilePath) {
+    //   setError("File belum diupload atau masih diproses.");
+    //   setLoading(false);
+    //   return;
+    // }
+
+    if (!isUploadComplete || tempFilePaths.length === 0) {
+      setError("Belum ada file yang berhasil diupload.");
       setLoading(false);
       return;
     }
@@ -178,12 +297,14 @@ const UploadDokumen = () => {
     const user = JSON.parse(Cookies.get("user") || "{}");
    
     const payload = {
-      nama_dinas: namaDinas,
+      dinas_id: dinas,
       type_id: type,
       subtype_id: subtype,
       tahun: tahun,
       keterangan: keterangan,
-      file_name: tempFilePath,
+      // file_name: tempFilePath,
+      file_paths: tempFilePaths,
+      // file_name: JSON.stringify(tempFilePaths),
       maker: user.userid || "",
       maker_role: user.role || "",
     };
@@ -193,14 +314,15 @@ const UploadDokumen = () => {
   
       if (response.ok) {
         setSuccess(true);
-        setNamaDinas('');
-        setType('');
-        setSubtype('');
+        setDinas(0);
+        setType(0);
+        setSubtype(0);
         setTahun('');
         setKeterangan('');
         setFiles([]);
         setUploadProgress([]);
-        setTempFilePath('');
+        // setTempFilePath('');
+        setTempFilePaths([]);
         setIsUploadComplete(false);
         setResetKey(prev => prev + 1);
       } else {
@@ -225,35 +347,44 @@ const UploadDokumen = () => {
           <form onSubmit={handleSubmit}>
             <div className="p-6.5">
               {/* Nama Dinas */}
-              <div className="mb-4.5">
+              {/* <div className="mb-4.5">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Nama Dinas
                 </label>
                 <input
                   type="text"
-                  value={namaDinas} // ✅
-                  onChange={(e) => setNamaDinas(e.target.value)} // ✅
+                  value={namaDinas}
+                  onChange={(e) => setNamaDinas(e.target.value)}
                   placeholder="Masukkan Nama Dinas..."
                   className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                   required
                 />
-              </div>
+               
+              </div> */}
+              <ElementCombobox
+                label="Dinas"
+                placeholder="Pilih dinas"
+                // options={dataJenis}
+                options={optionOfficials.map((t) => ({ name: t.dinas, id: t.id }))}
+                onChange={(value) => setDinas(Number(value))}
+                resetKey={resetKey}
+              />
 
               <ElementCombobox
                 label="Jenis"
                 placeholder="Pilih jenis"
                 // options={dataJenis}
                 options={optionTypes.map((t) => ({ name: t.jenis, id: t.id }))}
-                onChange={(value) => setType(value)}
+                onChange={(value) => setType(Number(value))}
                 resetKey={resetKey}
               />
-              {type && (
+              {type != 0 && (
                 <ElementCombobox
                   label="Sub Jenis"
                   placeholder="Pilih sub jenis"
                   // options={dataSubJenis}
                   options={optionSubtypes.map((t) => ({ name: t.subjenis, id: t.id }))}
-                  onChange={(value) => setSubtype(value)}
+                  onChange={(value) => setSubtype(Number(value))}
                   resetKey={resetKey}
                 />
               )}
@@ -285,7 +416,7 @@ const UploadDokumen = () => {
               >
                 <input
                   type="file"
-                  // multiple
+                  multiple
                   name="profilePhoto"
                   id="profilePhoto"
                   accept="image/png, image/jpg, image/jpeg"
@@ -372,7 +503,8 @@ const UploadDokumen = () => {
                             onClick={() => {
                               setFiles([]);
                               setUploadProgress([]);
-                              setTempFilePath("");
+                              // setTempFilePath("");
+                              setTempFilePaths([]);
                               setIsUploading(false);
                               setIsUploadComplete(false);
                             }}

@@ -114,11 +114,13 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       department_name: selectedDepartment?.dinas || "",
       responsible_person: responsiblePerson,
       level_id: accessUser,
-      password
+      change_password: changePassword,
+      ...(changePassword && { password }),
+      // password
     };
 
     try {
-      const response = await apiRequest(`/users/${dataEdit.id}`, 'PUT', payload);
+      const response = await apiRequest(`/users/${dataEdit.userid}`, 'PUT', payload);
       const result = await response.json();
 
       if (!response.ok) {
