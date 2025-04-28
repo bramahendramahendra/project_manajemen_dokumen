@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { encryptObject } from "@/utils/crypto";
 import { HiOutlineArrowTopRightOnSquare} from "react-icons/hi2";
-import { ValidationUpload } from "@/types/validationUpload";
+import { ValidationUploadAdmin } from "@/types/validationUpload";
 import Pagination from "@/components/pagination/Pagination";
 
 // const validationUpload: ValidationUpload[] = [
@@ -26,7 +26,7 @@ const MainPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   // const [success, setSuccess] = useState<boolean>(false);
-  const [dataList, setDataList] = useState<ValidationUpload[]>([]);
+  const [dataList, setDataList] = useState<ValidationUploadAdmin[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -49,7 +49,7 @@ const MainPage = () => {
         }
         const result = await response.json();
         
-        const data: ValidationUpload[] = result.responseData.items.map((item: any) => ({
+        const data: ValidationUploadAdmin[] = result.responseData.items.map((item: any) => ({
           id: item.dinas_id,
           skpd: item.dinas,
           validasiPending: item.total_validasi_pending,
