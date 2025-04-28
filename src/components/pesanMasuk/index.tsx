@@ -105,7 +105,7 @@ const MainPage = () => {
     }
     // Reset ke halaman pertama ketika melakukan pencarian
     setCurrentPage(1);
-  }, [searchTerm]);
+  }, [searchTerm, activeMessage]);
 
   const totalPages = Math.ceil(filteredMessages.length / itemsPerPage);
 
