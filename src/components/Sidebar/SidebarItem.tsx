@@ -1,14 +1,25 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import SidebarDropdown from "@/components/Sidebar/SidebarDropdown";
 
 const SidebarItem = ({ item, pageName, setPageName }: any) => {
+  const pathname = usePathname();
+  
+  // Efek untuk mengatur pageName default berdasarkan pathname
+  useEffect(() => {
+    // Jika pathname adalah /dashboard dan belum ada pageName yang diatur
+    if (pathname === "/dashboard" && item.route === "/dashboard" && pageName === "") {
+      setPageName("dashboard");
+    }
+  }, [pathname, item.route, pageName, setPageName]);
+
   const handleClick = () => {
     setPageName(item.label.toLowerCase());
-    // const updatedPageName =
-    //   pageName !== item.label.toLowerCase() ? item.label.toLowerCase() : "";
-    // return setPageName(updatedPageName);
   };
+
+  // Cek apakah item ini aktif
+  const isActive = pageName === item.label.toLowerCase();
 
   return (
     <>
@@ -16,7 +27,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
         <Link
           href={item.route}
           onClick={handleClick}
-          className={`${pageName === item.label.toLowerCase() ? "bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] transition-all duration-300 text-white dark:bg-white/10 dark:text-white" : "text-dark-4 hover:bg-gray-3 hover:text-dark dark:text-gray-5 dark:hover:bg-white/10 dark:hover:text-white"} group relative flex items-center gap-3 rounded-[7px] px-3.5 py-3 font-medium duration-300 ease-in-out`}
+          className={`${isActive ? "bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] transition-all duration-300 text-white dark:bg-white/10 dark:text-white" : "text-dark-4 hover:bg-gray-3 hover:text-dark dark:text-gray-5 dark:hover:bg-white/10 dark:hover:text-white"} group relative flex items-center gap-3 rounded-[7px] px-3.5 py-3 font-medium duration-300 ease-in-out`}
         >
           {item.icon}
           {item.label}
@@ -33,7 +44,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
           {item.children && (
             <svg
               className={`absolute right-3.5 top-1/2 -translate-y-1/2 fill-current ${
-                pageName !== item.label.toLowerCase() && "rotate-180"
+                !isActive && "rotate-180"
               }`}
               width="22"
               height="22"
@@ -54,7 +65,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
         {item.children && (
           <div
             className={`translate transform overflow-hidden ${
-              pageName !== item.label.toLowerCase() && "hidden"
+              !isActive && "hidden"
             }`}
           >
             <SidebarDropdown item={item.children} />
