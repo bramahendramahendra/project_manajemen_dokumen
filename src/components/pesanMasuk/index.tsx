@@ -1,8 +1,9 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { MessageList } from "./messageList";
 import { MessageDetail } from "./messageDetails";
 import Pagination from "../pagination/Pagination";
+import SearchBar from "../search/SearchBar";
 
 const dummyMessages = [
   {
@@ -78,48 +79,94 @@ const dummyMessages = [
 ];
 
 const MainPage = () => {
-  const [activeMessage, setActiveMessage] = useState(dummyMessages[0]); // Default message aktif
-  const [currentPage, setCurrentPage] = useState(1); // State untuk halaman saat ini
-  const [itemsPerPage, setItemsPerPage] = useState(10); // State untuk jumlah item per halaman
-  const totalPages = Math.ceil(dummyMessages.length / itemsPerPage); // Total halaman
+  const [activeMessage, setActiveMessage] = useState(dummyMessages[0]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredMessages, setFilteredMessages] = useState(dummyMessages);
 
-  // Pesan yang ditampilkan berdasarkan halaman dan jumlah item per halaman
-  const paginatedMessages = dummyMessages.slice(
+  // Effect untuk memfilter pesan berdasarkan searchTerm
+  useEffect(() => {
+    if (searchTerm === "") {
+      setFilteredMessages(dummyMessages);
+    } else {
+      const lowercaseSearchTerm = searchTerm.toLowerCase();
+      const filtered = dummyMessages.filter(
+        (message) =>
+          message.sender.toLowerCase().includes(lowercaseSearchTerm) ||
+          message.content.toLowerCase().includes(lowercaseSearchTerm)
+      );
+      setFilteredMessages(filtered);
+      
+      // Jika hasil pencarian tidak kosong dan pesan aktif tidak ada dalam hasil
+      if (filtered.length > 0 && !filtered.includes(activeMessage)) {
+        setActiveMessage(filtered[0]);
+      }
+    }
+    // Reset ke halaman pertama ketika melakukan pencarian
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  const totalPages = Math.ceil(filteredMessages.length / itemsPerPage);
+
+  // Pesan yang ditampilkan berdasarkan halaman dan hasil pencarian
+  const paginatedMessages = filteredMessages.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
+    currentPage * itemsPerPage
   );
 
   return (
     <div className="col-span-12 xl:col-span-12">
-      {/* <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card"> */}
-      <div className="rounded-[10px] bg-white pr-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <h4 className="mb-5.5 font-medium text-dark dark:text-white"></h4>
-        <div className="grid grid-cols-12">
+      <div className="rounded-[10px] bg-white pr-0 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <div className="flex justify-between items-center px-7.5 pt-7.5 mb-4">
+          <h4 className="font-medium text-dark dark:text-white"></h4>
+          
+          {/* Komponen Pencarian */}
+          <SearchBar 
+            searchTerm={searchTerm} 
+            onSearchChange={setSearchTerm}
+            placeholder="Cari pengirim atau isi..."
+          />
+        </div>
+        
+        <div className="grid grid-cols-12 border-t border-gray-200">
           {/* Daftar Pesan */}
-          {/* <div className="col-span-12 xl:col-span-6 border-r border-gray-200"> */}
           <div className="col-span-12 border-r border-gray-200 xl:col-span-2">
             <MessageList
               messages={paginatedMessages}
               activeMessage={activeMessage}
               onMessageSelect={setActiveMessage}
+              isSearching={searchTerm.length > 0}
+              noResults={filteredMessages.length === 0}
+              searchTerm={searchTerm}
             />
           </div>
 
           {/* Detail Pesan */}
           <div className="col-span-12 xl:col-span-6">
-            <MessageDetail message={activeMessage} />
+            {activeMessage && filteredMessages.length > 0 ? (
+              <MessageDetail message={activeMessage} />
+            ) : filteredMessages.length === 0 && searchTerm ? (
+              <div className="flex h-full items-center justify-center p-8 text-gray-500">
+                Pilih pesan untuk melihat detailnya
+              </div>
+            ) : (
+              <MessageDetail message={activeMessage} />
+            )}
           </div>
         </div>
         
-        <div className="my-4 border-t pb-4 pl-7.5">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-          />
-        </div>
+        {filteredMessages.length > 0 && (
+          <div className="my-4 border-t pb-4 pl-7.5">
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -15,88 +15,124 @@ const formatDate = (date: Date): string => {
   });
 };
 
-const validationUploadUraianData: ValidationUploadUraian[] = [
+// Menambahkan status pada interface ValidationUploadUraian
+interface EnhancedValidationUploadUraian extends ValidationUploadUraian {
+  status: 'Proses' | 'Ditolak' | 'Diterima';
+}
+
+// Data dengan status ditambahkan
+const validationUploadUraianData: EnhancedValidationUploadUraian[] = [
   {
     skpd: "Dinas Sosial",
     uraian: "Bantuan pangan untuk warga terdampak bencana",
     tanggal: new Date("2024-08-21T10:00:00Z"),
+    status: "Proses"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Program pemberdayaan ekonomi warga miskin",
     tanggal: new Date("2024-09-14T11:30:00Z"),
+    status: "Diterima"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Penyaluran bantuan subsidi pendidikan",
     tanggal: new Date("2024-07-03T09:45:00Z"),
+    status: "Ditolak"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Rehabilitasi rumah tidak layak huni",
     tanggal: new Date("2024-06-18T15:00:00Z"),
+    status: "Proses"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Pelatihan keterampilan untuk penyandang disabilitas",
     tanggal: new Date("2024-11-05T14:20:00Z"),
+    status: "Diterima"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Program bantuan sosial tunai",
     tanggal: new Date("2024-12-19T16:45:00Z"),
+    status: "Ditolak"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Pembagian bantuan sembako untuk lansia",
     tanggal: new Date("2024-05-10T13:00:00Z"),
+    status: "Proses"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Kegiatan pemberdayaan komunitas adat terpencil",
     tanggal: new Date("2024-10-28T08:15:00Z"),
+    status: "Diterima"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Pelatihan keterampilan untuk penyandang disabilitas",
     tanggal: new Date("2024-11-05T14:20:00Z"),
+    status: "Ditolak"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Program bantuan sosial tunai",
     tanggal: new Date("2024-12-19T16:45:00Z"),
+    status: "Proses"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Pembagian bantuan sembako untuk lansia",
     tanggal: new Date("2024-05-10T13:00:00Z"),
+    status: "Diterima"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Kegiatan pemberdayaan komunitas adat terpencil",
     tanggal: new Date("2024-10-28T08:15:00Z"),
+    status: "Ditolak"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Pelatihan keterampilan untuk penyandang disabilitas",
     tanggal: new Date("2024-11-05T14:20:00Z"),
+    status: "Proses"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Program bantuan sosial tunai",
     tanggal: new Date("2024-12-19T16:45:00Z"),
+    status: "Diterima"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Pembagian bantuan sembako untuk lansia",
     tanggal: new Date("2024-05-10T13:00:00Z"),
+    status: "Ditolak"
   },
   {
     skpd: "Dinas Sosial",
     uraian: "Kegiatan pemberdayaan komunitas adat terpencil",
     tanggal: new Date("2024-10-28T08:15:00Z"),
+    status: "Proses"
   },
 ];
+
+// Mendapatkan warna sesuai status
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Proses':
+      return 'bg-yellow-100 text-yellow-800'; // Warna kuning untuk Proses
+    case 'Ditolak':
+      return 'bg-red-100 text-red-800'; // Warna merah untuk Ditolak
+    case 'Diterima':
+      return 'bg-green-100 text-green-800'; // Warna hijau untuk Diterima
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 const ValidationUploadTable = () => {
   const [checkedItems, setCheckedItems] = useState<boolean[]>(
@@ -213,7 +249,7 @@ const ValidationUploadTable = () => {
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2 ">
+              <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2">
                 <th className="px-4 py-4 xl:pl-7.5">
                   <input
                     type="checkbox"
@@ -221,11 +257,14 @@ const ValidationUploadTable = () => {
                     onChange={handleSelectAll}
                   />
                 </th>
-                <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white ">
+                <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white">
                   Uraian
                 </th>
                 <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                   Tanggal Upload
+                </th>
+                <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white text-center">
+                  Status
                 </th>
                 <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Actions
@@ -251,7 +290,7 @@ const ValidationUploadTable = () => {
                   <td
                     className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
                   >
-                    <p className="text-dark dark:text-white">{userItem.skpd}</p>
+                    <p className="text-dark dark:text-white">{userItem.uraian}</p>
                   </td>
                   <td
                     className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
@@ -259,6 +298,15 @@ const ValidationUploadTable = () => {
                     <p className="text-dark dark:text-white">
                       {formatDate(new Date(userItem.tanggal))}
                     </p>
+                  </td>
+                  <td
+                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"} text-center`}
+                  >
+                    <div className="flex justify-center">
+                      <span className={`px-2.5 py-1 text-xs font-medium rounded-full ${getStatusColor(userItem.status)}`}>
+                        {userItem.status}
+                      </span>
+                    </div>
                   </td>
                   <td
                     className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}

@@ -2,21 +2,37 @@
 import { useState } from "react";
 import { ValidationUpload } from "@/types/validationUpload";
 import Pagination from "../pagination/Pagination";
-import { HiOutlineArrowTopRightOnSquare} from "react-icons/hi2";
+import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 
-const validationUpload: ValidationUpload[] = [
-  { skpd: "Dinas Pendidikan", belumValidasi: 1 },
-  { skpd: "Dinas Kesehatan", belumValidasi: 3 },
-  { skpd: "Dinas Pertanian", belumValidasi: 5 },
-  { skpd: "Dinas Kelautan", belumValidasi: 0 },
-  { skpd: "Dinas Kesejahteraan", belumValidasi: 1 },
-  { skpd: "Dinas Politik", belumValidasi: 4 },
-  { skpd: "Dinas Pertahanan", belumValidasi: 1 },
-  { skpd: "Dinas Keuangan", belumValidasi: 5 },
+// Tambahkan properti status pada tipe ValidationUpload
+interface EnhancedValidationUpload extends ValidationUpload {
+  status: 'Proses' | 'Tolak' | 'Diterima';
+}
+
+const validationUpload: EnhancedValidationUpload[] = [
+  { skpd: "Dinas Pendidikan", belumValidasi: 1, status: "Proses" },
+  { skpd: "Dinas Kesehatan", belumValidasi: 3, status: "Diterima" },
+  { skpd: "Dinas Pertanian", belumValidasi: 5, status: "Tolak" },
+  { skpd: "Dinas Kelautan", belumValidasi: 0, status: "Diterima" },
+  { skpd: "Dinas Kesejahteraan", belumValidasi: 1, status: "Proses" },
+  { skpd: "Dinas Politik", belumValidasi: 4, status: "Tolak" },
+  { skpd: "Dinas Pertahanan", belumValidasi: 1, status: "Proses" },
+  { skpd: "Dinas Keuangan", belumValidasi: 5, status: "Diterima" },
 ];
 
-const itemsPerPage = 5;
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'Proses':
+      return 'bg-yellow-100 text-yellow-800'; // Warna kuning untuk Proses
+    case 'Tolak':
+      return 'bg-red-100 text-red-800'; // Warna merah untuk Tolak
+    case 'Diterima':
+      return 'bg-green-100 text-green-800'; // Warna hijau untuk Diterima
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
 
 const MainPage = () => {
   const router = useRouter();
@@ -50,8 +66,11 @@ const MainPage = () => {
                 <th className="px-2 py-4 text-left font-medium text-dark dark:bg-gray-dark xl:pl-7.5">
                   SKPD
                 </th>
-                <th className="px-4 py-4 pb-3.5 font-medium text-dark">
+                <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
                   Belum di validasi
+                </th>
+                <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
+                  Status
                 </th>
                 <th className="px-4 py-4 pb-3.5 text-right font-medium text-dark xl:pr-7.5">
                   Actions
@@ -82,6 +101,14 @@ const MainPage = () => {
                       <div className="pl-1 capitalize text-dark dark:text-white">
                         {brand.belumValidasi}
                       </div>
+                    </div>
+                  </td>
+
+                  <td className="px-3 py-4">
+                    <div className="flex items-center justify-center">
+                      <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(brand.status)}`}>
+                        {brand.status}
+                      </span>
                     </div>
                   </td>
 
