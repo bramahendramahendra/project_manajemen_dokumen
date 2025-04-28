@@ -37,6 +37,7 @@ const SectionRight = () => {
     fetchCaptcha();
   }, []);
 
+
   const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -45,17 +46,15 @@ const SectionRight = () => {
       return;
     }
     try {
-        const payload = {
-          username: username,
-          password: password,
-          captcha_id: captchaID,
-          captcha: captchaInput,
-        };
-        const response = await loginRequest("/auths/login", "POST", payload);
-        const data = await response.json();
-        // console.log(data);
-        
-
+      const payload = {
+        username: username,
+        password: password,
+        captcha_id: captchaID,
+        captcha: captchaInput,
+      };
+      const response = await loginRequest("/auths/login", "POST", payload);
+      const data = await response.json();
+  
       if (response.ok && data.responseCode === 200) {
         localStorage.setItem("hasVisited", "true");
         Cookies.set("token", data.responseData.token, { expires: 7 });
@@ -63,11 +62,49 @@ const SectionRight = () => {
         router.push("/dashboard");
       } else {
         setErrorMessage(data.responseDesc || "Login failed. Please try again.");
+        // Reset captcha input dan refresh captcha baru saat login gagal
+        setCaptchaInput("");
+        fetchCaptcha();
       }
     } catch (error) {
       setErrorMessage("An error occurred. Please try again later.");
+      // Reset captcha input dan refresh captcha baru jika terjadi error
+      setCaptchaInput("");
+      fetchCaptcha();
     }
   };
+  
+  // const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   setErrorMessage(null);
+  //   if (!captchaInput) {
+  //     setErrorMessage("Captcha is required");
+  //     return;
+  //   }
+  //   try {
+  //       const payload = {
+  //         username: username,
+  //         password: password,
+  //         captcha_id: captchaID,
+  //         captcha: captchaInput,
+  //       };
+  //       const response = await loginRequest("/auths/login", "POST", payload);
+  //       const data = await response.json();
+  //       // console.log(data);
+        
+
+  //     if (response.ok && data.responseCode === 200) {
+  //       localStorage.setItem("hasVisited", "true");
+  //       Cookies.set("token", data.responseData.token, { expires: 7 });
+  //       Cookies.set("user", JSON.stringify(data.responseData.user), { expires: 7 });
+  //       router.push("/dashboard");
+  //     } else {
+  //       setErrorMessage(data.responseDesc || "Login failed. Please try again.");
+  //     }
+  //   } catch (error) {
+  //     setErrorMessage("An error occurred. Please try again later.");
+  //   }
+  // };
 
   // Fungsi Bypass Login
   // const handleBypassLogin = () => {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import { FaUser, FaEnvelope, FaBuilding, FaUserTie, FaShieldAlt, FaCheck } from 'react-icons/fa';
 
 const FormDetailUser = ({ user }: { user?: any }) => {
   const [firstName, setFirstName] = useState('');
@@ -9,43 +10,39 @@ const FormDetailUser = ({ user }: { user?: any }) => {
   const [departmentName, setDepartmentName] = useState('');
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [accessUser, setAccessUser] = useState('');
-  const [password, setPassword] = useState('');
-
-  const [isDefaultPassword, setIsDefaultPassword] = useState(false);
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
 
-   useEffect(() => {
-      const fetchRoles = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-          const response = await apiRequest("/user_roles/", "GET");
-          if (!response.ok) {
-            if (response.status === 404) {
-              throw new Error("Roles data not found");
-            }
-            throw new Error(`HTTP error! status: ${response.status}`);
+  useEffect(() => {
+    const fetchRoles = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest("/user_roles/", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Roles data not found");
           }
-          const result = await response.json();
-  
-          const fetchedRoles = result.responseData.items.map((item: any) => ({
-            level_id: item.level_id,
-            role: item.role,
-          }));
-  
-          setRoles(fetchedRoles);
-        } catch (err: any) {
-          setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
-        } finally {
-          setLoading(false);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      };
-  
-      fetchRoles();
-    }, []);
+        const result = await response.json();
+
+        const fetchedRoles = result.responseData.items.map((item: any) => ({
+          level_id: item.level_id,
+          role: item.role,
+        }));
+
+        setRoles(fetchedRoles);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoles();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -59,177 +56,163 @@ const FormDetailUser = ({ user }: { user?: any }) => {
     }
   }, [user]);
 
-  const handleCheckboxChange = () => {
-    setIsDefaultPassword(!isDefaultPassword);
-    setPassword(!isDefaultPassword ? 'm@nAj3mendokumen' : '');
+  // Mendapatkan nama role dari level_id
+  const getRoleName = (levelId: string) => {
+    const role = roles.find(r => r.level_id === levelId);
+    return role ? role.role : 'Unknown Role';
   };
 
+  // Dummy user permissions for visual demo
+  const userPermissions = [
+    "Pengelolaan Data",
+    "Validasi Dokumen",
+    "Upload Dokumen",
+    "Melihat Laporan",
+    "Akses Dashboard"
+  ];
+
   return (
-    <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-      {/* <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-        Untuk Edit User, silahkan edit berdasarkan form dibawah ini
-      </h4> */}
-      <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-        <form action="#">
-          <div className="p-6.5">
-            <div className="mb-4.5 flex flex-col gap-4.5 xl:flex-row">
-              {/* Nama Depan */}
-              <div className="w-full xl:w-1/2">
-                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                  Nama Depan
-                </label>
-                <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Enter your first name"
-                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                  required
-                  disabled
-                />
-              </div>
-              {/* Nama Belakang */}
-              <div className="w-full xl:w-1/2">
-                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                  Nama Belakang
-                </label>
-                <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Enter your last name"
-                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                  required
-                  disabled
-                />
-              </div>
-            </div>
-            {/* Username */}
-            <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Username
-              </label>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your Username"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                required
-                disabled
-              />
-            </div>
-            {/* Email */}
-            <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                required
-                disabled
-              />
-            </div>
-            {/* Nama Dinas */}
-            <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Nama Dinas
-              </label>
-              <input
-                type="text"
-                value={departmentName}
-                onChange={(e) => setDepartmentName(e.target.value)}
-                placeholder="Enter your subject"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                required
-                disabled
-              />
-            </div>
-            {/* Penanggung Jawab */}
-            <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Penanggung Jawab
-              </label>
-              <input
-                type="text"
-                value={responsiblePerson}
-                onChange={(e) => setResponsiblePerson(e.target.value)}
-                placeholder="Enter your subject"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                required
-                disabled
-              />
-            </div>
-            {/* Access User */}
-            <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Access User
-              </label>
-              <select
-                value={accessUser}
-                onChange={(e) => setAccessUser(e.target.value)}
-                // className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
-                required
-                disabled
-              >
-                <option value="" disabled>Pilih Access User</option> 
-                {roles.length > 0 ? (
-                  roles.map((role, index) => (
-                    <option key={index} value={role.level_id}>
-                      {role.role}
-                    </option>
-                  ))
-                ) : (
-                  <option value="all" disabled>Loading roles...</option>
-                )}
-              </select>
-            </div>
-            {/* <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Password
-              </label>
-              <input
-                type="text"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-              />
-              <div className="mt-2 flex items-center">
-                <input
-                  type="checkbox"
-                  id="defaultPassword"
-                  checked={isDefaultPassword}
-                  onChange={handleCheckboxChange}
-                  className="mr-2"
-                />
-                <label
-                  htmlFor="defaultPassword"
-                  className="text-body-sm font-medium text-dark dark:text-white"
-                >
-                  Gunakan password default / reset
-                </label>
-              </div>
-            </div> */}
+    <div className="p-6 bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-md">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-[#0C479F] to-[#1D92F9] bg-clip-text text-transparent">
+          {/* Detail User */}
+        </h2>
+        <div className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-1 rounded-full">
+          <span className="text-white text-sm font-medium">{getRoleName(accessUser)}</span>
+        </div>
+      </div>
 
-            {/* <button 
-              type="submit"
-              className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
-              disabled={loading}
-            >
-              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
-            </button> */}
-
-            {/* Error and Success Messages */}
-            {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">User berhasil ditambahkan!</p>}  
+      <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+        {/* User Profile Header */}
+        <div className="bg-gradient-to-r from-[#0C479F]/5 to-[#1D92F9]/5 p-6 border-b border-gray-100">
+          <div className="flex items-center">
+            <div className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] h-16 w-16 rounded-full flex items-center justify-center text-white text-2xl mr-4">
+              {firstName.charAt(0)}{lastName.charAt(0)}
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-gray-800">{firstName} {lastName}</h3>
+              <p className="text-gray-500">{username}</p>
+            </div>
           </div>
-        </form>
+        </div>
+
+        {/* User Info Content */}
+        <div className="p-6">
+          <h4 className="text-lg font-medium mb-4 text-gray-700">Informasi Pengguna</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#0C479F]/10 p-2 rounded-lg mr-3">
+                    <FaUser className="text-[#0C479F]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Nama Lengkap</p>
+                    <p className="text-gray-800 font-medium">{firstName} {lastName}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
+                    <FaEnvelope className="text-[#1D92F9]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Email</p>
+                    <p className="text-gray-800 font-medium">{email}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#0C479F]/10 p-2 rounded-lg mr-3">
+                    <FaBuilding className="text-[#0C479F]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Nama Dinas</p>
+                    <p className="text-gray-800 font-medium">{departmentName}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
+                    <FaUser className="text-[#1D92F9]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Username</p>
+                    <p className="text-gray-800 font-medium">{username}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#0C479F]/10 p-2 rounded-lg mr-3">
+                    <FaUserTie className="text-[#0C479F]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Penanggung Jawab</p>
+                    <p className="text-gray-800 font-medium">{responsiblePerson}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
+                    <FaShieldAlt className="text-[#1D92F9]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Role</p>
+                    <p className="text-gray-800 font-medium">{getRoleName(accessUser)}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* User Permissions */}
+        <div className="p-6 border-t border-gray-100 bg-gradient-to-r from-[#0C479F]/5 to-[#1D92F9]/5">
+          <h4 className="text-lg font-medium mb-4 text-gray-700">Akses & Hak Istimewa</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {userPermissions.map((permission, index) => (
+              <div key={index} className="bg-white bg-opacity-70 backdrop-blur-sm rounded-lg p-3 flex items-center">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-[#0C479F] to-[#1D92F9] flex items-center justify-center mr-3">
+                  <FaCheck className="text-white text-xs" />
+                </div>
+                <span className="text-gray-700">{permission}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Activity Summary - Optional */}
+      <div className="mt-6 bg-white rounded-xl border border-gray-100 p-6">
+        <h4 className="text-lg font-medium mb-4 text-gray-700">Ringkasan Aktivitas</h4>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-gray-50 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-[#0C479F]">23</p>
+            <p className="text-sm text-gray-500">Dokumen Diupload</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-[#1D92F9]">18</p>
+            <p className="text-sm text-gray-500">Dokumen Divalidasi</p>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4 text-center">
+            <p className="text-3xl font-bold text-[#0C479F]">5</p>
+            <p className="text-sm text-gray-500">Hari Terakhir Login</p>
+          </div>
+        </div>
       </div>
     </div>
   );
