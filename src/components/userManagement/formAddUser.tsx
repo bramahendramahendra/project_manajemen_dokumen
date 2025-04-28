@@ -10,7 +10,7 @@ const FormAddUser = () => {
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [departmentName, setDepartmentName] = useState('');
+  const [department, setDepartment] = useState<number>(0);
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [accessUser, setAccessUser] = useState('');
   const [password, setPassword] = useState('');
@@ -91,14 +91,14 @@ const FormAddUser = () => {
     setSuccess(false);
 
     // const selectedDepartment = optionOfficials.find((opt) => opt.id === departmentName);
-    const selectedDepartment = optionOfficials.find((opt) => String(opt.id) === String(departmentName));
+    const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
 
     const payload = {
       firstname: firstName,
       lastname: lastName,
       username: username,
       email,
-      department_id: departmentName,
+      department_id: department,
       department_name: selectedDepartment?.dinas || "",
       responsible_person: responsiblePerson,
       level_id: accessUser,
@@ -114,7 +114,7 @@ const FormAddUser = () => {
         setLastName('');
         setUsername('');
         setEmail('');
-        setDepartmentName('');
+        setDepartment(0);
         setResponsiblePerson('');
         setAccessUser('');
         setPassword('');
@@ -200,12 +200,12 @@ const FormAddUser = () => {
                 Nama Dinas
               </label>
               <select
-                value={departmentName}
-                onChange={(e) => setDepartmentName(e.target.value)}
+                value={department}
+                onChange={(e) => setDepartment(Number(e.target.value))}
                 className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               >
-                <option value="" disabled>Pilih Dinas</option> 
+                <option value={0} disabled>Pilih Dinas</option> 
                 {optionOfficials.length > 0 ? (
                   optionOfficials.map((option, index) => (
                     <option key={index} value={option.id}>

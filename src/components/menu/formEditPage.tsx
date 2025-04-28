@@ -1,3 +1,4 @@
+"use client";
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import { Jenis, Status } from "@/utils/enums";

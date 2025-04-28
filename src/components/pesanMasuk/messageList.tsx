@@ -45,7 +45,7 @@ export const MessageList: React.FC<MessageListProps> = ({
             />
           </svg>
           <p className="text-sm font-medium">Tidak ada hasil untuk</p>
-          <p className="mt-1 text-base font-semibold">"{searchTerm}"</p>
+          <p className="mt-1 text-base font-semibold">&quot;{searchTerm}&quot;</p>
           <p className="mt-4 text-xs text-gray-500">
             Coba cari dengan kata kunci lain
           </p>

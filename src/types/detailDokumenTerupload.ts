@@ -5,7 +5,13 @@ export type DetailDokumenTerupload = {
 };
 
 export interface DokumenPerTahun {
+    id?: number;
     uraian: string;
     tahun: number;
     data: string;
+}
+
+export interface FilterDokumenPerTahun {
+    typeID: number;
+    uraian: string;
 }

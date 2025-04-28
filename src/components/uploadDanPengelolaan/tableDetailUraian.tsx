@@ -1,22 +1,29 @@
 import { useEffect, useState } from "react";
 import ElemenComboboxDetailUraian from "../elements/ElemenComboboxDetailUraian";
-import { DokumenPerTahun } from "@/types/detailDokumenTerupload";
+import { DokumenPerTahun, FilterDokumenPerTahun  } from "@/types/detailDokumenTerupload";
 
 interface TableDetailUraianProps {
   dokumenPerTahun: DokumenPerTahun[];
   detailUraian: string;
+  filterList: FilterDokumenPerTahun[];
+  onSelectUraian: (uraian: string) => void;
 }
 
 const TableDetailUraian = ({
   dokumenPerTahun,
   detailUraian,
+  filterList,
+  onSelectUraian,
 }: TableDetailUraianProps) => {
+    console.log( filterList);
+
   const [filteredData, setFilteredData] = useState<DokumenPerTahun[]>([]);
   const [years, setYears] = useState<number[]>([]);
   const [selectedUraian, setSelectedUraian] = useState(detailUraian);
 
   const handleSelectUraian = (uraian: string) => {
     setSelectedUraian(uraian);
+    onSelectUraian(uraian);
   };
 
   useEffect(() => {
@@ -36,7 +43,9 @@ const TableDetailUraian = ({
     <div className="col-span-12 xl:col-span-6">
       <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <ElemenComboboxDetailUraian
-          dokumenPerTahun={dokumenPerTahun}
+          // dokumenPerTahun={dokumenPerTahun}
+          dokumenPerTahun={filterList}
+          selectedUraian={selectedUraian}
           onSelectUraian={handleSelectUraian}
         />
         <div className="mt-4 w-full overflow-x-auto">
