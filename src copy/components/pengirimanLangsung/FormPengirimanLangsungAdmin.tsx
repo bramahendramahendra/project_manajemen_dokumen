@@ -1,0 +1,226 @@
+import React, { useState } from "react";
+
+const people = [
+  { id: 1, name: "DPA" },
+  { id: 2, name: "RKA" },
+  { id: 3, name: "Anggaran Kas" },
+  { id: 4, name: "Laporan Tahunan" },
+  { id: 5, name: "Budget Proposal" },
+  { id: 6, name: "DPA" },
+  { id: 7, name: "RKA" },
+  { id: 8, name: "Anggaran Kas" },
+  { id: 9, name: "Laporan Tahunan" },
+  { id: 10, name: "Budget Proposal" },
+  { id: 11, name: "Dokumen Ekstra" },
+  { id: 12, name: "Anggaran Baru" },
+];
+
+const FormPengirimanLangsungAdmin = () => {
+  const [searchTerm, setSearchTerm] = useState<string>(""); // Untuk pencarian
+  const [showAll, setShowAll] = useState<boolean>(false); // Untuk mengatur apakah semua data ditampilkan
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]); // Dokumen yang dipilih
+
+  // Filter dokumen berdasarkan pencarian
+  const filteredPeople = people.filter((person) =>
+    person.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  // Tentukan jumlah data yang ditampilkan
+  const displayedPeople = showAll
+    ? filteredPeople
+    : filteredPeople.slice(0, 10);
+
+  // Handle perubahan checkbox
+  const handleCheckboxChange = (personName: string, isChecked: boolean) => {
+    if (isChecked) {
+      setSelectedDocuments((prev) => [...prev, personName]);
+    } else {
+      setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+    }
+  };
+
+  // Handle hapus dokumen
+  const handleRemoveDocument = (personName: string) => {
+    setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+  };
+
+  return (
+    <>
+      <div className="col-span-12 xl:col-span-12">
+        <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
+          <h4 className="mb-5.5 font-medium text-dark dark:text-white">
+            Pengiriman dokumen secara langsung pada Admin
+          </h4>
+          <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
+            <form>
+              <div className="grid grid-cols-12 gap-6 p-6.5">
+                {/* Kolom Kiri */}
+                <div className="col-span-12 lg:col-span-6">
+                  {/* Dokumen Yang Dipilih */}
+
+                  {/* Kepada Dinas */}
+                  <div className="mb-4.5">
+                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                      Kepada Admin
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Masukkan Nama Dinas..."
+                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                      required
+                    />
+                  </div>
+
+                  {/* Judul */}
+                  <div className="mb-4.5">
+                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                      Judul
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Masukkan Nama Judul..."
+                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-4.5">
+                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                      Dokumen Yang Dipilih
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedDocuments.map((doc, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center space-x-2 rounded-md bg-gray-100 px-3 py-2 shadow-sm dark:bg-gray-700"
+                        >
+                          <span className="text-sm text-gray-700 dark:text-white">
+                            {doc}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDocument(doc)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth="1.5"
+                              stroke="currentColor"
+                              className="h-4 w-4"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                      {selectedDocuments.length === 0 && (
+                        <span className="text-gray-500 dark:text-gray-400">
+                          Belum ada dokumen yang dipilih.
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lampiran */}
+                  <div className="mb-4.5">
+                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                      Lampiran (opsional)
+                    </label>
+                    <textarea
+                      rows={6}
+                      placeholder="Isi Lampiran..."
+                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                    ></textarea>
+                  </div>
+
+                  {/* Tombol Kirim */}
+                  <div className="mt-6">
+                    <button
+                      type="button"
+                      className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                      Kirim
+                    </button>
+                  </div>
+                </div>
+
+                {/* Kolom Kanan */}
+                <div className="col-span-12 lg:col-span-6">
+                  <div className="mb-4.5">
+                    <div className="flex items-center justify-between">
+                      <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                        Dokumen
+                      </label>
+                      {/* Input Pencarian */}
+                      <input
+                        type="text"
+                        placeholder="Cari dokumen..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-[200px] rounded-[7px] bg-transparent px-5 py-2 text-dark ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white"
+                      />
+                    </div>
+                    <fieldset>
+                      <div className="mt-4 divide-y divide-gray-200 border-b border-t border-gray-200">
+                        {displayedPeople.map((person) => (
+                          <div
+                            key={person.id}
+                            className="relative flex items-start py-4"
+                          >
+                            <div className="min-w-0 flex-1 text-[12px]">
+                              <label
+                                htmlFor={`person-${person.id}`}
+                                className="select-none font-medium text-gray-500"
+                              >
+                                {person.name}
+                              </label>
+                            </div>
+                            <div className="ml-3 flex h-6 items-center">
+                              <input
+                                id={`person-${person.id}`}
+                                name={`person-${person.id}`}
+                                type="checkbox"
+                                checked={selectedDocuments.includes(
+                                  person.name,
+                                )}
+                                onChange={(e) =>
+                                  handleCheckboxChange(
+                                    person.name,
+                                    e.target.checked,
+                                  )
+                                }
+                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                        {filteredPeople.length > 10 && !showAll && (
+                          <div className="py-4 text-center">
+                            <button
+                              onClick={() => setShowAll(true)}
+                              className="text-[#0C479F] hover:underline"
+                            >
+                              Lihat Semua Dokumen
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </fieldset>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default FormPengirimanLangsungAdmin;

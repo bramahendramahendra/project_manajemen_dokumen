@@ -1,18 +1,26 @@
 import { useState, useEffect, useRef } from "react";
 import { HiChevronUp, HiChevronDown } from "react-icons/hi2";
-import { DokumenPerTahun } from "@/types/detailDokumenTerupload";
+import { DokumenPerTahun, FilterDokumenPerTahun } from "@/types/detailDokumenTerupload";
 
 interface ElemenComboboxDetailUraianProps {
-  dokumenPerTahun: DokumenPerTahun[];
+  dokumenPerTahun: FilterDokumenPerTahun[];
+  // dokumenPerTahun: DokumenPerTahun[];
+  selectedUraian: string;
   onSelectUraian: (uraian: string) => void;
 }
 
 const ElemenComboboxDetailUraian = ({
   dokumenPerTahun,
+  selectedUraian,
   onSelectUraian,
 }: ElemenComboboxDetailUraianProps) => {
+
+
+  // console.log( dokumenPerTahun);
+  //   console.log( selectedUraian);
+  
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedUraian, setSelectedUraian] = useState("RKA");
+  // const [selectedUraian, setSelectedUraian] = useState("RKA");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const uniqueUraian = Array.from(
@@ -21,7 +29,7 @@ const ElemenComboboxDetailUraian = ({
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const handleSelect = (item: string) => {
-    setSelectedUraian(item);
+    // setSelectedUraian(item);
     onSelectUraian(item); // Call the parent function to update the selected uraian
     setIsOpen(false);
   };
