@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import { Jenis, Status } from "@/utils/enums";
+import SuccessModalMenu from '../modals/successModalMenu';
 
 const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [loading, setLoading] = useState(false);
@@ -19,6 +20,15 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [status, setStatus] = useState('');
 
   const [inputIcon, setInputIcon] = useState(false);
+  
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState({
+    title: '',
+    message: '',
+    buttonText: '',
+    status: 'success' as 'success' | 'error'
+  });
 
   const options = {
     jenis: [
@@ -47,6 +57,20 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     }
   }, [dataEdit]);
 
+  const closeModal = () => {
+    setModalOpen(false);
+  };
+
+  const handleSuccessButtonClick = () => {
+    setModalOpen(false);
+    // Jika perlu, lakukan navigasi atau tindakan lain setelah sukses
+  };
+
+  const handleFailureButtonClick = () => {
+    setModalOpen(false);
+    // Tetap di halaman yang sama dengan form tetap terisi
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -74,8 +98,27 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       }
 
       setSuccess(true);
+      
+      // Tampilkan modal sukses
+      setModalData({
+        title: 'Perubahan Berhasil Disimpan!',
+        message: 'Data menu telah berhasil diperbarui.',
+        buttonText: 'Kembali',
+        status: 'success'
+      });
+      setModalOpen(true);
+      
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat mengirim data');
+      
+      // Tampilkan modal error
+      setModalData({
+        title: 'Gagal Menyimpan Perubahan!',
+        message: error.message || 'Terjadi kesalahan saat menyimpan perubahan.',
+        buttonText: 'Coba Lagi',
+        status: 'error'
+      });
+      setModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -249,16 +292,22 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Update User */}
-              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
+              {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
-
-            {/* Error and Success Messages */}
-            {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">User berhasil update!</p>}  
           </div>
         </form>
       </div>
+      
+      {/* Modal */}
+      <SuccessModalMenu
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={modalData.title}
+        message={modalData.message}
+        buttonText={modalData.buttonText}
+        onButtonClick={modalData.status === 'success' ? handleSuccessButtonClick : handleFailureButtonClick}
+        status={modalData.status}
+      />
     </div>
   );
 };
