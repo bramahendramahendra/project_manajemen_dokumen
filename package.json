@@ -17,6 +17,8 @@
     "crypto-js": "^4.2.0",
     "framer-motion": "^11.3.30",
     "js-cookie": "^3.0.5",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
     "next": "^14.2.7",
     "next-session": "^4.0.5",
     "react": "^18",

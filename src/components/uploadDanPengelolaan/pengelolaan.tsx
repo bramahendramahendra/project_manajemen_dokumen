@@ -27,7 +27,7 @@ import { DokumenTerupload } from "@/types/dokumenTerupload";
 
 const PengelolaanDokumen = () => {
   const router = useRouter();
-   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const [dataList, setDataList] = useState<DokumenTerupload[]>([]);
@@ -65,7 +65,7 @@ const PengelolaanDokumen = () => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const token = Cookies.get("token");
     if (!token) return alert("Token tidak ditemukan!");
-     const encrypted = encryptObject({ typeID, uraian }, token);
+    const encrypted = encryptObject({ typeID, uraian }, token);
 
     // Ganti spasi dengan tanda hubung untuk URL-friendly
     const formattedUraian = uraian.replace(/\s+/g, "-").toLowerCase();

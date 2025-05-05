@@ -1,31 +1,37 @@
 import { useState, useEffect, useRef } from "react";
 import { HiChevronUp, HiChevronDown } from "react-icons/hi2";
-import { DokumenPerTahun } from "@/types/detailDokumenTerupload";
+
+interface FilterDokumenPerTahun {
+  typeID: number;
+  uraian: string;
+}
 
 interface ElemenComboboxDetailUraianProps {
-  dokumenPerTahun: DokumenPerTahun[];
+  dokumenPerTahun: FilterDokumenPerTahun[];
+  selectedUraian: string;
   onSelectUraian: (uraian: string) => void;
 }
 
 const ElemenComboboxDetailUraianLaporan = ({
   dokumenPerTahun,
+  selectedUraian,
   onSelectUraian,
 }: ElemenComboboxDetailUraianProps) => {
+
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedUraian, setSelectedUraian] = useState("Semua");
+  // const [selectedUraian, setSelectedUraian] = useState("Semua");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Ambil daftar uraian unik selain "Semua" dan urutkan
-  const uniqueUraian = [
-    "Semua",
-    ...Array.from(new Set(dokumenPerTahun.map((dokumen) => dokumen.uraian))).sort((a, b) =>
-      a.localeCompare(b)
-    ),
-  ];
+  const rawUraian = dokumenPerTahun
+  .map((dokumen) => dokumen.uraian)
+  .filter((uraian): uraian is string => typeof uraian === "string" && uraian.trim() !== "");
+
+const cleanedUraian = Array.from(new Set(rawUraian)).filter((u) => u.toLowerCase() !== "semua");
+const uniqueUraian = ["Semua", ...cleanedUraian.sort((a, b) => a.localeCompare(b))];
 
   const toggleDropdown = () => setIsOpen(!isOpen);
   const handleSelect = (item: string) => {
-    setSelectedUraian(item);
+    // setSelectedUraian(item);
     onSelectUraian(item);
     setIsOpen(false);
   };

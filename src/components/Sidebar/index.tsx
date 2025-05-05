@@ -69,12 +69,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             .sort((a: any, b: any) => parseInt(a.urutan) - parseInt(b.urutan))
             .map((child: any) => ({
               label: child.menu,
+              pro: child.pro,
+              // message: 1,
               route: child.url || "#",
               icon: iconMap[child.icon] || null,
             }));
 
           return {
             label: item.menu,
+            pro: item.pro,
+            // message: 1,
             route: item.url || "#",
             icon: iconMap[item.icon] || null,
             ...(children.length > 0 ? { children } : {}),

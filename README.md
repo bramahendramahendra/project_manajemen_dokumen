@@ -69,3 +69,16 @@ npm install crypto-js
 npm i --save-dev @types/crypto-js
 ```
 
+## Install Print PDF
+
+berbentuk capture diubah ke pdf
+```bash
+npm install jspdf html2canvas
+```
+
+berbentuk tulisan diubah ke pdf
+```bash
+npm install jspdf jspdf-autotable
+```
+
+

@@ -1,107 +1,133 @@
 "use client";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import TableDetailUraianLaporan from "./tableDetailUraianLaporan";
+import Cookies from "js-cookie";
+import { apiRequest } from "@/helpers/apiClient";
+import { decryptObject } from "@/utils/crypto";
+import { useState, useEffect } from "react";
 
+interface FilterDokumenPerTahun {
+  // dinasID: number;
+  typeID: number;
+  uraian: string;
+}
 interface DokumenPerTahun {
+  id: number;
   uraian: string;
   tahun: number;
   data: string;
 }
 
-const dokumenPerTahun: DokumenPerTahun[] = [
-  { uraian: "DPA", tahun: 2023, data: "Data DPA for 2023" },
-  { uraian: "RKA", tahun: 2021, data: "Data RKA for 2021" },
-  { uraian: "Anggaran Kas", tahun: 2024, data: "Data Anggaran Kas for 2024" },
-  {
-    uraian: "Laporan Realisasi",
-    tahun: 2022,
-    data: "Data Laporan Realisasi for 2022",
-  },
-  { uraian: "Nota Keuangan", tahun: 2023, data: "Data Nota Keuangan for 2023" },
-  {
-    uraian: "Rencana Anggaran Biaya",
-    tahun: 2024,
-    data: "Data Rencana Anggaran Biaya for 2024",
-  },
-  {
-    uraian: "Surat Pertanggungjawaban",
-    tahun: 2021,
-    data: "Data Surat Pertanggungjawaban for 2021",
-  },
-  {
-    uraian: "Dokumen Pendukung",
-    tahun: 2022,
-    data: "Data Dokumen Pendukung for 2022",
-  },
-  { uraian: "DPA", tahun: 2024, data: "Data DPA for 2024" },
-  { uraian: "RKA", tahun: 2022, data: "Data RKA for 2022" },
-  { uraian: "Anggaran Kas", tahun: 2023, data: "Data Anggaran Kas for 2023" },
-  {
-    uraian: "Laporan Realisasi",
-    tahun: 2021,
-    data: "Data Laporan Realisasi for 2021",
-  },
-  { uraian: "Nota Keuangan", tahun: 2024, data: "Data Nota Keuangan for 2024" },
-  {
-    uraian: "Rencana Anggaran Biaya",
-    tahun: 2022,
-    data: "Data Rencana Anggaran Biaya for 2022",
-  },
-  {
-    uraian: "Surat Pertanggungjawaban",
-    tahun: 2023,
-    data: "Data Surat Pertanggungjawaban for 2023",
-  },
-  {
-    uraian: "Dokumen Pendukung",
-    tahun: 2021,
-    data: "Data Dokumen Pendukung for 2021",
-  },
-  { uraian: "DPA", tahun: 2021, data: "Data DPA for 2021" },
-  { uraian: "RKA", tahun: 2024, data: "Data RKA for 2024" },
-  { uraian: "Anggaran Kas", tahun: 2022, data: "Data Anggaran Kas for 2022" },
-  {
-    uraian: "Laporan Realisasi",
-    tahun: 2023,
-    data: "Data Laporan Realisasi for 2023",
-  },
-  { uraian: "Nota Keuangan", tahun: 2021, data: "Data Nota Keuangan for 2021" },
-  {
-    uraian: "Rencana Anggaran Biaya",
-    tahun: 2023,
-    data: "Data Rencana Anggaran Biaya for 2023",
-  },
-  {
-    uraian: "Surat Pertanggungjawaban",
-    tahun: 2024,
-    data: "Data Surat Pertanggungjawaban for 2024",
-  },
-  {
-    uraian: "Dokumen Pendukung",
-    tahun: 2023,
-    data: "Data Dokumen Pendukung for 2023",
-  },
-  {
-    uraian: "Dokumen Pendukung",
-    tahun: 2025,
-    data: "Data Dokumen Pendukung for 2025",
-  }
-];
-
 const Index = () => {
   const params = useParams();
+  const searchParams = useSearchParams();
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [filterList, setFilterList] = useState<FilterDokumenPerTahun[]>([]);
+  const [selectedUraian, setSelectedUraian] = useState<string>("");
+  const [dataList, setDataList] = useState<DokumenPerTahun[]>([]);
+
+  const key = process.env.NEXT_PUBLIC_APP_KEY;
+  const encrypted = searchParams.get(`${key}`);
+  const token = Cookies.get("token");
+
+  useEffect(() => {
+    const initPage = async () => {
+      try {
+        if (!encrypted || !token) throw new Error("Token atau data tidak tersedia.");
+
+        const result = decryptObject(encrypted, token);
+        if (!result) throw new Error("Gagal dekripsi atau data rusak.");
+
+        const { id: dinasID, nama: namaDinas  } = result;
+        // setSelectedUraian(nama);
+
+        // Fetch filter
+        const filterResponse = await apiRequest(`/reports/document/filter/${dinasID}`, "GET");
+        if (!filterResponse.ok) throw new Error("Gagal fetch filter data");
+        const filterResult = await filterResponse.json();
+
+        const filters: FilterDokumenPerTahun[] = filterResult.responseData.items.map((item: any) => ({
+          typeID: item.type_id,
+          uraian: item.jenis,
+        }));
+        
+        const allFilter = [{ typeID: 0, uraian: "Semua" }, ...filters];
+        setFilterList(allFilter);
+        setSelectedUraian("Semua"); // <--- tambahkan ini
+        await fetchData(dinasID, 0);
+        // await fetchAllData(dinasID);
+      } catch (err: any) {
+        setError(err.message || "Terjadi kesalahan");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initPage();
+  }, [encrypted, token]);
+
+  const fetchData = async (dinasID: number, typeID: number) => {
+    try {
+      setLoading(true);
+
+      const query = typeID === 0 
+        ? `/reports/document/subtype-by-dinas/${dinasID}` 
+        : `/reports/document/subtype-by-jenis/${dinasID}/${typeID}`;
+
+
+      const dataResponse = await apiRequest(query, "GET");
+      if (!dataResponse.ok) throw new Error("Gagal fetch dokumen data");
+      const dataResult = await dataResponse.json();
+
+      const datas: DokumenPerTahun[] = dataResult.responseData.items.map((item: any) => ({
+        id: item.id,
+        // uraian: item.jenis,
+        uraian: item.uraian,
+        tahun: item.tahun,
+        data: item.subjenis,
+      }));
+
+      // console.log(datas);
+      
+      setDataList(datas);
+    } catch (err: any) {
+      setError(err.message || "Terjadi kesalahan");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSelectUraian = async (uraian: string) => {
+    setSelectedUraian(uraian);
+
+    const selectedFilter = filterList.find((item) => item.uraian === uraian);
+    const result = decryptObject(encrypted!, token!);
+    if (!result) throw new Error("Gagal dekripsi atau data rusak.");
+    const idDinas = result.id;
+
+    if (selectedFilter) {
+      await fetchData(idDinas, selectedFilter.typeID);
+    }
+  };
 
   const detailUraian = params?.detailUraian;
   const detailUraianString = Array.isArray(detailUraian)
     ? decodeURIComponent(detailUraian[0])
     : decodeURIComponent(detailUraian || "");
 
-  
 
   return (
     <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
       <div className="col-span-12 xl:col-span-12">
-        <TableDetailUraianLaporan dokumenPerTahun={dokumenPerTahun} />
+        <TableDetailUraianLaporan 
+          dokumenPerTahun={dataList} 
+          detailUraian={selectedUraian}
+          filterList={filterList}
+          onSelectUraian={handleSelectUraian}
+        />
       </div>
     </div>
   );

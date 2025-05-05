@@ -1,41 +1,47 @@
 import { useEffect, useState } from "react";
-import { DokumenPerTahun } from "@/types/detailDokumenTerupload";
 import ElemenComboboxDetailUraianLaporan from "@/components/elements/ElemenComboboxDetailUraianLaporan";
 
-interface TableDetailUraianLaporanProps {
-  dokumenPerTahun: DokumenPerTahun[];
+interface DokumenPerTahun {
+  uraian: string;
+  tahun: number;
+  data: string;
 }
 
-const TableDetailUraianLaporan = ({ dokumenPerTahun }: TableDetailUraianLaporanProps) => {
-  const [sortedData, setSortedData] = useState<DokumenPerTahun[]>([]);
+interface FilterDokumenPerTahun {
+  typeID: number;
+  uraian: string;
+}
+interface TableDetailUraianLaporanProps {
+  dokumenPerTahun: DokumenPerTahun[];
+  detailUraian: string;
+  filterList: FilterDokumenPerTahun[];
+  onSelectUraian: (uraian: string) => void;
+}
+
+const TableDetailUraianLaporan = ({ 
+  dokumenPerTahun,
+  detailUraian,
+  filterList,
+  onSelectUraian,
+}: TableDetailUraianLaporanProps) => {
+  const activeUraian = detailUraian || "Semua";
   const [years, setYears] = useState<number[]>([]);
-  const [selectedUraian, setSelectedUraian] = useState<string>("Semua"); // Default ke "Semua"
 
   useEffect(() => {
-    console.log("Selected Uraian:", selectedUraian); // Debugging nilai selectedUraian
-    // Jika "Semua" dipilih, tampilkan semua data
-    const filteredData =
-      selectedUraian === "Semua"
-        ? dokumenPerTahun
-        : dokumenPerTahun.filter((dokumen) => dokumen.uraian === selectedUraian);
-
-    console.log("Filtered Data:", filteredData); // Debugging data setelah filter
-
-    // Urutkan berdasarkan abjad pada kolom "uraian"
-    const sorted = [...filteredData].sort((a, b) => a.uraian.localeCompare(b.uraian));
-    setSortedData(sorted);
-
-    // Ambil semua tahun unik dan urutkan
-    const uniqueYears = Array.from(new Set(sorted.map((d) => d.tahun))).sort();
+    const uniqueYears = Array.from(
+      new Set(dokumenPerTahun.map((d) => d.tahun)),
+    ).sort();
     setYears(uniqueYears);
-  }, [dokumenPerTahun, selectedUraian]);
+  }, [dokumenPerTahun]);
 
   return (
     <div className="col-span-12 xl:col-span-6">
       <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <ElemenComboboxDetailUraianLaporan
-          dokumenPerTahun={dokumenPerTahun}
-          onSelectUraian={(uraian) => setSelectedUraian(uraian)}
+          dokumenPerTahun={filterList}
+          selectedUraian={activeUraian}
+          onSelectUraian={onSelectUraian}
+          
         />
         <div className="mt-4 w-full overflow-x-auto">
           <table className="w-full table-auto">
@@ -53,10 +59,10 @@ const TableDetailUraianLaporan = ({ dokumenPerTahun }: TableDetailUraianLaporanP
               </tr>
             </thead>
             <tbody>
-              {sortedData.length > 0 ? (
+              {dokumenPerTahun.length > 0 ? (
                 <tr>
                   {years.map((year) => {
-                    const dokumenByYear = sortedData.filter((d) => d.tahun === year);
+                    const dokumenByYear = dokumenPerTahun.filter((d) => d.tahun === year);
                     return (
                       <td
                         key={year}

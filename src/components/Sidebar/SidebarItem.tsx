@@ -36,7 +36,7 @@ const SidebarItem = ({ item, pageName, setPageName }: any) => {
               {item.message}
             </span>
           )}
-          {item.pro && (
+          {item.pro == 1 && (
             <span className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md bg-primary px-1.5 py-px text-[10px] font-medium leading-[17px] text-white">
               Pro
             </span>
