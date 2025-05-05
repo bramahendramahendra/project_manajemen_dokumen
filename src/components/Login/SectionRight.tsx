@@ -17,9 +17,11 @@ const SectionRight = () => {
   const [captchaID, setCaptchaID] = useState<string>("");
   const [captchaURL, setCaptchaURL] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   // Generate CAPTCHA
   const fetchCaptcha = async () => {
+    setIsRefreshing(true);
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API}/auths/generate-captcha`,
@@ -30,13 +32,15 @@ const SectionRight = () => {
       setCaptchaURL(`${process.env.NEXT_PUBLIC_API}${data.captcha_url}`);
     } catch (error) {
       console.error("Error fetching CAPTCHA:", error);
+    } finally {
+      // Tambahkan delay kecil untuk efek visual
+      setTimeout(() => setIsRefreshing(false), 800);
     }
   };
 
   useEffect(() => {
     fetchCaptcha();
   }, []);
-
 
   const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,51 +77,12 @@ const SectionRight = () => {
       fetchCaptcha();
     }
   };
-  
-  // const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault();
-  //   setErrorMessage(null);
-  //   if (!captchaInput) {
-  //     setErrorMessage("Captcha is required");
-  //     return;
-  //   }
-  //   try {
-  //       const payload = {
-  //         username: username,
-  //         password: password,
-  //         captcha_id: captchaID,
-  //         captcha: captchaInput,
-  //       };
-  //       const response = await loginRequest("/auths/login", "POST", payload);
-  //       const data = await response.json();
-  //       // console.log(data);
-        
-
-  //     if (response.ok && data.responseCode === 200) {
-  //       localStorage.setItem("hasVisited", "true");
-  //       Cookies.set("token", data.responseData.token, { expires: 7 });
-  //       Cookies.set("user", JSON.stringify(data.responseData.user), { expires: 7 });
-  //       router.push("/dashboard");
-  //     } else {
-  //       setErrorMessage(data.responseDesc || "Login failed. Please try again.");
-  //     }
-  //   } catch (error) {
-  //     setErrorMessage("An error occurred. Please try again later.");
-  //   }
-  // };
-
-  // Fungsi Bypass Login
-  // const handleBypassLogin = () => {
-  //   Cookies.set("token", "bypassToken", { expires: 7 }); // Simpan token manual
-  //   router.push("/dashboard"); // Redirect langsung ke dashboard
-  // };
 
   return (
     <>
       <div className="block sm:hidden md:block">
         <div className="relative z-[2] flex h-screen flex-col items-center justify-center px-12 lg:px-[100px] xl:px-[120px] 2xl:px-[150px]">
           <div className="2xl:w-full">
-            {/* <div className="relative z-[2] mt-[250px] md:mt-[220px] md:px-12 lg:mt-[230px] lg:px-[100px] 2xl:mt-[250px] xl:mt-[170px] xl:px-[120px] 2xl:px-[150px]"> */}
             <div className="w-full font-poppins font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
               Masuk ke dalam Sipaduke
             </div>
@@ -152,9 +117,10 @@ const SectionRight = () => {
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   >
                     {showPassword ? (
-                      <FaEyeSlash size={20} />
-                    ) : (
                       <FaEye size={20} />
+                    ) : (
+                      <FaEyeSlash size={20} />
+                      
                     )}
                   </button>
                 </div>
@@ -166,9 +132,6 @@ const SectionRight = () => {
                 )}
                 {/* CAPTCHA */}
                 <div className="mt-[15px]">
-                  {/* <label htmlFor="captcha" className="font-inter font-medium text-[#1D92F9]">
-                  Captcha
-                </label> */}
                   <div className="mt-2 flex items-center">
                     <Image
                       src={captchaURL}
@@ -177,13 +140,33 @@ const SectionRight = () => {
                       height={80}
                       unoptimized
                     />
-                    <button
-                      type="button"
-                      onClick={fetchCaptcha}
-                      className="ml-2 font-poppins text-blue-600 hover:text-blue-800 md:text-[15px] lg:text-[16px]"
-                    >
-                      🔄 Refresh
-                    </button>
+                    <div className="group relative inline-block">
+                      <button
+                        type="button"
+                        onClick={fetchCaptcha}
+                        disabled={isRefreshing}
+                        className="ml-2 rounded-full bg-blue-100 p-2.5 text-blue-600 shadow-md transition-all duration-300 hover:bg-blue-200 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                        aria-label="Refresh captcha"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className={`transition-transform ${isRefreshing ? "animate-spin" : "hover:rotate-90"}`}
+                        >
+                          <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
+                        </svg>
+                      </button>
+                      <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 scale-0 rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
+                        Refresh Captcha
+                      </div>
+                    </div>
                   </div>
                   <input
                     type="text"
@@ -208,15 +191,6 @@ const SectionRight = () => {
                   Masuk
                 </button>
               </form>
-
-              {/* Tombol Bypass Login */}
-              {/* <button
-                type="button"
-                onClick={handleBypassLogin}
-                className="mt-[20px] w-full rounded-[7px] bg-green-500 font-poppins font-normal text-white shadow-sm hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
-              >
-                Bypass Login
-              </button> */}
             </section>
           </div>
         </div>

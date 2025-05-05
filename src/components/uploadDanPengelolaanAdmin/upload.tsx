@@ -23,8 +23,8 @@ const UploadDokumen = () => {
   const [dinas, setDinas] = useState<number>(0);
   const [type, setType] = useState<number>(0);
   const [subtype, setSubtype] = useState<number>(0);
-  const [tahun, setTahun] = useState<string | number>("");
-  const [keterangan, setKeterangan] = useState("");
+  const [tahun, setTahun] = useState<string | number>('');
+  const [keterangan, setKeterangan] = useState('');
   const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
@@ -37,39 +37,8 @@ const UploadDokumen = () => {
   const [optionSubtypes, setOptionSubtypes] = useState<any[]>([]);
   const [resetKey, setResetKey] = useState(0);
   
-  // State untuk SuccessModal
+  // State untuk Success Modal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-
-  // Tambahkan useEffect untuk debugging js-cookie
-  useEffect(() => {
-    // Log semua cookies
-    console.log("=== COOKIES DEBUG INFO ===");
-    const allCookies = Cookies.get();
-    console.log("Semua cookies:", allCookies);
-    
-    // Coba parse cookie user
-    try {
-      const userCookie = Cookies.get("user");
-      if (userCookie) {
-        const userData = JSON.parse(userCookie);
-        console.log("User data (parsed):", userData);
-        
-        // Log userid dan level_id
-        console.log("UserID:", userData.userid);
-        console.log("User level:", userData.level_id);
-        
-        // Set nilai dinas dengan userData.userid
-        if (userData.userid) {
-          setDinas(typeof userData.userid === 'number' ? userData.userid : userData.userid);
-        }
-      } else {
-        console.log("User cookie tidak ditemukan");
-      }
-    } catch (error) {
-      console.error("Error saat parsing user cookie:", error);
-    }
-    console.log("=== END COOKIES DEBUG INFO ===");
-  }, []);
 
   useEffect(() => {
     const fetchOfficials = async () => {
@@ -92,11 +61,7 @@ const UploadDokumen = () => {
 
         setOptionOfficials(fetchedOfficials);
       } catch (err: any) {
-        setError(
-          err.message === "Failed to fetch"
-            ? "Roles data not found"
-            : err.message,
-        );
+        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
       } finally {
         setLoading(false);
       }
@@ -111,10 +76,7 @@ const UploadDokumen = () => {
       setError(null);
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(
-          `/setting_types/all-data/by-role/${user.level_id}`,
-          "GET",
-        );
+        const response = await apiRequest(`/setting_types/all-data/by-role/${user.level_id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Jenis data not found");
@@ -123,20 +85,14 @@ const UploadDokumen = () => {
         }
         const result = await response.json();
 
-        const fetchOptionSettingTypes = result.responseData.items.map(
-          (item: any) => ({
-            id: item.id,
-            jenis: item.jenis,
-          }),
-        );
+        const fetchOptionSettingTypes = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          jenis: item.jenis,
+        }));
 
         setOptionTypes(fetchOptionSettingTypes);
       } catch (err: any) {
-        setError(
-          err.message === "Failed to fetch"
-            ? "Jenis data not found"
-            : err.message,
-        );
+        setError(err.message === "Failed to fetch" ? "Jenis data not found" : err.message);
       } finally {
         setLoading(false);
       }
@@ -145,6 +101,7 @@ const UploadDokumen = () => {
     fetchOptionTypes();
   }, []);
 
+  
   useEffect(() => {
     if (!type) return;
 
@@ -153,10 +110,7 @@ const UploadDokumen = () => {
       setError(null);
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(
-          `/setting_subtypes/all-data/by-role/${type}/${user.level_id}`,
-          "GET",
-        );
+        const response = await apiRequest(`/setting_subtypes/all-data/by-role/${type}/${user.level_id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Subjenis data not found");
@@ -165,20 +119,14 @@ const UploadDokumen = () => {
         }
         const result = await response.json();
 
-        const fetchOptionSettingSubtypes = result.responseData.items.map(
-          (item: any) => ({
-            id: item.id,
-            subjenis: item.subjenis,
-          }),
-        );
+        const fetchOptionSettingSubtypes = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          subjenis: item.subjenis,
+        }));
 
         setOptionSubtypes(fetchOptionSettingSubtypes);
       } catch (err: any) {
-        setError(
-          err.message === "Failed to fetch"
-            ? "Subjenis data not found"
-            : err.message,
-        );
+        setError(err.message === "Failed to fetch" ? "Subjenis data not found" : err.message);
       } finally {
         setLoading(false);
       }
@@ -187,19 +135,17 @@ const UploadDokumen = () => {
     fetchOptionSubtypes();
   }, [type]);
 
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const selectedFiles = Array.from(event.target.files);
       setFiles(selectedFiles);
       setUploadProgress(new Array(selectedFiles.length).fill(0));
       setIsUploading(true);
       setIsUploadComplete(false);
-
+  
       const uploadedPaths: string[] = [];
       const progresses: number[] = [];
-
+  
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         try {
@@ -209,9 +155,9 @@ const UploadDokumen = () => {
             (progress) => {
               progresses[i] = progress;
               setUploadProgress([...progresses]);
-            },
+            }
           );
-
+  
           if (status === 200 && response.responseData?.temp_file_path) {
             uploadedPaths.push(response.responseData.temp_file_path);
           } else {
@@ -224,7 +170,7 @@ const UploadDokumen = () => {
           return;
         }
       }
-
+  
       setTempFilePaths(uploadedPaths);
       setIsUploadComplete(true);
       setIsUploading(false);
@@ -235,9 +181,7 @@ const UploadDokumen = () => {
     if (tempFilePaths.length > 0) {
       for (const path of tempFilePaths) {
         try {
-          await apiRequest("/document_managements/delete-file", "POST", {
-            file_path: path,
-          });
+          await apiRequest("/document_managements/delete-file", "POST", { file_path: path });
         } catch (error) {
           console.warn("Gagal hapus file:", error);
         }
@@ -274,63 +218,41 @@ const UploadDokumen = () => {
       return;
     }
 
-    // Dapatkan user data langsung dari cookie
-    let userData;
-    try {
-      const userCookie = Cookies.get("user");
-      userData = userCookie ? JSON.parse(userCookie) : {};
-      
-      // Debug: Log user data
-      console.log("User data untuk payload:", userData);
-    } catch (error) {
-      console.error("Error parsing user cookie:", error);
-      userData = {};
-    }
-
-    // Gunakan userData.userid langsung sebagai dinas_id
+    const user = JSON.parse(Cookies.get("user") || "{}");
+   
     const payload = {
-      dinas_id: userData.userid || dinas,
+      dinas_id: dinas,
       type_id: type,
       subtype_id: subtype,
       tahun: tahun,
       keterangan: keterangan,
       file_paths: tempFilePaths,
-      maker: userData.userid || "",
-      maker_role: userData.level_id || "",
+      maker: user.userid || "",
+      maker_role: user.level_id || "",
     };
 
-    // Debug: Log payload
-    console.log("Submitting payload:", payload);
-
     try {
-      const response = await apiRequest(
-        "/document_managements/",
-        "POST",
-        payload,
-      );
-
+      const response = await apiRequest("/document_managements/", "POST", payload);
+  
       if (response.ok) {
         setSuccess(true);
-        
-        // Buka modal sukses
+        // Tampilkan modal sukses
         setIsSuccessModalOpen(true);
         
-        // Reset form
+        // Reset semua field form
         setDinas(0);
         setType(0);
         setSubtype(0);
-        setTahun("");
-        setKeterangan("");
+        setTahun('');
+        setKeterangan('');
         setFiles([]);
         setUploadProgress([]);
         setTempFilePaths([]);
         setIsUploadComplete(false);
-        setResetKey((prev) => prev + 1);
+        setResetKey(prev => prev + 1);
       } else {
         const result = await response.json();
-        setError(
-          result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen",
-        );
+        setError(result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen");
       }
     } catch (error) {
       setError("Terjadi kesalahan saat mengirim data");
@@ -348,49 +270,13 @@ const UploadDokumen = () => {
         <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
           <form onSubmit={handleSubmit}>
             <div className="p-6.5">
-              <div className="mb-6">
-                <div className="relative w-full overflow-hidden">
-                  <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-3.5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                    <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#0C479F] to-[#1D92F9] text-white">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-medium text-gray-500 dark:text-gray-400">
-                        Dinas
-                      </p>
-                      <p className="text-lg font-bold text-gray-800 dark:text-white">
-                        {(() => {
-                          try {
-                            const userCookie = Cookies.get("user");
-                            if (userCookie) {
-                              const userData = JSON.parse(userCookie);
-                              if (userData.userid) {
-                                return userData.userid;
-                              }
-                            }
-                          } catch (e) {
-                            console.error("Error parsing user cookie:", e);
-                          }
-                          return "Nama Instansi Dinas";
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ElementCombobox
+                label="Dinas"
+                placeholder="Pilih dinas"
+                options={optionOfficials.map((t) => ({ name: t.dinas, id: t.id }))}
+                onChange={(value) => setDinas(Number(value))}
+                resetKey={resetKey}
+              />
 
               <ElementCombobox
                 label="Jenis"
@@ -403,10 +289,7 @@ const UploadDokumen = () => {
                 <ElementCombobox
                   label="Sub Jenis"
                   placeholder="Pilih sub jenis"
-                  options={optionSubtypes.map((t) => ({
-                    name: t.subjenis,
-                    id: t.id,
-                  }))}
+                  options={optionSubtypes.map((t) => ({ name: t.subjenis, id: t.id }))}
                   onChange={(value) => setSubtype(Number(value))}
                   resetKey={resetKey}
                 />
@@ -477,7 +360,7 @@ const UploadDokumen = () => {
 
               {files.length > 0 && (
                 <div className="mt-4">
-                  <h5 className="mb-3 font-semibold text-dark dark:text-white">
+                  <h5 className="text-dark dark:text-white font-semibold mb-3">
                     File Terpilih
                   </h5>
                   {files.map((file, index) => {
@@ -485,30 +368,25 @@ const UploadDokumen = () => {
                     const percent = uploadProgress[index];
 
                     return (
-                      <div
-                        key={index}
-                        className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2"
-                      >
+                      <div key={index} className="relative p-3 border rounded-md bg-white dark:bg-dark-2 shadow-sm flex gap-4 items-center">
                         {isImage && (
                           <Image
                             src={URL.createObjectURL(file)}
                             alt="preview"
                             width={48}
                             height={48}
-                            className="rounded-md border object-cover"
+                            className="object-cover rounded-md border"
                           />
                         )}
 
                         <div className="flex-1 overflow-hidden">
-                          <div className="mb-1 flex items-center justify-between">
-                            <span className="max-w-[80%] truncate text-sm font-medium">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium truncate max-w-[80%]">
                               📄 {file.name}
                             </span>
-                            <span className="text-xs text-gray-500">
-                              {percent}%
-                            </span>
+                            <span className="text-xs text-gray-500">{percent}%</span>
                           </div>
-                          <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
                             <div
                               className={`h-2.5 rounded-full transition-all duration-300 ${
                                 percent === 100 ? "bg-green-500" : "bg-blue-600"
@@ -529,7 +407,7 @@ const UploadDokumen = () => {
                               setIsUploading(false);
                               setIsUploadComplete(false);
                             }}
-                            className="ml-2 text-sm text-red-500 hover:text-red-700"
+                            className="ml-2 text-red-500 hover:text-red-700 text-sm"
                             title="Batalkan Upload"
                           >
                             ✖
@@ -541,7 +419,7 @@ const UploadDokumen = () => {
                           <button
                             type="button"
                             onClick={handleRemoveFile}
-                            className="mt-1 flex-shrink-0 text-sm text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 text-sm mt-1 flex-shrink-0"
                             title="Hapus File"
                           >
                             🗑️
@@ -561,19 +439,15 @@ const UploadDokumen = () => {
                 {isUploading
                   ? "Uploading..."
                   : isUploadComplete
-                    ? loading
-                      ? "Menambahkan..."
+                    ? loading 
+                      ? 'Menambahkan...'
                       : "Simpan Document"
                     : "Menunggu Upload"}
               </button>
 
               {/* Error and Success Messages */}
-              {error && <p className="mt-2 text-red-500">{error}</p>}
-              {success && (
-                <p className="mt-2 text-green-500">
-                  Upload Dokumen berhasil ditambahkan!
-                </p>
-              )}
+              {error && <p className="text-red-500 mt-2">{error}</p>}
+              {success && <p className="text-green-500 mt-2">Upload Dokumen berhasil ditambahkan!</p>}  
             </div>
           </form>
         </div>

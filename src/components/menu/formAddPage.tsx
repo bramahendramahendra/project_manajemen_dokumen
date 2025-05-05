@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import { Jenis, Status } from "@/utils/enums";
+import SuccessModalMenu from '../modals/successModalMenu';
 
 const FormAddPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   
+  // Form fields
   const [code, setCode] = useState('');
   const [codeParent, setCodeParent] = useState('');
   const [icon, setIcon] = useState('');
@@ -19,6 +21,15 @@ const FormAddPage = () => {
 
   const [inputIcon, setInputIcon] = useState(false);
 
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalData, setModalData] = useState({
+    title: '',
+    message: '',
+    buttonText: '',
+    status: 'success' as 'success' | 'error'
+  });
+
   const options = {
     jenis: [
       { value: Jenis.Free, label: 'Free' },
@@ -29,6 +40,33 @@ const FormAddPage = () => {
       { value: Status.TidakAktif, label: 'Tidak Aktif' },
       { value: Status.Aktif, label: 'Aktif' },
     ],
+  };
+
+  const resetForm = () => {
+    setCode('');
+    setCodeParent('');
+    setIcon('');
+    setMenu('');
+    setUrl('');
+    setDescription('');
+    setUrutan('');
+    setType('0');
+    setStatus('1');
+    setInputIcon(false);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+  };
+
+  const handleSuccessButtonClick = () => {
+    setModalOpen(false);
+    // Jika berhasil, form sudah direset saat respons berhasil diterima
+  };
+
+  const handleFailureButtonClick = () => {
+    setModalOpen(false);
+    // Tetap di halaman yang sama dengan form tetap terisi
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -54,20 +92,40 @@ const FormAddPage = () => {
 
       if (response.ok) {
         setSuccess(true);
-        setCode('');
-        setCodeParent('');
-        setMenu('');
-        setUrl('');
-        setDescription('');
-        setUrutan('');
-        setType('');
-        setStatus('');
+        resetForm();
+        
+        // Tampilkan modal sukses
+        setModalData({
+          title: 'Berhasil Ditambahkan!',
+          message: 'Menu baru telah berhasil ditambahkan ke sistem.',
+          buttonText: 'Kembali ke Form',
+          status: 'success'
+        });
+        setModalOpen(true);
       } else {
         const result = await response.json();
         setError(result.message || 'Terjadi kesalahan saat menambahkan menu');
+        
+        // Tampilkan modal gagal
+        setModalData({
+          title: 'Gagal Menambahkan!',
+          message: result.message || 'Terjadi kesalahan saat menambahkan menu.',
+          buttonText: 'Coba Lagi',
+          status: 'error'
+        });
+        setModalOpen(true);
       }
     } catch (error) {
       setError('Terjadi kesalahan saat mengirim data');
+      
+      // Tampilkan modal error
+      setModalData({
+        title: 'Terjadi Kesalahan!',
+        message: 'Gagal menghubungi server. Silakan periksa koneksi Anda dan coba lagi.',
+        buttonText: 'Tutup',
+        status: 'error'
+      });
+      setModalOpen(true);
     } finally {
       setLoading(false);
     }
@@ -138,8 +196,6 @@ const FormAddPage = () => {
                 value={icon}
                 onChange={(e) => setIcon(e.target.value)}
                 placeholder="Enter your icon"
-                // className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                // className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 className={`w-full rounded-[7px] px-5 py-3 transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary 
                   ${inputIcon 
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-700 dark:text-gray-500' 
@@ -247,16 +303,22 @@ const FormAddPage = () => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Tambah Menu Baru */}
               {loading ? 'Menambahkan...' : 'Tambah Menu Baru'}
             </button>
-
-            {/* Error and Success Messages */}
-            {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">Menu berhasil ditambahkan!</p>}  
           </div>
         </form>
       </div>
+      
+      {/* Modal */}
+      <SuccessModalMenu
+        isOpen={modalOpen}
+        onClose={closeModal}
+        title={modalData.title}
+        message={modalData.message}
+        buttonText={modalData.buttonText}
+        onButtonClick={modalData.status === 'success' ? handleSuccessButtonClick : handleFailureButtonClick}
+        status={modalData.status}
+      />
     </div>
   );
 };

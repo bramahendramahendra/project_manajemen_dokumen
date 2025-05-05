@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModal from '../modals/successModal';
 
 const FormAddUser = () => {
   const [loading, setLoading] = useState(false);
@@ -15,6 +16,7 @@ const FormAddUser = () => {
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [accessUser, setAccessUser] = useState('');
   const [password, setPassword] = useState('');
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [isDefaultPassword, setIsDefaultPassword] = useState(false);
   const [optionOfficials, setOptionOfficials] = useState<any[]>([]);
@@ -85,13 +87,22 @@ const FormAddUser = () => {
     setPassword(!isDefaultPassword ? 'm@nAj3mendokumen' : '');
   };
 
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
+  const handleSuccessButtonClick = () => {
+    setIsSuccessModalOpen(false);
+    // Opsional: Navigasi ke halaman lain jika diperlukan
+    // router.push('/users');
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(false);
 
-    // const selectedDepartment = optionOfficials.find((opt) => opt.id === departmentName);
     const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
     const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
 
@@ -115,6 +126,10 @@ const FormAddUser = () => {
 
       if (response.ok) {
         setSuccess(true);
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+        
+        // Reset form fields
         setFirstName('');
         setLastName('');
         setUsername('');
@@ -124,7 +139,7 @@ const FormAddUser = () => {
         setResponsiblePerson('');
         setAccessUser('');
         setPassword('');
-        setIsDefaultPassword(false)
+        setIsDefaultPassword(false);
       } else {
         const result = await response.json();
         setError(result.message || 'Terjadi kesalahan saat menambahkan user');
@@ -326,6 +341,16 @@ const FormAddUser = () => {
           </div>
         </form>
       </div>
+      
+      {/* SuccessModal Component */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="User baru telah berhasil ditambahkan ke dalam sistem."
+        buttonText="Kembali ke Halaman Utama"
+        onButtonClick={handleSuccessButtonClick}
+      />
     </div>
   );
 };
