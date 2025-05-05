@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import SuccessModal from "../modals/successModal";
 
 const people = [
   { id: 1, name: "DPA" },
@@ -19,6 +20,13 @@ const FormPengirimanLangsung = () => {
   const [searchTerm, setSearchTerm] = useState<string>(""); // Untuk pencarian
   const [showAll, setShowAll] = useState<boolean>(false); // Untuk mengatur apakah semua data ditampilkan
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]); // Dokumen yang dipilih
+  const [namaDinas, setNamaDinas] = useState<string>(""); // Nama dinas
+  const [judul, setJudul] = useState<string>(""); // Judul
+  const [lampiran, setLampiran] = useState<string>(""); // Lampiran
+  const [loading, setLoading] = useState<boolean>(false); // State loading
+  
+  // State untuk SuccessModal
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
 
   // Filter dokumen berdasarkan pencarian
   const filteredPeople = people.filter((person) =>
@@ -43,6 +51,74 @@ const FormPengirimanLangsung = () => {
   const handleRemoveDocument = (personName: string) => {
     setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
   };
+  
+  // Handle pengiriman dokumen
+  const handleSubmit = async () => {
+    // Validasi form
+    if (!namaDinas) {
+      alert("Nama Dinas harus diisi");
+      return;
+    }
+    
+    if (!judul) {
+      alert("Judul harus diisi");
+      return;
+    }
+    
+    if (selectedDocuments.length === 0) {
+      alert("Pilih minimal 1 dokumen");
+      return;
+    }
+    
+    // Set loading
+    setLoading(true);
+    
+    try {
+      // Simulasi API call (ganti dengan API call sebenarnya)
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Di sini Anda bisa melakukan API call untuk mengirim data
+      // const response = await apiRequest("/send-documents", "POST", {
+      //   kepada: namaDinas,
+      //   judul: judul,
+      //   dokumen: selectedDocuments,
+      //   lampiran: lampiran
+      // });
+      
+      // if (!response.ok) {
+      //   throw new Error("Gagal mengirim dokumen");
+      // }
+      
+      // Jika berhasil, tampilkan modal sukses
+      setIsSuccessModalOpen(true);
+      
+    } catch (error) {
+      // Handle error
+      console.error("Error sending documents:", error);
+      alert("Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi.");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Fungsi untuk menutup modal
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+  
+  // Fungsi untuk menangani klik pada tombol di modal
+  const handleSuccessButtonClick = () => {
+    setIsSuccessModalOpen(false);
+    
+    // Reset form setelah berhasil
+    setNamaDinas("");
+    setJudul("");
+    setLampiran("");
+    setSelectedDocuments([]);
+    
+    // Opsional: redirect ke halaman lain
+    // window.location.href = "/dokumen/daftar";
+  };
 
   return (
     <>
@@ -52,7 +128,7 @@ const FormPengirimanLangsung = () => {
             Pengiriman dokumen secara langsung pada Dinas
           </h4>
           <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-            <form>
+            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
               <div className="grid grid-cols-12 gap-6 p-6.5">
                 {/* Kolom Kiri */}
                 <div className="col-span-12 lg:col-span-6">
@@ -65,6 +141,8 @@ const FormPengirimanLangsung = () => {
                     </label>
                     <input
                       type="text"
+                      value={namaDinas}
+                      onChange={(e) => setNamaDinas(e.target.value)}
                       placeholder="Masukkan Nama Dinas..."
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                       required
@@ -78,6 +156,8 @@ const FormPengirimanLangsung = () => {
                     </label>
                     <input
                       type="text"
+                      value={judul}
+                      onChange={(e) => setJudul(e.target.value)}
                       placeholder="Masukkan Nama Judul..."
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                       required
@@ -134,6 +214,8 @@ const FormPengirimanLangsung = () => {
                     </label>
                     <textarea
                       rows={6}
+                      value={lampiran}
+                      onChange={(e) => setLampiran(e.target.value)}
                       placeholder="Isi Lampiran..."
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                     ></textarea>
@@ -142,10 +224,11 @@ const FormPengirimanLangsung = () => {
                   {/* Tombol Kirim */}
                   <div className="mt-6">
                     <button
-                      type="button"
-                      className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                      type="submit"
+                      disabled={loading}
+                      className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-70"
                     >
-                      Kirim
+                      {loading ? "Mengirim..." : "Kirim"}
                     </button>
                   </div>
                 </div>
@@ -203,6 +286,7 @@ const FormPengirimanLangsung = () => {
                         {filteredPeople.length > 10 && !showAll && (
                           <div className="py-4 text-center">
                             <button
+                              type="button"
                               onClick={() => setShowAll(true)}
                               className="text-[#0C479F] hover:underline"
                             >
@@ -219,6 +303,16 @@ const FormPengirimanLangsung = () => {
           </div>
         </div>
       </div>
+      
+      {/* SuccessModal Component */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Dokumen berhasil dikirim ke Dinas."
+        buttonText="Kembali ke Daftar Dokumen"
+        onButtonClick={handleSuccessButtonClick}
+      />
     </>
   );
 };

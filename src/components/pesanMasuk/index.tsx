@@ -117,7 +117,7 @@ const MainPage = () => {
 
   return (
     <div className="col-span-12 xl:col-span-12">
-      <div className="rounded-[10px] bg-white pr-0 shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <div className="rounded-[10px] bg-white overflow-hidden shadow-1 dark:bg-gray-dark dark:shadow-card">
         <div className="flex justify-between items-center px-7.5 pt-7.5 mb-4">
           <h4 className="font-medium text-dark dark:text-white"></h4>
           
@@ -129,9 +129,9 @@ const MainPage = () => {
           />
         </div>
         
-        <div className="grid grid-cols-12 border-t border-gray-200">
-          {/* Daftar Pesan */}
-          <div className="col-span-12 border-r border-gray-200 xl:col-span-2">
+        <div className="grid grid-cols-12 border-t border-gray-200 h-[calc(100vh-220px)]">
+          {/* Daftar Pesan - perhatikan col-span yang lebih kecil */}
+          <div className="col-span-3 border-r border-gray-200 overflow-y-auto">
             <MessageList
               messages={paginatedMessages}
               activeMessage={activeMessage}
@@ -142,8 +142,8 @@ const MainPage = () => {
             />
           </div>
 
-          {/* Detail Pesan */}
-          <div className="col-span-12 xl:col-span-6">
+          {/* Detail Pesan - perhatikan col-span yang lebih besar */}
+          <div className="col-span-9 relative flex flex-col overflow-hidden">
             {activeMessage && filteredMessages.length > 0 ? (
               <MessageDetail message={activeMessage} />
             ) : filteredMessages.length === 0 && searchTerm ? (
@@ -157,7 +157,7 @@ const MainPage = () => {
         </div>
         
         {filteredMessages.length > 0 && (
-          <div className="my-4 border-t pb-4 pl-7.5">
+          <div className="border-t pb-4 pl-7.5 pr-7.5 py-4">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
