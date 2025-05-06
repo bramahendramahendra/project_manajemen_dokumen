@@ -41,6 +41,21 @@ const iconMap: Record<string, JSX.Element> = {
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
   const [menuGroups, setMenuGroups] = useState<any[]>([]);
+  const [notifCount, setNotifCount] = useState<number>(0);
+  const [user, setUser] = useState<any>({});
+
+  const fetchNotifCount = async () => {
+    try {
+      const res = await apiRequest(`/notifications/sidebar/1`, "GET");
+      const json = await res.json();
+      if (json.responseCode === 200) {
+        setNotifCount(json.responseData.unread_count || 0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notif count:", error);
+    }
+  };
+
 
   const transformMenuData = (items: any[]) => {
     const lookup: Record<string, any> = {};
@@ -71,6 +86,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               label: child.menu,
               pro: child.pro,
               // message: 1,
+              message: child.code_menu === "0105" ? notifCount : "",
+              // message: notifCount > 0 ? notifCount : "",
               route: child.url || "#",
               icon: iconMap[child.icon] || null,
             }));
@@ -79,6 +96,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             label: item.menu,
             pro: item.pro,
             // message: 1,
+            message: item.code_menu === "0105" ? notifCount : "",
+            // message: notifCount > 0 ? notifCount : "",
             route: item.url || "#",
             icon: iconMap[item.icon] || null,
             ...(children.length > 0 ? { children } : {}),
@@ -95,6 +114,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   };
 
   useEffect(() => {
+    // const currentUser = JSON.parse(Cookies.get("user") || "{}");
+    // setUser(currentUser);
+
     const fetchMenu = async () => {
       const user = JSON.parse(Cookies.get("user") || "{}");
       const res = await apiRequest(`/access_menus/menu/${user.level_id}`, "GET");
@@ -103,7 +125,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       setMenuGroups(transformed);
     };
     fetchMenu();
-  }, []);
+    fetchNotifCount();
+
+    const interval = setInterval(() => {
+      fetchNotifCount();
+    }, 10000); // every 10s
+
+    return () => clearInterval(interval);
+  }, [notifCount]);
 
   return (
     <ClickOutside onClick={() => setSidebarOpen(false)}>
