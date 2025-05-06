@@ -3,37 +3,44 @@ import { useState, useEffect } from "react";
 import Pagination from "../pagination/Pagination";
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { apiRequest } from "@/helpers/apiClient";
+import { encryptObject } from "@/utils/crypto";
 
 type LaporanDokumen = {
   id: number;
   nama: string;
 };
 
-const dataLaporanDokumen: LaporanDokumen[] = [
-  { id: 1, nama: "Dinas Pendidikan Pemuda dan Olahraga" },
-  { id: 2, nama: "Dinas Kesehatan" },
-  { id: 3, nama: "Dinas Pekerjaan Umum dan Penataan Ruang" },
-  { id: 4, nama: "Dinas Sosial" },
-  { id: 5, nama: "Dinas Perhubungan" },
-  { id: 6, nama: "Dinas Pariwisata dan Kebudayaan" },
-  { id: 7, nama: "Dinas Lingkungan Hidup" },
-  { id: 8, nama: "Dinas Tenaga Kerja dan Transmigrasi" },
-  { id: 9, nama: "Dinas Komunikasi dan Informatika" },
-  { id: 10, nama: "Dinas Perindustrian dan Perdagangan" },
-];
+// const dataLaporanDokumen: LaporanDokumen[] = [
+//   { id: 1, nama: "Dinas Pendidikan Pemuda dan Olahraga" },
+//   { id: 2, nama: "Dinas Kesehatan" },
+//   { id: 3, nama: "Dinas Pekerjaan Umum dan Penataan Ruang" },
+//   { id: 4, nama: "Dinas Sosial" },
+//   { id: 5, nama: "Dinas Perhubungan" },
+//   { id: 6, nama: "Dinas Pariwisata dan Kebudayaan" },
+//   { id: 7, nama: "Dinas Lingkungan Hidup" },
+//   { id: 8, nama: "Dinas Tenaga Kerja dan Transmigrasi" },
+//   { id: 9, nama: "Dinas Komunikasi dan Informatika" },
+//   { id: 10, nama: "Dinas Perindustrian dan Perdagangan" },
+// ];
 
 const MainPage = () => {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [dataList, setDataList] = useState<LaporanDokumen[]>([]);
+  
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
-  const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredDokumen = dataLaporanDokumen.filter((item) =>
+  const filteredDokumen = dataList.filter((item) =>
     item.nama.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredDokumen.length / itemsPerPage);
-
   const currentItems = filteredDokumen.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
@@ -43,14 +50,45 @@ const MainPage = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await apiRequest("/reports/document", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Report Document data not found");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        
+        const documents: LaporanDokumen[] = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          nama: item.dinas,
+        }));
+
+        setDataList(documents);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const formatNamaForUrl = (nama: string) =>
     encodeURIComponent(nama.toLowerCase().replace(/\s+/g, "-"));
 
-  const handleDetailsClick = (nama: string) => {
+  const handleDetailsClick = (id: number, nama: string) => {
+    const key = process.env.NEXT_PUBLIC_APP_KEY;
+    const token = Cookies.get("token");
+    if (!token) return alert("Token tidak ditemukan!");
+    const encrypted = encryptObject({ id, nama }, token);
     const formattedNama = encodeURIComponent(
       nama.toLowerCase().replace(/\s+/g, "-")
     );
-    router.push(`/laporan_dokumen/${formattedNama}`);
+    router.push(`/laporan_dokumen/${formattedNama}?${key}=${encrypted}`);
   };
   
 
@@ -101,7 +139,7 @@ const MainPage = () => {
                     <div className="flex items-center justify-end">
                       <button
                         className="group active:scale-[.97]"
-                        onClick={() => handleDetailsClick(item.nama)}
+                        onClick={() => handleDetailsClick(item.id, item.nama)}
                       >
                         <div className="flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6">
                           <span className="text-[20px]">

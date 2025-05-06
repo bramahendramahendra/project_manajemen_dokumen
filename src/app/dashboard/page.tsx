@@ -4,9 +4,14 @@ import DataStatsPage from "@/components/dashboard/dataStatsPage";
 import TablePage from "@/components/dashboard/tablePage";
 import { useState, useEffect } from "react";
 import ModalPopup from "@/components/popup"; // Import komponen popup
+import Cookies from "js-cookie";
 
 const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+
+
+  // const user = JSON.parse(Cookies.get("user") || "{}");
+  // console.log(user);
 
   useEffect(() => {
     const hasVisited = localStorage.getItem("hasVisited");

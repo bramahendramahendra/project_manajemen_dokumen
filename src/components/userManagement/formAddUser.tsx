@@ -11,6 +11,7 @@ const FormAddUser = () => {
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [department, setDepartment] = useState<number>(0);
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [accessUser, setAccessUser] = useState('');
@@ -103,14 +104,18 @@ const FormAddUser = () => {
     setSuccess(false);
 
     const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
+    const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
 
     const payload = {
       firstname: firstName,
       lastname: lastName,
       username: username,
       email,
-      department_id: department,
-      department_name: selectedDepartment?.dinas || "",
+      phone_number: phoneNumber,
+      // department_id: department,
+      // department_name: selectedDepartment?.dinas || "",
+      department_id: accessUser === 'DNS' ? department : 0,
+      department_name: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
       responsible_person: responsiblePerson,
       level_id: accessUser,
       password: password,
@@ -129,6 +134,7 @@ const FormAddUser = () => {
         setLastName('');
         setUsername('');
         setEmail('');
+        setPhoneNumber('');
         setDepartment(0);
         setResponsiblePerson('');
         setAccessUser('');
@@ -209,40 +215,24 @@ const FormAddUser = () => {
                 required
               />
             </div>
-            {/* Nama Dinas */}
+            {/* Nomor Handphone */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Nama Dinas
-              </label>
-              <select
-                value={department}
-                onChange={(e) => setDepartment(Number(e.target.value))}
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                required
-              >
-                <option value={0} disabled>Pilih Dinas</option> 
-                {optionOfficials.length > 0 ? (
-                  optionOfficials.map((option, index) => (
-                    <option key={index} value={option.id}>
-                      {option.dinas}
-                    </option>
-                  ))
-                ) : (
-                  <option value="all" disabled>Loading dinas...</option>
-                )}
-              </select>
-            </div>
-            {/* Penanggung Jawab */}
-            <div className="mb-4.5">
-              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                Penanggung Jawab
+                Nomor Handphone
               </label>
               <input
-                type="text"
-                value={responsiblePerson}
-                onChange={(e) => setResponsiblePerson(e.target.value)}
-                placeholder="Enter your penanggung jawab"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                type="tel"
+                value={phoneNumber}
+                onChange={(e) => {
+                  const input = e.target.value;
+                  if (/^(\+)?[0-9]*$/.test(input)) {
+                    setPhoneNumber(input);
+                  }
+                }}
+                placeholder="Masukkan nomor handphone"
+                pattern="^\+?[0-9]{9,15}$"
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                required
               />
             </div>
             {/* Access User */}
@@ -267,6 +257,44 @@ const FormAddUser = () => {
                   <option value="all" disabled>Loading roles...</option>
                 )}
               </select>
+            </div>
+            {/* Nama Dinas */}
+            {accessUser === 'DNS' && (
+              <div className="mb-4.5">
+                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                  Nama Dinas
+                </label>
+                <select
+                  value={department}
+                  onChange={(e) => setDepartment(Number(e.target.value))}
+                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                  required
+                >
+                  <option value={0} disabled>Pilih Dinas</option> 
+                  {optionOfficials.length > 0 ? (
+                    optionOfficials.map((option, index) => (
+                      <option key={index} value={option.id}>
+                        {option.dinas}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="all" disabled>Loading dinas...</option>
+                  )}
+                </select>
+              </div>
+            )}
+            {/* Penanggung Jawab */}
+            <div className="mb-4.5">
+              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                Penanggung Jawab
+              </label>
+              <input
+                type="text"
+                value={responsiblePerson}
+                onChange={(e) => setResponsiblePerson(e.target.value)}
+                placeholder="Enter your penanggung jawab"
+                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+              />
             </div>
             {/* Password */}
             <div className="mb-4.5">

@@ -2,38 +2,81 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
 import Image from "next/image";
+import { apiRequest } from "@/helpers/apiClient";
 
-const notificationList = [
-  {
-    image: "/images/user/user-15.png",
-    title: "Piter Joined the Team!",
-    subTitle: "Congratulate him",
-  },
-  {
-    image: "/images/user/user-02.png",
-    title: "New message received",
-    subTitle: "Devid sent you new message",
-  },
-  {
-    image: "/images/user/user-26.png",
-    title: "New Payment received",
-    subTitle: "Check your earnings",
-  },
-  {
-    image: "/images/user/user-28.png",
-    title: "Jolly completed tasks",
-    subTitle: "Assign her newtasks",
-  },
-  {
-    image: "/images/user/user-27.png",
-    title: "Roman Joined the Team!",
-    subTitle: "Congratulate him",
-  },
-];
+// const notificationList = [
+//   {
+//     image: "/images/profile.png",
+//     title: "Piter Joined the Team!",
+//     subTitle: "Congratulate him",
+//   },
+//   {
+//     image: "/images/profile.png",
+//     title: "New message received",
+//     subTitle: "Devid sent you new message",
+//   },
+//   {
+//     image: "/images/profile.png",
+//     title: "New Payment received",
+//     subTitle: "Check your earnings",
+//   },
+//   {
+//     image: "/images/profile.png",
+//     title: "Jolly completed tasks",
+//     subTitle: "Assign her newtasks",
+//   },
+//   {
+//     image: "/images/profile.png",
+//     title: "Roman Joined the Team!",
+//     subTitle: "Congratulate him",
+//   },
+// ];
+
+type NotificationItem = {
+  url: string;
+  image: string;
+  title: string;
+  subTitle: string;
+};
 
 const DropdownNotification = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [notifying, setNotifying] = useState(true);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+
+   useEffect(() => {
+      const fetchData = async () => {
+        try {
+          const response = await apiRequest("/notifications/header", "GET");
+          if (!response.ok) {
+            if (response.status === 404) {
+              throw new Error("Notification data not found");
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const result = await response.json();
+          
+          const notif: NotificationItem[] = result.responseData.items.map((item: any) => ({
+            url: item.url,
+            image: item.image,
+            title: item.title,
+            subTitle: item.subtitle,
+          }));
+  
+          setNotifications(notif);
+        } catch (err: any) {
+          setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchData();
+    }, []);
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative hidden sm:block">
@@ -82,49 +125,60 @@ const DropdownNotification = () => {
                 Notifications
               </h5>
               <span className="rounded-md bg-primary px-2 py-0.5 text-body-xs font-medium text-white">
-                5 new
+                {notifications.length} new
               </span>
             </div>
 
             <ul className="no-scrollbar mb-5 flex h-auto flex-col gap-1 overflow-y-auto">
-              {notificationList.map((item, index) => (
-                <li key={index}>
-                  <Link
-                    className="flex items-center gap-4 rounded-[10px] p-2.5 hover:bg-gray-2 dark:hover:bg-dark-3"
-                    href="#"
-                  >
-                    <span className="block h-14 w-14 rounded-full">
-                      <Image
-                        width={112}
-                        height={112}
-                        src={item.image}
-                        style={{
-                          width: "auto",
-                          height: "auto",
-                        }}
-                        alt="User"
-                      />
-                    </span>
+              {loading ? (
+                <li className="text-sm text-gray-500 px-2.5 py-2">Loading...</li>
+              ) : error ? (
+                <li className="text-sm text-red-500 px-2.5 py-2">{error}</li>
+              ) :  (
+                notifications
+                  .slice(0, showAll ? notifications.length : 4)
+                  .map((item, index) => (
+                  <li key={index}>
+                    <Link
+                      className="flex items-center gap-4 rounded-[10px] p-2.5 hover:bg-gray-2 dark:hover:bg-dark-3"
+                      href={item.url || "#"}
+                    >
+                      <span className="block h-14 w-14 rounded-full">
+                        <Image
+                          width={112}
+                          height={112}
+                          src={item.image}
+                          style={{
+                            width: "auto",
+                            height: "auto",
+                          }}
+                          alt="User"
+                        />
+                      </span>
 
-                    <span className="block">
-                      <span className="block font-medium text-dark dark:text-white">
-                        {item.title}
+                      <span className="block">
+                        <span className="block font-medium text-dark dark:text-white">
+                          {item.title}
+                        </span>
+                        <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
+                          {item.subTitle}
+                        </span>
                       </span>
-                      <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
-                        {item.subTitle}
-                      </span>
-                    </span>
-                  </Link>
-                </li>
-              ))}
+                    </Link>
+                  </li>
+                ))
+              )}
             </ul>
 
-            <Link
-              className="flex items-center justify-center rounded-[7px] border border-primary p-2.5 font-medium text-primary hover:bg-blue-light-5 dark:border-dark-4 dark:text-dark-6 dark:hover:border-primary dark:hover:bg-blue-light-3 dark:hover:text-primary"
-              href="#"
-            >
-              See all notifications
-            </Link>
+            {!loading && !error && notifications.length > 5 && (
+              <button
+                className="flex items-center justify-center rounded-[7px] border border-primary p-2.5 font-medium text-primary hover:bg-blue-light-5 dark:border-dark-4 dark:text-dark-6 dark:hover:border-primary dark:hover:bg-blue-light-3 dark:hover:text-primary"
+                // href="#"
+                onClick={() => setShowAll(!showAll)}
+              >
+                {showAll ? "Show less" : "See all notifications"}
+              </button>
+            )}
           </div>
         )}
       </li>

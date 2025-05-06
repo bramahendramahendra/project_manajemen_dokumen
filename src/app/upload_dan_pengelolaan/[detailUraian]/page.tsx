@@ -39,7 +39,6 @@ import { decryptObject } from "@/utils/crypto";
 
 const DetailUraian = () => {
   const searchParams = useSearchParams();
-
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
