@@ -1,5 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { apiRequest } from "@/helpers/apiClient";
 import SuccessModal from "../modals/successModal";
+import Cookies from "js-cookie";
+
+// Tipe data untuk dokumen
+interface Document {
+  id: number;
+  type_id: number;
+  jenis: string;
+  subtype_id: number;
+  subjenis: string;
+  dinas_id: number;
+  dinas: string;
+  tahun: string;
+}
+
+// Tipe data untuk dinas/official
+interface Official {
+  id: number;
+  dinas: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 // Modal untuk error message
 interface ErrorModalProps {
@@ -72,30 +94,40 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
   );
 };
 
-const people = [
-  { id: 1, name: "DPA" },
-  { id: 2, name: "RKA" },
-  { id: 3, name: "Anggaran Kas" },
-  { id: 4, name: "Laporan Tahunan" },
-  { id: 5, name: "Budget Proposal" },
-  { id: 6, name: "DPA" },
-  { id: 7, name: "RKA" },
-  { id: 8, name: "Anggaran Kas" },
-  { id: 9, name: "Laporan Tahunan" },
-  { id: 10, name: "Budget Proposal" },
-  { id: 11, name: "Dokumen Ekstra" },
-  { id: 12, name: "Anggaran Baru" },
-];
+// const people = [
+//   { id: 1, name: "DPA" },
+//   { id: 2, name: "RKA" },
+//   { id: 3, name: "Anggaran Kas" },
+//   { id: 4, name: "Laporan Tahunan" },
+//   { id: 5, name: "Budget Proposal" },
+//   { id: 6, name: "DPA" },
+//   { id: 7, name: "RKA" },
+//   { id: 8, name: "Anggaran Kas" },
+//   { id: 9, name: "Laporan Tahunan" },
+//   { id: 10, name: "Budget Proposal" },
+//   { id: 11, name: "Dokumen Ekstra" },
+//   { id: 12, name: "Anggaran Baru" },
+// ];
 
 const FormPengirimanLangsungAdmin = () => {
   const [searchTerm, setSearchTerm] = useState<string>(""); // Untuk pencarian
   const [showAll, setShowAll] = useState<boolean>(false); // Untuk mengatur apakah semua data ditampilkan
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]); // Dokumen yang dipilih
-  const [namaDinas, setNamaDinas] = useState<string>(""); // Nama dinas
+  // const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]); // Dokumen yang dipilih
+  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]); // Dokumen yang dipilih
+  // const [namaDinas, setNamaDinas] = useState<string>(""); // Nama dinas
   const [judul, setJudul] = useState<string>(""); // Judul
   const [lampiran, setLampiran] = useState<string>(""); // Lampiran
   const [loading, setLoading] = useState<boolean>(false); // State loading
-  
+  const [documents, setDocuments] = useState<Document[]>([]); // Semua dokumen
+  const [error, setError] = useState<string | null>(null); // Error state
+
+  // State untuk dropdown officials/dinas
+  const [officials, setOfficials] = useState<Official[]>([]);
+  const [selectedOfficial, setSelectedOfficial] = useState<Official | null>(null);
+  const [isLoadingOfficials, setIsLoadingOfficials] = useState<boolean>(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [officialSearchTerm, setOfficialSearchTerm] = useState<string>("");
+
   // State untuk menampilkan SuccessModal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
   
@@ -104,29 +136,167 @@ const FormPengirimanLangsungAdmin = () => {
   const [errorTitle, setErrorTitle] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
+  // Ref untuk dropdown
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Effect untuk menangani klik diluar dropdown untuk menutupnya
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  // Mengambil data dokumen dari API saat komponen dimuat
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest("/direct-shipping/", "GET");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        
+        // Pastikan data dokumen ada dan memiliki format yang benar
+        if (result.responseData && result.responseData.items) {
+          setDocuments(result.responseData.items);
+        } else {
+          throw new Error("Format data tidak sesuai");
+        }
+      } catch (err: any) {
+        setError(err.message || "Gagal mengambil data dokumen");
+        showErrorModal("Kesalahan", "Gagal memuat daftar dokumen. Silakan coba lagi nanti.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, []);
+
+  // Mengambil data officials/dinas dari API
+  useEffect(() => {
+    const fetchOfficials = async () => {
+      setIsLoadingOfficials(true);
+      try {
+        const response = await apiRequest("/officials/", "GET");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        
+        // Pastikan data officials ada dan memiliki format yang benar
+        if (result.responseData && result.responseData.items) {
+          setOfficials(result.responseData.items);
+        } else {
+          throw new Error("Format data officials tidak sesuai");
+        }
+      } catch (err: any) {
+        console.error("Gagal mengambil data officials:", err);
+      } finally {
+        setIsLoadingOfficials(false);
+      }
+    };
+
+    fetchOfficials();
+  }, []);
+
+  // Fungsi untuk memfilter officials berdasarkan pencarian
+  // const filteredOfficials = officialSearchTerm === ''
+  // ? officials
+  // : officials.filter((official) =>
+  //     official.dinas
+  //       .toLowerCase()
+  //       .includes(officialSearchTerm.toLowerCase())
+  //   );
+
+  // Fungsi untuk memfilter officials berdasarkan pencarian
+  const filteredOfficials = officialSearchTerm === ''
+    ? officials
+    : officials.filter((official) =>
+        official.dinas
+          .toLowerCase()
+          .includes(officialSearchTerm.toLowerCase())
+      );
+  
+  // Format display name untuk dokumen
+  const getDocumentDisplayName = (doc: Document): string => {
+    return `${doc.dinas} - ${doc.jenis} - ${doc.subjenis} - ${doc.tahun}`;
+  };
+
   // Filter dokumen berdasarkan pencarian
-  const filteredPeople = people.filter((person) =>
-    person.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  // const filteredPeople = people.filter((person) =>
+  //   person.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  // );
+
+  // Filter dokumen berdasarkan pencarian
+  const filteredDocuments = documents.filter((doc) =>
+    getDocumentDisplayName(doc).toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Tentukan jumlah data yang ditampilkan
-  const displayedPeople = showAll
-    ? filteredPeople
-    : filteredPeople.slice(0, 10);
+  const displayedDocuments = showAll
+    ? filteredDocuments
+    : filteredDocuments.slice(0, 10);
+
+  // Handle toggle dropdown
+  const handleToggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+  
+  // Handle pilih official dari dropdown
+  const handleSelectOfficial = (official: Official) => {
+    setSelectedOfficial(official);
+    setIsDropdownOpen(false);
+    setOfficialSearchTerm("");
+  };
+  
+  // Handle perubahan search term untuk official
+  const handleOfficialSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOfficialSearchTerm(e.target.value);
+  };
 
   // Handle perubahan checkbox
-  const handleCheckboxChange = (personName: string, isChecked: boolean) => {
+  const handleCheckboxChange = (document: Document, isChecked: boolean) => {
     if (isChecked) {
-      setSelectedDocuments((prev) => [...prev, personName]);
+      setSelectedDocuments((prev) => [...prev, document]);
     } else {
-      setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+      setSelectedDocuments((prev) => 
+        prev.filter((doc) => doc.id !== document.id)
+      );
     }
   };
 
+  // Tentukan jumlah data yang ditampilkan
+  // const displayedPeople = showAll
+  //   ? filteredPeople
+  //   : filteredPeople.slice(0, 10);
+
+  // // Handle perubahan checkbox
+  // const handleCheckboxChange = (personName: string, isChecked: boolean) => {
+  //   if (isChecked) {
+  //     setSelectedDocuments((prev) => [...prev, personName]);
+  //   } else {
+  //     setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+  //   }
+  // };
+
   // Handle hapus dokumen
-  const handleRemoveDocument = (personName: string) => {
-    setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+  // const handleRemoveDocument = (personName: string) => {
+  //   setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+  // };
+  const handleRemoveDocument = (docId: number) => {
+    setSelectedDocuments((prev) => prev.filter((doc) => doc.id !== docId));
   };
+  
   
   // Fungsi untuk menampilkan error modal
   const showErrorModal = (title: string, message: string) => {
@@ -140,8 +310,19 @@ const FormPengirimanLangsungAdmin = () => {
     e.preventDefault();
     
     // Validasi form dengan modal error
-    if (!namaDinas) {
-      showErrorModal("Validasi Gagal", "Nama Admin harus diisi");
+    // if (!namaDinas) {
+    //   showErrorModal("Validasi Gagal", "Nama Admin harus diisi");
+    //   return;
+    // }
+
+    console.log("Form submission started");
+    console.log("Selected official:", selectedOfficial);
+    console.log("Judul:", judul);
+    console.log("Selected documents:", selectedDocuments);
+    console.log("Lampiran:", lampiran);
+
+    if (!selectedOfficial) {
+      showErrorModal("Validasi Gagal", "Nama Admin harus dipilih");
       return;
     }
     
@@ -159,8 +340,43 @@ const FormPengirimanLangsungAdmin = () => {
     setLoading(true);
     
     try {
+      // Menyiapkan data dokumen yang dipilih
+      const documentIds = selectedDocuments.map(doc => doc.id);
+      console.log("Document IDs to be sent:", documentIds);
+
+      const user = JSON.parse(Cookies.get("user") || "{}");
+      console.log("User cookie:", user);
+
+      if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
+        console.error("User tidak ditemukan di cookie.");
+        return;
+      }
+      
+      // Siapkan payload untuk API
+      const payload = {
+        kepada_id: selectedOfficial.id,
+        kepada_dinas: selectedOfficial.dinas,
+        judul: judul,
+        dokumen_ids: documentIds,
+        lampiran: lampiran,
+        pengirim_userid: user.userid,
+        pengirim_name: user.name,
+        pengirim_department_id: user.department_id,
+        pengirim_department_name: user.department_name
+      };
+      
+      console.log("Starting actual API call with payload:", payload);
+
+      const response = await apiRequest("/direct-shipping/", "POST", payload);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.responseDesc || "Gagal mengirim dokumen");
+      }
+
+
       // Simulasi API call (ganti dengan API call sebenarnya)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Di sini Anda bisa melakukan API call untuk mengirim data
       // const response = await apiRequest("/send-documents", "POST", {
@@ -200,16 +416,30 @@ const FormPengirimanLangsungAdmin = () => {
     setIsSuccessModalOpen(false);
   };
   
+  // // Fungsi untuk menangani pemilihan official
+  // const handleOfficialChange = (key: React.Key | null) => {
+  //   if (key === null) {
+  //     setSelectedOfficial(null);
+  //     return;
+  //   }
+    
+  //   const selectedId = parseInt(key.toString());
+  //   const found = officials.find(official => official.id === selectedId);
+  //   setSelectedOfficial(found || null);
+  // };
+
   // Fungsi untuk menangani klik pada tombol di modal sukses
   const handleSuccessButtonClick = () => {
     setIsSuccessModalOpen(false);
     
     // Reset form setelah berhasil
-    setNamaDinas("");
+    // setNamaDinas("");
+    setSelectedOfficial(null);
     setJudul("");
     setLampiran("");
     setSelectedDocuments([]);
     setSearchTerm("");
+    setOfficialSearchTerm("");
     
     // Opsional: redirect ke halaman lain
     // window.location.href = "/dokumen/daftar";
@@ -232,14 +462,94 @@ const FormPengirimanLangsungAdmin = () => {
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                       Kepada Admin
                     </label>
-                    <input
+                    {/* <input
                       type="text"
                       placeholder="Masukkan Nama Dinas..."
                       value={namaDinas}
                       onChange={(e) => setNamaDinas(e.target.value)}
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                       required
-                    />
+                    /> */}
+                    <div className="relative" ref={dropdownRef}>
+                      <div 
+                        className="flex items-center w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition cursor-pointer"
+                        onClick={handleToggleDropdown}
+                      >
+                        {selectedOfficial ? (
+                          <div className="flex-grow text-dark dark:text-white">
+                            {selectedOfficial.dinas}
+                          </div>
+                        ) : (
+                          <input
+                            type="text"
+                            placeholder="Pilih atau cari dinas..."
+                            value={officialSearchTerm}
+                            onChange={handleOfficialSearchChange}
+                            autoComplete="off"
+                            className="flex-grow bg-transparent focus:outline-none text-dark dark:text-white"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isDropdownOpen) {
+                                setIsDropdownOpen(true);
+                              }
+                            }}
+                          />
+                        )}
+                        <div className="ml-2">
+                          <svg 
+                            xmlns="http://www.w3.org/2000/svg" 
+                            className={`h-5 w-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+                            fill="none" 
+                            viewBox="0 0 24 24" 
+                            stroke="currentColor"
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {isDropdownOpen && (
+                        <div className="absolute z-10 mt-1 w-full rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto">
+                          {selectedOfficial && (
+                            <div 
+                              className="px-4 py-2 border-b border-gray-200 cursor-pointer hover:bg-red-50 text-red-500 flex items-center"
+                              onClick={() => {
+                                setSelectedOfficial(null);
+                                setOfficialSearchTerm("");
+                                setIsDropdownOpen(false);
+                              }}
+                            >
+                              <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className="h-4 w-4 mr-2"
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                              Hapus Pilihan
+                            </div>
+                          )}
+                          {isLoadingOfficials ? (
+                            <div className="text-center py-2 text-gray-500">Memuat data...</div>
+                          ) : filteredOfficials.length === 0 ? (
+                            <div className="text-center py-2 text-gray-500">Tidak ada data ditemukan</div>
+                          ) : (
+                            filteredOfficials.map((official) => (
+                              <div
+                                key={official.id}
+                                className={`px-4 py-2 cursor-pointer hover:bg-blue-100 ${selectedOfficial?.id === official.id ? 'bg-blue-50' : ''}`}
+                                onClick={() => handleSelectOfficial(official)}
+                              >
+                                {official.dinas}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                   </div>
 
                   {/* Judul */}
@@ -262,17 +572,18 @@ const FormPengirimanLangsungAdmin = () => {
                       Dokumen Yang Dipilih
                     </label>
                     <div className="flex flex-wrap gap-2">
-                      {selectedDocuments.map((doc, index) => (
+                      {selectedDocuments.map((doc) => (
                         <div
-                          key={index}
+                          key={doc.id}
                           className="flex items-center space-x-2 rounded-md bg-gray-100 px-3 py-2 shadow-sm dark:bg-gray-700"
                         >
                           <span className="text-sm text-gray-700 dark:text-white">
-                            {doc}
+                            {/* {doc} */}
+                            {getDocumentDisplayName(doc)}
                           </span>
                           <button
                             type="button"
-                            onClick={() => handleRemoveDocument(doc)}
+                            onClick={() => handleRemoveDocument(doc.id)}
                             className="text-red-500 hover:text-red-700"
                           >
                             <svg
@@ -307,8 +618,8 @@ const FormPengirimanLangsungAdmin = () => {
                     </label>
                     <textarea
                       rows={6}
-                      placeholder="Isi Lampiran..."
                       value={lampiran}
+                      placeholder="Isi Lampiran..."
                       onChange={(e) => setLampiran(e.target.value)}
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                     ></textarea>
@@ -344,39 +655,89 @@ const FormPengirimanLangsungAdmin = () => {
                     </div>
                     <fieldset>
                       <div className="mt-4 divide-y divide-gray-200 border-b border-t border-gray-200">
-                        {displayedPeople.map((person) => (
-                          <div
-                            key={person.id}
-                            className="relative flex items-start py-4"
-                          >
-                            <div className="min-w-0 flex-1 text-[12px]">
-                              <label
-                                htmlFor={`person-${person.id}`}
-                                className="select-none font-medium text-gray-500"
+                        {loading ? (
+                          // Tampilkan loading state
+                          Array.from({ length: 5 }).map((_, index) => (
+                            <div key={index} className="flex items-start py-4">
+                              <div className="min-w-0 flex-1">
+                                <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                              </div>
+                              <div className="ml-3 flex h-6 items-center">
+                                <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          // Tampilkan data dokumen
+                          displayedDocuments.length > 0 ? (
+                            displayedDocuments.map((doc) => (
+                              // displayedPeople.map((person) => (
+                              <div
+                                key={doc.id}
+                                className="relative flex items-start py-4"
                               >
-                                {person.name}
-                              </label>
+                                <div className="min-w-0 flex-1 text-[12px]">
+                                  <label
+                                    // htmlFor={`person-${person.id}`}
+                                    htmlFor={`document-${doc.id}`}
+                                    className="select-none font-medium text-gray-500"
+                                  >
+                                    {/* {person.name} */}
+                                    {getDocumentDisplayName(doc)}
+                                  </label>
+                                </div>
+                                <div className="ml-3 flex h-6 items-center">
+                                  <input
+                                    // id={`person-${person.id}`}
+                                    // name={`person-${person.id}`}
+                                    id={`document-${doc.id}`}
+                                    name={`document-${doc.id}`}
+                                    type="checkbox"
+                                    // checked={selectedDocuments.includes(
+                                    //   person.name,
+                                    // )}
+                                    checked={selectedDocuments.some(
+                                      (selectedDoc) => selectedDoc.id === doc.id
+                                    )}
+                                    onChange={(e) =>
+                                      handleCheckboxChange(
+                                        doc,
+                                        e.target.checked,
+                                      )
+                                    }
+                                    // onChange={(e) =>
+                                    //   handleCheckboxChange(
+                                    //     person.name,
+                                    //     e.target.checked,
+                                    //   )
+                                    // }
+                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                  />
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-4 text-center">
+                              <span className="text-gray-500">
+                                {error ? "Terjadi kesalahan saat memuat data" : "Tidak ada dokumen yang tersedia"}
+                              </span>
                             </div>
-                            <div className="ml-3 flex h-6 items-center">
-                              <input
-                                id={`person-${person.id}`}
-                                name={`person-${person.id}`}
-                                type="checkbox"
-                                checked={selectedDocuments.includes(
-                                  person.name,
-                                )}
-                                onChange={(e) =>
-                                  handleCheckboxChange(
-                                    person.name,
-                                    e.target.checked,
-                                  )
-                                }
-                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                              />
-                            </div>
+                          )
+                        )}
+
+                        {/* {filteredPeople.length > 10 && !showAll && (
+                          <div className="py-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setShowAll(true)}
+                              className="text-[#0C479F] hover:underline"
+                            >
+                              Lihat Semua Dokumen
+                            </button>
                           </div>
-                        ))}
-                        {filteredPeople.length > 10 && !showAll && (
+                        )} */}
+
+                        {filteredDocuments.length > 10 && !showAll && (
                           <div className="py-4 text-center">
                             <button
                               type="button"

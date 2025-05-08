@@ -85,9 +85,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             .map((child: any) => ({
               label: child.menu,
               pro: child.pro,
-              // message: 1,
               message: child.code_menu === "0105" ? notifCount : "",
-              // message: notifCount > 0 ? notifCount : "",
               route: child.url || "#",
               icon: iconMap[child.icon] || null,
             }));
@@ -95,9 +93,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           return {
             label: item.menu,
             pro: item.pro,
-            // message: 1,
             message: item.code_menu === "0105" ? notifCount : "",
-            // message: notifCount > 0 ? notifCount : "",
             route: item.url || "#",
             icon: iconMap[item.icon] || null,
             ...(children.length > 0 ? { children } : {}),
