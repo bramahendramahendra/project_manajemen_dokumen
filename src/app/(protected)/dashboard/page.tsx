@@ -10,8 +10,8 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
 
-  // const user = JSON.parse(Cookies.get("user") || "{}");
-  // console.log(user);
+  const user = JSON.parse(Cookies.get("user") || "{}");
+  console.log(user);
 
   useEffect(() => {
     const hasVisited = localStorage.getItem("hasVisited");

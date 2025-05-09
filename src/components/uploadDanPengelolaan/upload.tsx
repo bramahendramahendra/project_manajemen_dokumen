@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Cookies from "js-cookie";
-import { apiRequest, apiRequestUpload } from "@/helpers/apiClient";
+import { apiRequest } from "@/helpers/apiClient";
+import { apiRequestUpload } from "@/helpers/uploadClient";
 import ElementCombobox from "../elements/ElementCombobox";
 import SuccessModal from "../modals/successModal";
 

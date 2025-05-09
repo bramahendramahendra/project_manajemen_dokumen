@@ -24,12 +24,14 @@ const SectionRight = () => {
     setIsRefreshing(true);
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API}/auths/generate-captcha`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auths/generate-captcha`, {
+          credentials: "include",
+        }
       );
       const data = await response.json();
 
       setCaptchaID(data.captcha_id);
-      setCaptchaURL(`${process.env.NEXT_PUBLIC_API}${data.captcha_url}`);
+      setCaptchaURL(`${process.env.NEXT_PUBLIC_API_URL}${data.captcha_url}`);
     } catch (error) {
       console.error("Error fetching CAPTCHA:", error);
     } finally {
@@ -61,8 +63,14 @@ const SectionRight = () => {
   
       if (response.ok && data.responseCode === 200) {
         localStorage.setItem("hasVisited", "true");
-        Cookies.set("token", data.responseData.token, { expires: 7 });
-        Cookies.set("user", JSON.stringify(data.responseData.user), { expires: 7 });
+        // Cookies.set("token", data.responseData.token, { expires: 7 });
+        // Cookies.set("user", JSON.stringify(data.responseData.user), { expires: 7 });
+        Cookies.set("user", JSON.stringify(data.responseData.user), { path: "/" });
+
+        // Simpan waktu login untuk refresh token check
+        localStorage.setItem('lastLoginTime', Date.now().toString());
+
+        // Navigasi ke dashboard
         router.push("/dashboard");
       } else {
         setErrorMessage(data.responseDesc || "Login failed. Please try again.");
@@ -71,6 +79,7 @@ const SectionRight = () => {
         fetchCaptcha();
       }
     } catch (error) {
+      console.error("Login error:", error);
       setErrorMessage("An error occurred. Please try again later.");
       // Reset captcha input dan refresh captcha baru jika terjadi error
       setCaptchaInput("");
