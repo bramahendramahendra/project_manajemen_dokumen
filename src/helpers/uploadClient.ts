@@ -44,7 +44,7 @@ export const apiRequestUpload = (
         reject(new Error("Terjadi kesalahan saat mengupload file."));
       };
   
-      xhr.open("POST", `${process.env.NEXT_PUBLIC_API}${endpoint}`, true);
+      xhr.open("POST", `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, true);
       xhr.setRequestHeader("Authorization", token);
       xhr.send(formData);
     });
