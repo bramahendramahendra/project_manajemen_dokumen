@@ -377,8 +377,8 @@ const UploadDokumen = () => {
                             const userCookie = Cookies.get("user");
                             if (userCookie) {
                               const userData = JSON.parse(userCookie);
-                              if (userData.userid) {
-                                return userData.userid;
+                              if (userData.department_name) {
+                                return userData.department_name;
                               }
                             }
                           } catch (e) {

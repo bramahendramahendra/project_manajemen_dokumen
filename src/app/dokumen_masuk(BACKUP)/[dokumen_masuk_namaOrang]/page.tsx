@@ -19,7 +19,7 @@ const DokumenMasukDetail = ({
   return (
     <DefaultLayout>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-      <DokumenMasukDetailDokumen senderNamaDinas={decodedName}/>
+      <DokumenMasukDetailDokumen senderName={decodedName}/>
     </DefaultLayout>
   );
 };

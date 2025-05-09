@@ -482,3 +482,28 @@ input[type="search"]::-webkit-search-cancel-button {
 .custom-gradient-1 {
     background-image: linear-gradient(145deg, #EEF 0%, #FFF8FC 100%);;
 }
+
+
+.scrollbar-visible {
+    scrollbar-width: auto;
+    overflow-y: scroll !important;
+  }
+  
+  .scrollbar-visible::-webkit-scrollbar {
+    display: block;
+    width: 6px;
+  }
+  
+  .scrollbar-visible::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+  }
+  
+  .scrollbar-visible::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+  }
+  
+  .scrollbar-visible::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
