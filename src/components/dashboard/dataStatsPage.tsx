@@ -24,7 +24,7 @@ const dataStatsList = [
       </svg>
     ),
     color: "#3FD97F",
-    title: "Total Dokumen",
+    title: "Jumlah Dokumen Upload",
     value: "3.456K",
     growthRate: 0.43,
   },
@@ -46,7 +46,7 @@ const dataStatsList = [
       </svg>
     ),
     color: "#FF9C55",
-    title: "Belum Divalidasi",
+    title: "Jumlah Dokumen Diterima",
     value: "$42.2K",
     growthRate: 4.35,
   },
@@ -74,7 +74,7 @@ const dataStatsList = [
       </svg>
     ),
     color: "#8155FF",
-    title: "Dokumen Terhapus",
+    title: "Jumlah Dokumen Tidak Diterima",
     value: "2.450",
     growthRate: 2.59,
   },

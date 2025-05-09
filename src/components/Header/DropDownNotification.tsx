@@ -117,70 +117,69 @@ const DropdownNotification = () => {
         </Link>
 
         {dropdownOpen && (
-          <div
-            className={`absolute -right-27 mt-7.5 flex h-[550px] w-75 flex-col rounded-xl border-[0.5px] border-stroke bg-white px-5.5 pb-5.5 pt-5 shadow-default dark:border-dark-3 dark:bg-gray-dark sm:right-0 sm:w-[364px]`}
-          >
-            <div className="mb-5 flex items-center justify-between">
-              <h5 className="text-lg font-medium text-dark dark:text-white">
-                Notifications
-              </h5>
-              <span className="rounded-md bg-primary px-2 py-0.5 text-body-xs font-medium text-white">
-                {notifications.length} new
+  <div
+    className={`absolute -right-27 mt-7.5 flex max-h-[550px] w-75 flex-col rounded-xl border-[0.5px] border-stroke bg-white px-5.5 pb-5.5 pt-5 shadow-default dark:border-dark-3 dark:bg-gray-dark sm:right-0 sm:w-[364px]`}
+  >
+    <div className="mb-5 flex items-center justify-between">
+      <h5 className="text-lg font-medium text-dark dark:text-white">
+        Notifications
+      </h5>
+      <span className="rounded-md bg-primary px-2 py-0.5 text-body-xs font-medium text-white">
+        {notifications.length} new
+      </span>
+    </div>
+
+    <ul className={`${showAll ? 'scrollbar-visible h-96' : 'no-scrollbar h-auto'} mb-5 flex flex-col gap-1 overflow-y-auto`}>
+      {loading ? (
+        <li className="text-sm text-gray-500 px-2.5 py-2">Loading...</li>
+      ) : error ? (
+        <li className="text-sm text-red-500 px-2.5 py-2">{error}</li>
+      ) : (
+        notifications
+          .slice(0, showAll ? notifications.length : 4)
+          .map((item, index) => (
+          <li key={index}>
+            <Link
+              className="flex items-center gap-4 rounded-[10px] p-2.5 hover:bg-gray-2 dark:hover:bg-dark-3"
+              href={item.url || "#"}
+            >
+              <span className="block h-14 w-14 rounded-full">
+                <Image
+                  width={112}
+                  height={112}
+                  src={item.image}
+                  style={{
+                    width: "auto",
+                    height: "auto",
+                  }}
+                  alt="User"
+                />
               </span>
-            </div>
 
-            <ul className="no-scrollbar mb-5 flex h-auto flex-col gap-1 overflow-y-auto">
-              {loading ? (
-                <li className="text-sm text-gray-500 px-2.5 py-2">Loading...</li>
-              ) : error ? (
-                <li className="text-sm text-red-500 px-2.5 py-2">{error}</li>
-              ) :  (
-                notifications
-                  .slice(0, showAll ? notifications.length : 4)
-                  .map((item, index) => (
-                  <li key={index}>
-                    <Link
-                      className="flex items-center gap-4 rounded-[10px] p-2.5 hover:bg-gray-2 dark:hover:bg-dark-3"
-                      href={item.url || "#"}
-                    >
-                      <span className="block h-14 w-14 rounded-full">
-                        <Image
-                          width={112}
-                          height={112}
-                          src={item.image}
-                          style={{
-                            width: "auto",
-                            height: "auto",
-                          }}
-                          alt="User"
-                        />
-                      </span>
+              <span className="block">
+                <span className="block font-medium text-dark dark:text-white">
+                  {item.title}
+                </span>
+                <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
+                  {item.subTitle}
+                </span>
+              </span>
+            </Link>
+          </li>
+        ))
+      )}
+    </ul>
 
-                      <span className="block">
-                        <span className="block font-medium text-dark dark:text-white">
-                          {item.title}
-                        </span>
-                        <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
-                          {item.subTitle}
-                        </span>
-                      </span>
-                    </Link>
-                  </li>
-                ))
-              )}
-            </ul>
-
-            {!loading && !error && notifications.length > 5 && (
-              <button
-                className="flex items-center justify-center rounded-[7px] border border-primary p-2.5 font-medium text-primary hover:bg-blue-light-5 dark:border-dark-4 dark:text-dark-6 dark:hover:border-primary dark:hover:bg-blue-light-3 dark:hover:text-primary"
-                // href="#"
-                onClick={() => setShowAll(!showAll)}
-              >
-                {showAll ? "Show less" : "See all notifications"}
-              </button>
-            )}
-          </div>
-        )}
+    {!loading && !error && notifications.length > 5 && (
+      <button
+        className="flex items-center justify-center rounded-[7px] border border-primary p-2.5 font-medium text-primary hover:bg-blue-light-5 dark:border-dark-4 dark:text-dark-6 dark:hover:border-primary dark:hover:bg-blue-light-3 dark:hover:text-primary"
+        onClick={() => setShowAll(!showAll)}
+      >
+        {showAll ? "Show less" : "See all notifications"}
+      </button>
+    )}
+  </div>
+)}
       </li>
     </ClickOutside>
   );

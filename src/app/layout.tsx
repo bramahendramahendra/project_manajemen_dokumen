@@ -5,7 +5,7 @@ import { Inter, Poppins } from "next/font/google";
 import { usePathname } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import Loader from "@/components/common/Loader";
-import TokenRefresher from "@/components/common/TokenRefresher";
+// import TokenRefresher from "@/components/common/TokenRefresher";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,8 +28,8 @@ export default function RootLayout({
   const pathname = usePathname();
 
   // Daftar rute publik yang tidak memerlukan autentikasi
-  const publicRoutes = ['/login', '/lupa-password'];
-  const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
+  // const publicRoutes = ['/login', '/lupa-password'];
+  // const isPublicRoute = publicRoutes.some(route => pathname?.startsWith(route));
 
   useEffect(() => {
     if (pathname !== "/login") {
@@ -47,7 +47,7 @@ export default function RootLayout({
         className={`${inter.variable} ${poppins.variable}`}
       >
         {/* Hanya tampilkan TokenRefresher jika bukan rute publik */}
-        {!isPublicRoute && <TokenRefresher />}
+        {/* {!isPublicRoute && <TokenRefresher />} */}
         
         {loading ? <Loader /> : children}
       </body>
