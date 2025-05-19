@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModal from '../modals/successModal';
 
-const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
+const FormAddUser = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
-
+  
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
@@ -15,14 +16,14 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [accessUser, setAccessUser] = useState('');
   const [password, setPassword] = useState('');
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  const [changePassword, setChangePassword] = useState(false);
   const [isDefaultPassword, setIsDefaultPassword] = useState(false);
   const [optionOfficials, setOptionOfficials] = useState<any[]>([]);
   const [optionRoles, setOptionRoles] = useState<any[]>([]);
-
+ 
   useEffect(() => {
-    const fetchDinas = async () => {
+    const fetchOfficials = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -48,7 +49,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       }
     };
 
-    fetchDinas();
+    fetchOfficials();
   }, []);
 
   useEffect(() => {
@@ -80,23 +81,20 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
 
     fetchRoles();
   }, []);
-
-  useEffect(() => {
-    if (dataEdit) {
-      setFirstName(dataEdit.firstname || dataEdit.name?.split(' ')[0] || '');
-      setLastName(dataEdit.lastname || dataEdit.name?.split(' ')[1] || '');
-      setUsername(dataEdit.username);
-      setEmail(dataEdit.email || '');
-      setPhoneNumber(dataEdit.phone_number || '');
-      setDepartment(dataEdit.department_id || '');
-      setResponsiblePerson(dataEdit.responsible_person || '');
-      setAccessUser(dataEdit.level_id || '');
-    }
-  }, [dataEdit]);
-
+  
   const handleCheckboxChange = () => {
     setIsDefaultPassword(!isDefaultPassword);
     setPassword(!isDefaultPassword ? 'm@nAj3mendokumen' : '');
+  };
+
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
+  const handleSuccessButtonClick = () => {
+    setIsSuccessModalOpen(false);
+    // Opsional: Navigasi ke halaman lain jika diperlukan
+    // router.push('/users');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,35 +103,47 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     setError(null);
     setSuccess(false);
 
-    const selectedDepartment = optionOfficials.find((opt) => opt.id === String(department));
+    const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
     const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
 
     const payload = {
       firstname: firstName,
       lastname: lastName,
-      username,
+      username: username,
       email,
       phone_number: phoneNumber,
-      // department_id: departmentName,
+      // department_id: department,
       // department_name: selectedDepartment?.dinas || "",
       department_id: accessUser === 'DNS' ? department : 0,
       department_name: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
       responsible_person: responsiblePerson,
       level_id: accessUser,
-      change_password: changePassword,
-      ...(changePassword && { password }),
-      // password
+      password: password,
     };
 
     try {
-      const response = await apiRequest(`/users/${dataEdit.userid}`, 'PUT', payload);
-      const result = await response.json();
+      const response = await apiRequest('/users/', 'POST', payload);
 
-      if (!response.ok) {
-        throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan');
+      if (response.ok) {
+        setSuccess(true);
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+        
+        // Reset form fields
+        setFirstName('');
+        setLastName('');
+        setUsername('');
+        setEmail('');
+        setPhoneNumber('');
+        setDepartment(0);
+        setResponsiblePerson('');
+        setAccessUser('');
+        setPassword('');
+        setIsDefaultPassword(false);
+      } else {
+        const result = await response.json();
+        setError(result.message || 'Terjadi kesalahan saat menambahkan user');
       }
-
-      setSuccess(true);
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
@@ -144,7 +154,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   return (
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
       <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-        Untuk Edit User, silahkan edit berdasarkan form dibawah ini
+        Untuk menambahkan User, lakukan inputan data dengan benar dibawah ini
       </h4>
       <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
         <form onSubmit={handleSubmit}>
@@ -160,7 +170,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="Enter your first name"
-                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 />
               </div>
               {/* Nama Belakang */}
@@ -173,7 +183,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Enter your last name"
-                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 />
               </div>
             </div>
@@ -187,9 +197,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 placeholder="Enter your Username"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-[#a5a5a5] transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary disabled:cursor-default disabled:bg-gray-3"
+                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
-                disabled
               />
             </div>
             {/* Email */}
@@ -202,7 +211,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email address"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               />
             </div>
@@ -226,8 +235,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                 required
               />
             </div>
-              {/* Access User */}
-              <div className="mb-4.5">
+            {/* Access User */}
+            <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Access User
               </label>
@@ -261,7 +270,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                   className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                   required
                 >
-                  <option value="" disabled>Pilih Dinas</option> 
+                  <option value={0} disabled>Pilih Dinas</option> 
                   {optionOfficials.length > 0 ? (
                     optionOfficials.map((option, index) => (
                       <option key={index} value={option.id}>
@@ -283,82 +292,67 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                 type="text"
                 value={responsiblePerson}
                 onChange={(e) => setResponsiblePerson(e.target.value)}
-                placeholder="Enter your subject"
-                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                placeholder="Enter your penanggung jawab"
+                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
               />
             </div>
-            
-            {/* Checkbox Ganti Password */}
+            {/* Password */}
             <div className="mb-4.5">
-              <div className="flex items-center">
+              <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                Password
+              </label>
+              <input
+                type="text"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+              />
+              <div className="mt-2 flex items-center">
                 <input
                   type="checkbox"
-                  id="changePassword"
-                  checked={changePassword}
-                  onChange={() => {
-                    setChangePassword(!changePassword);
-                    setPassword(''); // reset password saat toggle
-                    setIsDefaultPassword(false); // matikan default password saat manual
-                  }}
+                  id="defaultPassword"
+                  checked={isDefaultPassword}
+                  onChange={handleCheckboxChange}
                   className="mr-2"
                 />
                 <label
-                  htmlFor="changePassword"
+                  htmlFor="defaultPassword"
                   className="text-body-sm font-medium text-dark dark:text-white"
                 >
-                  Ganti Password
+                  Gunakan password default / reset
                 </label>
               </div>
             </div>
 
-            {/* Password */}
-            {changePassword && (
-              <div className="mb-4.5">
-                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                  Password
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                />
-                <div className="mt-2 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="defaultPassword"
-                    checked={isDefaultPassword}
-                    onChange={handleCheckboxChange}
-                    className="mr-2"
-                  />
-                  <label
-                    htmlFor="defaultPassword"
-                    className="text-body-sm font-medium text-dark dark:text-white"
-                  >
-                    Gunakan password default / reset
-                  </label>
-                </div>
-              </div>
-            )}
-
+            {/* Submit Button */}
             <button 
               type="submit"
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Update User */}
-              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
+              {/* Tambah User Baru */}
+              {loading ? 'Menambahkan...' : 'Tambah User Baru'}
             </button>
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">User berhasil update!</p>}  
+            {success && <p className="text-green-500 mt-2">User berhasil ditambahkan!</p>}  
           </div>
         </form>
       </div>
+      
+      {/* SuccessModal Component */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="User baru telah berhasil ditambahkan ke dalam sistem."
+        buttonText="Kembali ke Halaman Utama"
+        onButtonClick={handleSuccessButtonClick}
+      />
     </div>
   );
 };
 
-export default FormEditUser;
+export default FormAddUser;

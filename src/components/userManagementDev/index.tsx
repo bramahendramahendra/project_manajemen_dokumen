@@ -6,8 +6,8 @@ import { encryptObject } from "@/utils/crypto";
 import {
   HiOutlineLockClosed,
   HiOutlineLockOpen,
-  // HiOutlinePencilSquare,
-  // HiOutlineTrash,
+  HiOutlinePencilSquare,
+  HiOutlineTrash,
   HiOutlineArrowTopRightOnSquare
 } from "react-icons/hi2";
 import { User, UserResponse } from "@/types/user";
@@ -23,21 +23,26 @@ const MainPage = () => {
     [key: string]: boolean;
   }>({});
 
-  // State untuk pagination dan filter
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
 
+  
+  // State untuk filter
   const [filters, setFilters] = useState({
+    username: '',
+    department_id: '',
+    level_id: '',
+    is_active: '',
     sort_by: '',
     sort_dir: 'DESC'
   });
 
-  // const [showDeleteModal, setShowDeleteModal] = useState(false);
-  // const [itemDelete, setItemDelete] = useState<number | string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemDelete, setItemDelete] = useState<number | string | null>(null);
 
-  // Function untuk fetch data dengan parameter
+   // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -55,7 +60,7 @@ const MainPage = () => {
         if (!value) queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/users/?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/users/with-deleted?${queryParams.toString()}`, "GET");
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -66,7 +71,7 @@ const MainPage = () => {
 
       const result: UserResponse = await response.json();
       
-      const users: User[] = result.responseData.items.map((item: any) => ({
+       const users: User[] = result.responseData.items.map((item: any) => ({
           userid: item.userid,
           username: item.username,
           name: item.name,
@@ -115,34 +120,43 @@ const MainPage = () => {
     setCurrentPage(1); // Reset ke halaman pertama
   };
 
-  // // Handler untuk filter
-  // const handleFilterChange = (key: string, value: string) => {
-  //   setFilters(prev => ({
-  //     ...prev,
-  //     [key]: value
-  //   }));
-  // };
+  // Handler untuk filter
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
 
-  // // Handler untuk apply filter
-  // const handleApplyFilter = () => {
-  //   setCurrentPage(1); // Reset ke halaman pertama saat filter
-  //   fetchData(1, itemsPerPage, filters);
-  // };
+  // Handler untuk apply filter
+  const handleApplyFilter = () => {
+    setCurrentPage(1); // Reset ke halaman pertama saat filter
+    fetchData(1, itemsPerPage, filters);
+  };
 
   // Handler untuk reset filter
-  // const handleResetFilter = () => {
-  //   setFilters({
-  //     // username: '',
-  //     // email: '',
-  //     // department_id: '',
-  //     // level_id: '',
-  //     // is_active: '',
-  //     sort_by: '',
-  //     sort_dir: 'ASC'
-  //   });
-  //   setCurrentPage(1);
-  //   fetchData(1, itemsPerPage, {});
-  // };
+  const handleResetFilter = () => {
+    setFilters({
+      username: '',
+      department_id: '',
+      level_id: '',
+      is_active: '',
+      sort_by: '',
+      sort_dir: 'ASC'
+    });
+    setCurrentPage(1);
+    fetchData(1, itemsPerPage, {});
+  };
+
+  const handleEdit = (userid: string) => {
+    const key = process.env.NEXT_PUBLIC_APP_KEY;
+    const user = Cookies.get("user");
+   
+    if (!user) return alert("Token tidak ditemukan!");
+    const encrypted = encryptObject({ userid }, user);
+
+    router.push(`/user_management/edit_user/mz?${key}=${encrypted}`);
+  };
 
   const handleActivate = async (userid: string) => {
     // Toggle suspendedStatus untuk UI
@@ -178,83 +192,118 @@ const MainPage = () => {
     }
   };
 
-  // const handleEdit = (userid: string) => {
-  //   const key = process.env.NEXT_PUBLIC_APP_KEY;
-  //   const user = Cookies.get("user");
-    
-  //   if (!user) return alert("Token tidak ditemukan!");
-  //   const encrypted = encryptObject({ userid }, user);
-
-  //   router.push(`/user_management/edit_user/mz?${key}=${encrypted}`);
-  // };
-
   // Handler untuk detail user
   const handleDetailsClick = (userid: string) => {
-     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const user = Cookies.get("user");
-   
-    if (!user) return alert("Token tidak ditemukan!");
-    const encrypted = encryptObject({ userid }, user);
-
-    router.push(`/user_management/detail/mz?${key}=${encrypted}`);
+    router.push(`/user_management/detail/${userid}`);
   };
 
   // Handler untuk membuka modal konfirmasi hapus
-  // const handleDeleteClick = (userid: string) => {
-  //   setItemDelete(userid);
-  //   setShowDeleteModal(true);
-  // };
+  const handleDeleteClick = (userid: string) => {
+    setItemDelete(userid);
+    setShowDeleteModal(true);
+  };
 
   // Handler untuk konfirmasi hapus
-  // const handleConfirmDelete = async () => {
-  //   if (!itemDelete) return;
+  const handleConfirmDelete = async () => {
+    if (!itemDelete) return;
 
-  //   setLoading(true);
-  //   setError(null);
-  //   setSuccess(false);
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
-  //   try {
-  //     const response = await apiRequest(`/users/${itemDelete}`, 'DELETE');
-  //     const result = await response.json();
+    try {
+      const response = await apiRequest(`/users/${itemDelete}`, 'DELETE');
+      const result = await response.json();
 
-  //     if (!response.ok) {
-  //       throw new Error(result.responseDesc || 'Gagal menghapus data');
-  //     }
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Gagal menghapus data');
+      }
 
-  //     setSuccess(true);
-  //     // Refresh data setelah hapus
-  //     fetchData(currentPage, itemsPerPage, filters);
-  //     setShowDeleteModal(false);
-  //     setItemDelete(null);
-      
-  //   } catch (error: any) {
-  //     setError(error.message || 'Terjadi kesalahan saat menghapus data');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+      setSuccess(true);
+      // Refresh data setelah hapus
+      fetchData(currentPage, itemsPerPage, filters);
+      setShowDeleteModal(false);
+      setItemDelete(null);
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat menghapus data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // // Handler untuk membatalkan hapus
-  // const handleCancelDelete = () => {
-  //   setShowDeleteModal(false);
-  //   setItemDelete(null);
-  // };
+  // Handler untuk membatalkan hapus
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setItemDelete(null);
+  };
+
+  // if (error) {
+  //   return <UserManagement error="Data tidak ditemukan" />;
+  // }
 
   return (
     <>
-      {/* Error and Success Messages */}
-      {error && <p className="text-red-500 mt-2 mb-4">{error}</p>}
-      {success && <p className="text-green-500 mt-2 mb-4">Data berhasil dihapus!</p>}
-
-      {/* Data Table */}
-      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold">Data User</h2>
-          <div className="text-sm text-gray-600">
-            Menampilkan {dataList.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data
+    {/* Filter Section */}
+      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card mb-4">
+        <h2 className="text-lg font-semibold mb-4">Filter & Pencarian</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Username</label>
+            <input
+              type="text"
+              value={filters.username}
+              onChange={(e) => handleFilterChange('username', e.target.value)}
+              placeholder="Cari username..."
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#0C479F]"
+            />
           </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Status</label>
+            <select
+              value={filters.is_active}
+              onChange={(e) => handleFilterChange('is_active', e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#0C479F]"
+            >
+              <option value="">Semua Status</option>
+              <option value="1">Aktif</option>
+              <option value="0">Tidak Aktif</option>
+            </select>
+          </div>
+          {/* <div>
+            <label className="block text-sm font-medium mb-1">Urutkan</label>
+            <select
+              value={filters.sort_by}
+              onChange={(e) => handleFilterChange('sort_by', e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#0C479F]"
+            >
+              <option value="">Default</option>
+              <option value="username">Username</option>
+              <option value="name">Nama</option>
+              <option value="email">Email</option>
+              <option value="created_at">Tanggal Dibuat</option>
+            </select>
+          </div> */}
         </div>
-        
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={handleApplyFilter}
+            className="px-4 py-2 bg-[#0C479F] text-white rounded-md hover:bg-[#0A3A7A] transition-colors"
+          >
+            Terapkan Filter
+          </button>
+          <button
+            onClick={handleResetFilter}
+            className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition-colors"
+          >
+            Reset Filter
+          </button>
+        </div>
+      </div>
+
+      {/* Error and Success Messages */}
+      {error && <p className="text-red-500 mt-2">{error}</p>}
+      {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
+      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <div className="flex flex-col overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
@@ -270,9 +319,6 @@ const MainPage = () => {
                 </th>
                 <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                   Role
-                </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
-                  Dinas
                 </th>
                 <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Actions
@@ -298,15 +344,15 @@ const MainPage = () => {
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
                       </td>
-                      <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
-                        <div className="h-8 w-40 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-                      </td>
                     </tr>
                   )
                 ) : dataList.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
-                        Data belum tersedia"
+                    <td colSpan={5} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                      {filters.username || filters.is_active 
+                        ? "Tidak ada data yang sesuai dengan filter" 
+                         : "Data belum tersedia"
+                      } 
                     </td>
                   </tr>
                 ) : dataList.map((item, index) => (
@@ -321,22 +367,19 @@ const MainPage = () => {
                           {item.name}
                         </p>
                       </td>
-                      <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`}>
+                      <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                         <p className="text-dark dark:text-white">
                           {item.username}
                         </p>
                       </td>
-                      <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`}>
+                      <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                         <p className="text-dark dark:text-white">
                           {item.role}
                         </p>
                       </td>
-                       <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`}>
-                        <p className="text-dark dark:text-white">
-                          {item.dinas}
-                        </p>
-                      </td>
-                      <td className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}>
+                      <td
+                        className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}
+                      >
                         <div className="flex items-center justify-end space-x-3.5">
                           <button
                             onClick={() => handleActivate(item.userid)}
@@ -370,7 +413,7 @@ const MainPage = () => {
                               Detail
                             </span>
                           </button>
-                          {/* <button
+                          <button
                             onClick={() => handleEdit(item.userid)}
                             className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
                           >
@@ -391,20 +434,19 @@ const MainPage = () => {
                             <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
                               Hapus
                             </span>
-                          </button> */}
+                          </button>
                         </div>
                       </td>
                     </tr>
                   ))}
             </tbody>
           </table>
-
-          {/* Pagination - Server Side */}
+          {/* Pagination */}
           {!loading && dataList.length > 0 && (
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
-              onPageChange={handlePageChange}
+              onPageChange={setCurrentPage}
               itemsPerPage={itemsPerPage}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
@@ -413,7 +455,7 @@ const MainPage = () => {
       </div>
 
       {/* Modal Konfirmasi Hapus */}
-      {/* {showDeleteModal && (
+      {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black opacity-50"></div>
           <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
@@ -441,7 +483,7 @@ const MainPage = () => {
             </div>
           </div>
         </div>
-      )} */}
+      )}
     </>
   );
 };

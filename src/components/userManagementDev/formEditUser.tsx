@@ -22,7 +22,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [optionRoles, setOptionRoles] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDinas = async () => {
+    const fetchOfficials = async () => {
       setLoading(true);
       setError(null);
       try {
@@ -48,7 +48,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       }
     };
 
-    fetchDinas();
+    fetchOfficials();
   }, []);
 
   useEffect(() => {

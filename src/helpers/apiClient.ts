@@ -26,16 +26,6 @@ export const apiRequest = async (
   retried: boolean = false // Flag untuk mencegah retry loop tak terbatas
 ): Promise<Response> => {
   try {
-    // Ambil token dari cookies
-    // const token = Cookies.get("token");
-    // if (!token) {
-    //   // console.error("Token is missing");
-    //   throw new Error("Token is missing");
-    // }
-    
-    // const headers: Record<string, string> = {
-    //   Authorization: `${token}`,
-    // };
     const headers: Record<string, string> = {};
 
     let finalBody: any = undefined;
@@ -54,16 +44,6 @@ export const apiRequest = async (
       // Penting: Sertakan credentials agar cookies dikirim dengan request
       credentials: "include",
     });
-
-    // Periksa jika token expired (status 401)
-    // if (response.status === 401) {
-    //   // Cookies.remove("token");
-    //   Cookies.remove("user");
-
-    //   window.location.href = "/login";
-    //   // return;
-    //   throw new Error("Authentication required, please log in again.");
-    // }
 
     // Periksa jika token expired (status 401)
     if (response.status === 401 && !retried) {

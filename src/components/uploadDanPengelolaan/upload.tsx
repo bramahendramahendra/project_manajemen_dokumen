@@ -290,7 +290,7 @@ const UploadDokumen = () => {
 
     // Gunakan userData.userid langsung sebagai dinas_id
     const payload = {
-      dinas_id: userData.userid || dinas,
+      dinas_id: userData.department_id || dinas,
       type_id: type,
       subtype_id: subtype,
       tahun: tahun,

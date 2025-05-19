@@ -4,3 +4,18 @@ export type Dinas = {
   createdDate: string;
   updatedDate: string;
 };
+
+
+export type DinasResponse = {
+  responseCode: number;
+  responseDesc: string;
+  responseData: {
+    items: Dinas[];
+  };
+  responseMeta: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_records: number;
+  };
+}
