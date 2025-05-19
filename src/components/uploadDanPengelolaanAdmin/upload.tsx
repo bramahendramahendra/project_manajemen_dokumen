@@ -5,6 +5,7 @@ import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { apiRequestUpload } from "@/helpers/uploadClient";
 import ElementCombobox from "../elements/ElementCombobox";
+import ElementComboboxAutocomplete from "../elements/ElementComboboxAutocomplate";
 import SuccessModal from "../modals/successModal";
 
 const dataTahun = [
@@ -271,9 +272,10 @@ const UploadDokumen = () => {
         <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
           <form onSubmit={handleSubmit}>
             <div className="p-6.5">
-              <ElementCombobox
+              {/* Diganti dengan ElementComboboxAutocomplete */}
+              <ElementComboboxAutocomplete
                 label="Dinas"
-                placeholder="Pilih dinas"
+                placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
                 options={optionOfficials.map((t) => ({ name: t.dinas, id: t.id }))}
                 onChange={(value) => setDinas(Number(value))}
                 resetKey={resetKey}
