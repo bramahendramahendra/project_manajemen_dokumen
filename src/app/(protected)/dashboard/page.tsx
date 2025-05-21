@@ -9,10 +9,8 @@ import Cookies from "js-cookie";
 const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
-
-  const user = JSON.parse(Cookies.get("user") || "{}");
-  console.log(user);
-
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+  
   useEffect(() => {
     const hasVisited = localStorage.getItem("hasVisited");
     if (hasVisited === "true") {
@@ -33,12 +31,13 @@ const Dashboard = () => {
       <div className="mb-6 grid grid-cols-12">
         <div className="2xsm:col-span-12 2xsm:mb-2 md:col-span-9 md:mb-0 lg:col-span-9 xl:col-span-10">
           <h2 className="text-[26px] font-bold leading-[30px] text-dark dark:text-white">
-            Welcome, User Andalanku
+            Welcome, {user.name || "User Andalanku"}
           </h2>
           <span>Perform activities to organize documents</span>
         </div>
       </div>
 
+      {/* DataStatsOne digunakan sebagai pengganti DataStatsPage */}
       <DataStatsPage />
 
       <div className="mt-6 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">

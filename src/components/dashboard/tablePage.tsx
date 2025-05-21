@@ -1,238 +1,191 @@
-// import { BRAND, Status } from "@/types//brand";
-import { DASHBOARD, Status } from "@/types/dashboard";
-import Image from "next/image";
-import Link from "next/link";
-import { HiArrowTopRightOnSquare } from "react-icons/hi2";
+// TablePage.tsx
+"use client";
 
-const statuses: Record<Status, string> = {
-  complete: "text-green-400 bg-green-400/10",
-  uncomplete: "text-rose-400 bg-rose-400/10",
+import { useState } from "react";
+import Pagination from "@/components/pagination/Pagination"; // Sesuaikan path import sesuai struktur proyek Anda
+import { HiOutlineDocumentText } from "react-icons/hi";
+import Image from "next/image";
+
+// Definisikan tipe status dokumen
+type DocumentStatus = "Proses" | "Diterima" | "Tolak";
+
+// Definisikan tipe untuk data dokumen
+interface DocumentItem {
+  nameDocument: string;
+  status: DocumentStatus;
+  dateTime: Date;
+  link: string;
+}
+
+// Fungsi untuk mendapatkan warna status
+const getStatusColor = (status: DocumentStatus) => {
+  switch (status) {
+    case 'Proses':
+      return 'bg-yellow-100 text-yellow-800'; // Warna kuning untuk Proses
+    case 'Tolak':
+      return 'bg-red-100 text-red-800'; // Warna merah untuk Tolak
+    case 'Diterima':
+      return 'bg-green-100 text-green-800'; // Warna hijau untuk Diterima
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
 };
 
+// Format tanggal dalam bahasa Indonesia
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("id-ID", {
-    // 'id-ID' untuk format Indonesia
     day: "numeric",
-    month: "long", // Nama bulan penuh (e.g., "Maret", "April")
+    month: "long",
     year: "numeric",
   });
 };
 
-const dashboardData: DASHBOARD[] = [
-  {
-    logo: "/images/profile.png",
-    name: "Google",
-    nameDocument: "Anual_Report_2023",
-    status: "complete",
-    dateTime: new Date("2024-09-01T10:00:00Z"),
-    link: "#",
-  },
-  {
-    logo: "/images/profile.png",
-    name: "X.com",
-    nameDocument: "Product_Catalogue_Q1",
-    status: "complete",
-    dateTime: new Date("2024-09-02T11:30:00Z"),
-    link: "#",
-  },
-  {
-    logo: "/images/brand/brand-03.svg",
-    name: "Github",
-    nameDocument: "Employee_Handbook_v2",
-    status: "uncomplete",
-    dateTime: new Date("2024-07-21T11:30:00Z"),
-    link: "#",
-  },
-  {
-    logo: "/images/brand/brand-04.svg",
-    name: "Vimeo",
-    nameDocument: "Financial_Statement_August_2022_1221_23232-23232",
-    status: "complete",
-    dateTime: new Date("2023-07-01T11:30:00Z"),
-    link: "#",
-  },
-  {
-    logo: "/images/brand/brand-05.svg",
-    name: "Facebook",
-    nameDocument: "Marketing_Strategy_Plan_2024",
-    status: "uncomplete",
-    dateTime: new Date("2022-01-01T11:30:00Z"),
-    link: "#",
-  },
-  {
-    logo: "/images/brand/brand-05.svg",
-    name: "Facebook",
-    nameDocument: ".....",
-    status: "uncomplete",
-    dateTime: new Date("2022-01-01T11:30:00Z"),
-    link: "#",
-  },
-];
+const TablePage = () => {
+  // Data dokumen contoh dengan 3 status (Proses, Diterima, Tolak)
+  const [documentData, setDocumentData] = useState<DocumentItem[]>([
+    {
+      nameDocument: "Anual_Report_2023",
+      status: "Diterima",
+      dateTime: new Date("2024-09-01T10:00:00Z"),
+      link: "#",
+    },
+    {
+      nameDocument: "Product_Catalogue_Q1",
+      status: "Proses",
+      dateTime: new Date("2024-09-02T11:30:00Z"),
+      link: "#",
+    },
+    {
+      nameDocument: "Employee_Handbook_v2",
+      status: "Tolak",
+      dateTime: new Date("2024-07-21T11:30:00Z"),
+      link: "#",
+    },
+    {
+      nameDocument: "Financial_Statement_August_2022",
+      status: "Diterima",
+      dateTime: new Date("2023-07-01T11:30:00Z"),
+      link: "#",
+    },
+    {
+      nameDocument: "Marketing_Strategy_Plan_2024",
+      status: "Proses",
+      dateTime: new Date("2022-01-01T11:30:00Z"),
+      link: "#",
+    },
+    {
+      nameDocument: "Budget_Proposal_2025",
+      status: "Tolak",
+      dateTime: new Date("2022-01-01T11:30:00Z"),
+      link: "#",
+    },
+    {
+      nameDocument: "Budget_Proposal_2025",
+      status: "Tolak",
+      dateTime: new Date("2022-01-01T11:30:00Z"),
+      link: "#",
+    },
+  ]);
+  
+  // State untuk pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  
+  // Logic pagination
+  const totalPages = Math.ceil(documentData.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = documentData.slice(indexOfFirstItem, indexOfLastItem);
+  
+  // Handler untuk perubahan halaman
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+  
+  // Handler untuk perubahan items per page
+  const handleItemsPerPageChange = (value: number) => {
+    setItemsPerPage(value);
+    setCurrentPage(1); // Reset ke halaman pertama saat mengubah items per page
+  };
 
-const TableOne = () => {
   return (
-    <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
+    <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark">
       <h4 className="mb-5.5 text-body-2xlg font-bold text-dark dark:text-white">
         Document Information
       </h4>
 
-      {/* Wrapping the table with overflow-x-auto for horizontal scroll */}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-max table-auto">
+        <table className="w-full min-w-full table-auto">
           <thead>
-            <tr className="bg-[#F7F9FC]">
-              {/* Uraian Column (sticky) */}
-              <th className="px-2 py-4 xl:pl-7.5 text-left text-dark dark:bg-gray-dark ">
+            <tr className="bg-[#F7F9FC] dark:bg-gray-dark">
+              <th className="px-4 py-4 pb-3.5 text-left font-medium text-dark dark:text-gray-300">
                 Uraian
               </th>
-              {/* Other Year Columns */}
-              <th className="px-4 font-medium py-4 pb-3.5">2018</th>
-              <th className="px-4 font-medium py-4 pb-3.5">2019</th>
-              <th className="px-4 font-medium py-4 pb-3.5">2020</th>
-              <th className="px-4 font-medium py-4 pb-3.5">2021</th>
-              <th className="px-4 font-medium py-4 pb-3.5">2022</th>
-              <th className="px-4 font-medium py-4 pb-3.5">2023</th>
-              <th className="px-4 font-medium py-4 pb-3.5">2024</th>
-              <th className="px-4 font-medium py-4 pb-3.5 xl:pr-7.5">2025</th>
+              <th className="px-4 py-4 pb-3.5 text-center font-medium text-dark dark:text-gray-300">
+                Tanggal
+              </th>
+              <th className="px-4 py-4 pb-3.5 text-center font-medium text-dark dark:text-gray-300">
+                Status
+              </th>
             </tr>
           </thead>
-
           <tbody>
-            {dashboardData.map((brand, key) => (
+            {currentItems.map((item, index) => (
               <tr
+                key={index}
                 className={`hover:bg-gray-2 ${
-                  key === dashboardData.length - 1
+                  index === currentItems.length - 1
                     ? ""
                     : "border-b border-stroke dark:border-dark-3"
                 }`}
-                key={key}
               >
-                {/* Uraian column data (fixed) */}
-                <td className="xl:pl-7.5 px-2 py-4 dark:bg-gray-dark 2xsm:w-7  sm:w-60 md:w-90">
-                  <div className="flex items-center gap-3.5">
-                    <p className="font-medium text-dark dark:text-white">
-                      {brand.nameDocument.replace(/_/g, " ")}
-                    </p>
-                  </div>
-                </td>
-
-                {/* Year columns */}
-                <td className="px-3 py-4">
+                <td className="px-4 py-5 text-sm font-medium text-dark dark:text-white">
                   <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
+                    <div className="mr-3">
+                      <HiOutlineDocumentText className="h-5 w-5 text-gray-400" />
                     </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
+                    <span>{item.nameDocument.replace(/_/g, " ")}</span>
+                  </div>
+                </td>
+                <td className="px-4 py-5 text-center text-sm text-dark dark:text-white">
+                  {formatDate(item.dateTime)}
+                </td>
+                <td className="px-4 py-5 text-center">
+                  <div className="flex items-center justify-center">
+                    <div className={`${getStatusColor(item.status)} flex items-center px-3 py-1 rounded-full text-xs`}>
+                      {/* <div className="mr-1.5 h-2 w-2 rounded-full bg-current" /> */}
+                      <span>{item.status}</span>
                     </div>
                   </div>
                 </td>
-
-                <td className="px-3 py-4">
-                  <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-3 py-4">
-                  <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-3 py-4">
-                  <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-3 py-4">
-                  <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-3 py-4">
-                  <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-3 py-4">
-                  <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
-                    </div>
-                  </div>
-                </td>
-
-                <td className="px-3 py-4 xl:pr-7.5">
-                  <div className="flex items-center">
-                    <div
-                      className={`${statuses[brand.status]} flex-none rounded-full p-1`}
-                    >
-                      <div className="h-2 w-2 rounded-full bg-current" />
-                    </div>
-                    <div className="pl-1 capitalize text-dark dark:text-white">
-                      {brand.status}
-                    </div>
-                  </div>
-                </td>
-
-                {/* <td className="px-2 py-4 text-center">
-                  <Link href="#" className="text-2xl text-dark dark:text-white">
-                    <HiArrowTopRightOnSquare />
-                  </Link>
-                </td> */}
               </tr>
             ))}
+            
+            {/* Tampilkan pesan jika tidak ada data */}
+            {currentItems.length === 0 && (
+              <tr>
+                <td colSpan={3} className="px-4 py-6 text-center text-gray-500">
+                  <div className="flex flex-col items-center">
+                    <HiOutlineDocumentText className="h-10 w-10 text-gray-400" />
+                    <p className="mt-2">Tidak ada dokumen</p>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+
+      {/* Gunakan komponen Pagination */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={handleItemsPerPageChange}
+      />
     </div>
   );
 };
 
-export default TableOne;
+export default TablePage;
