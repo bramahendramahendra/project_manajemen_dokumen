@@ -1,6 +1,6 @@
 "use client";
 import Pagination from "../pagination/Pagination";
-import { apiRequest, downloadFileRequest  } from "@/helpers/apiClient";
+import { apiRequest } from "@/helpers/apiClient";
 import Cookies from "js-cookie";
 import { decryptObject } from "@/utils/crypto";
 import { useState, useEffect } from "react";
@@ -137,87 +137,33 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
     setIsModalOpen(false);
     setSelectedMessage(null);
   };
-// Fungsi untuk download file - VERSI YANG DIPERBAIKI
-  const handleDownload = async (filePath: string, documentName: string) => {
-    try {
-      console.log('Downloading file from path:', filePath);
-      
-      // Pastikan filePath tidak kosong
-      if (!filePath || filePath.trim() === '') {
-        throw new Error('Path file tidak valid');
-      }
 
-      // Hapus leading slash jika ada dan encode path
-      const cleanFilePath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
-      const encodedFilePath = encodeURIComponent(cleanFilePath);
+  // Fungsi untuk download file
+  const handleDownload = async (fileName: string, documentName: string) => {
+    try {
+      // Encode filename untuk URL (menghindari masalah dengan karakter khusus)
+      const encodedFileName = encodeURIComponent(fileName);
       
-      console.log('Clean file path:', cleanFilePath);
-      console.log('Encoded file path:', encodedFilePath);
-      
-      // Menggunakan downloadFileRequest helper untuk download dengan path yang sudah di-encode
-      const response = await downloadFileRequest(`/kotak_masuk/download/${encodedFilePath}`);
-      
-      console.log('Download response status:', response.status);
+      // Menggunakan apiRequest helper untuk download
+      const response = await apiRequest(`/kotak_masuk/download/${encodedFileName}`, "GET");
       
       if (!response.ok) {
         if (response.status === 404) {
-          // Coba ambil detail error dari response
-          try {
-            const errorData = await response.json();
-            console.error('File not found details:', errorData);
-            throw new Error(`File tidak ditemukan: ${cleanFilePath}`);
-          } catch (parseError) {
-            console.error('Error parsing error response:', parseError);
-            throw new Error(`File tidak ditemukan di server: ${cleanFilePath}`);
-          }
-        } else if (response.status === 400) {
-          try {
-            const errorData = await response.json();
-            console.error('Bad request details:', errorData);
-            throw new Error(errorData.ResponseDesc || 'Format file tidak valid');
-          } catch (parseError) {
-            throw new Error('Format file tidak valid');
-          }
-        } else {
-          throw new Error(`Error ${response.status}: Gagal mengunduh file`);
+          throw new Error("File tidak ditemukan");
         }
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       // Membuat blob dari response
       const blob = await response.blob();
       
-      if (blob.size === 0) {
-        throw new Error('File kosong atau tidak dapat dibaca');
-      }
-      
-      console.log('Blob size:', blob.size, 'bytes');
-      
       // Membuat URL object untuk blob
       const blobUrl = window.URL.createObjectURL(blob);
-      
-      // Tentukan nama file untuk download
-      let downloadFileName = documentName || 'download';
-      
-      // Jika documentName tidak ada ekstensi, ambil dari filePath
-      if (documentName && !documentName.includes('.')) {
-        const fileExtension = cleanFilePath.split('.').pop();
-        if (fileExtension) {
-          downloadFileName = `${documentName}.${fileExtension}`;
-        }
-      } else if (!documentName) {
-        // Jika tidak ada documentName, gunakan nama file dari path
-        downloadFileName = cleanFilePath.split('/').pop() || 'download';
-      }
-      
-      console.log('Download filename:', downloadFileName);
       
       // Membuat link download
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = downloadFileName;
-      link.style.display = 'none'; // Sembunyikan link
-      
-      // Tambahkan ke DOM, klik, lalu hapus
+      link.download = documentName || fileName.split('/').pop() || 'download';
       document.body.appendChild(link);
       link.click();
       
@@ -225,16 +171,9 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
       
-      console.log('Download completed successfully');
-      
-      // Tampilkan notifikasi sukses (opsional)
-      // alert(`File "${downloadFileName}" berhasil diunduh!`);
-      
     } catch (error) {
       console.error('Error downloading file:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengunduh file';
-      alert(`Gagal mengunduh file: ${errorMessage}`);
+      alert('Gagal mengunduh file. Silakan coba lagi.');
     }
   };
 

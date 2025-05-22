@@ -10,7 +10,6 @@ import ValidationUploadTable from "@/components/validationUploadAdmin/validation
 import { ValidationUploadUraianAdmin } from "@/types/validationUploadUraian";
 
 const ValidationUploadDetail = () => {
-
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);

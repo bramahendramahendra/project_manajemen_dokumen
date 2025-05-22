@@ -8,24 +8,10 @@ import { HiOutlineArrowTopRightOnSquare} from "react-icons/hi2";
 import { ValidationUploadAdmin } from "@/types/validationUpload";
 import Pagination from "@/components/pagination/Pagination";
 
-// const validationUpload: ValidationUpload[] = [
-//   { skpd: "Dinas Pendidikan", belumValidasi: 1 },
-//   { skpd: "Dinas Kesehatan", belumValidasi: 3 },
-//   { skpd: "Dinas Pertanian", belumValidasi: 5 },
-//   { skpd: "Dinas Kelautan", belumValidasi: 0 },
-//   { skpd: "Dinas Kesejahteraan", belumValidasi: 1 },
-//   { skpd: "Dinas Politik", belumValidasi: 4 },
-//   { skpd: "Dinas Pertahanan", belumValidasi: 1 },
-//   { skpd: "Dinas Keuangan", belumValidasi: 5 },
-// ];
-
-// const itemsPerPage = 5;
-
 const MainPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // const [success, setSuccess] = useState<boolean>(false);
   const [dataList, setDataList] = useState<ValidationUploadAdmin[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,11 +59,10 @@ const MainPage = () => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
     if (!user) return alert("Token tidak ditemukan!");
-     const encrypted = encryptObject({ id, skpd, total }, user);
+    const encrypted = encryptObject({ id, skpd, total }, user);
 
     const formattedSkpd = formatSkpdForUrl(skpd);
     router.push(`/validation_upload_admin/${formattedSkpd}?${key}=${encrypted}`);
-    // router.push(`/validation_upload/${formattedSkpd}`);
   };
 
   return (

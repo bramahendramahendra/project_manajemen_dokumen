@@ -1,6 +1,6 @@
 // src\utils\notifManager.ts
 import notificationClient from "@/helpers/notificationClient";
-import { Toast } from "@/components/Toast"; // Asumsikan Anda memiliki komponen Toast
+// import { Toast } from "@/components/Toast"; // Asumsikan Anda memiliki komponen Toast
 
 /**
  * Inisialisasi manager notifikasi
@@ -16,12 +16,12 @@ export const initNotificationManager = () => {
     if (data && Array.isArray(data.items) && data.items.length > 0) {
       // Hanya tampilkan toast jika ada notifikasi baru
       const latestNotif = data.items[0];
-      Toast.show({
-        type: 'info',
-        title: latestNotif.title,
-        message: latestNotif.subtitle,
-        duration: 5000,
-      });
+      // Toast.show({
+      //   type: 'info',
+      //   title: latestNotif.title,
+      //   message: latestNotif.subtitle,
+      //   duration: 5000,
+      // });
     }
   });
 
