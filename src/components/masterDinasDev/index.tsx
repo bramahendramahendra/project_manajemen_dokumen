@@ -34,7 +34,7 @@ const MainPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await apiRequest("/officials/", "GET");
+        const response = await apiRequest("/master_dinas/", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Setting dinas data not found");

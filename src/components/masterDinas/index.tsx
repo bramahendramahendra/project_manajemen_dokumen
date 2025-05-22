@@ -33,7 +33,7 @@ const MainPage = () => {
     sort_dir: 'DESC'
   });
 
-   // Function untuk fetch data dengan parameter
+  // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -63,8 +63,8 @@ const MainPage = () => {
       const result: DinasResponse = await response.json();
       
       const res: Dinas[] = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          dinas: item.dinas,
+          id: item.dinas,
+          dinas: item.nama_dinas,
           createdDate: item.created_at,
           updatedDate: item.updated_at,
       }));
@@ -87,7 +87,7 @@ const MainPage = () => {
 
   useEffect(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, filters]);
 
   // Handler untuk perubahan halaman
   const handlePageChange = (newPage: number) => {

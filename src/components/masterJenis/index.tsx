@@ -8,7 +8,7 @@ import {
   HiOutlineTrash,
   HiOutlineArrowTopRightOnSquare,
 } from "react-icons/hi2";
-import { Jenis } from "@/types/jenis";
+import { Jenis, JenisResponse } from "@/types/jenis";
 import { formatIndonesianDateTime } from "@/utils/dateFormatter";
 import Pagination from "@/components/pagination/Pagination";
 
@@ -20,58 +20,96 @@ const MainPage = () => {
   const [dataList, setDataList] = useState<Jenis[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-
-  const totalPages = Math.ceil(dataList.length / itemsPerPage);
-  const currentItems = dataList.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemDelete, setItemDelete] = useState<number | string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await apiRequest("/setting_types/", "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Setting jenis data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+  const [filters, setFilters] = useState({
+    sort_by: '',
+    sort_dir: 'DESC'
+  });
+  
+  // Function untuk fetch data dengan parameter
+  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Buat query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        ...filterParams
+      });
+
+      // Hapus parameter kosong
+      Array.from(queryParams.entries()).forEach(([key, value]) => {
+        if (!value) queryParams.delete(key);
+      });
+
+      const response = await apiRequest(`/master_jenis/?${queryParams.toString()}`, "GET");
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Data jenis tidak ditemukan");
         }
-        const result = await response.json();
-        
-        const types: Jenis[] = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          jenis: item.jenis,
-          roles: (item.roles || []).map((role: any) => ({
-            levelId: role.level_id,
-            role: role.role
-          })),
-          createdDate: item.created_at,
-          updatedDate: item.updated_at,
-        }));
-
-        setDataList(types);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-      } finally {
-        setLoading(false);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
-    fetchData();
-  }, []);
+      const result: JenisResponse = await response.json();
+      
+      const res: Jenis[] = result.responseData.items.map((item: any) => ({
+        id: item.jenis,
+        jenis: item.nama_jenis,
+        roles: (item.roles || []).map((role: any) => ({
+          levelId: role.level_id,
+          role: role.role
+        })),
+        createdDate: item.created_at,
+        updatedDate: item.updated_at,
+      }));
+
+      // Set data dari response
+      setDataList(res);
+      setTotalPages(result.responseMeta.total_pages);
+      setTotalRecords(result.responseMeta.total_records);
+    } catch (err: any) {
+      setError(
+        err.message === "Failed to fetch"
+          ? "Gagal mengambil data dinas"
+          : err.message,
+      );
+      setDataList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData(currentPage, itemsPerPage, filters);
+  }, [currentPage, itemsPerPage, filters]);
+
+  // Handler untuk perubahan halaman
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Handler untuk perubahan items per page
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset ke halaman pertama
+  };
 
   // Handler untuk detail user
   const handleDetailsClick = (id: number) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
+    const user = Cookies.get("user");
+    if (!user) return alert("Token tidak ditemukan!");
 
-    const encrypted = encryptObject({ id }, token);
+    const encrypted = encryptObject({ id }, user);
     
     router.push(`/setting_jenis/detail_setting_jenis/mz?${key}=${encrypted}`);
 
@@ -81,12 +119,12 @@ const MainPage = () => {
 
   const handleEdit = (id: number, jenis: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
+    const user = Cookies.get("user");
+    if (!user) return alert("Token tidak ditemukan!");
 
-    const encrypted = encryptObject({ id, jenis }, token);
+    const encrypted = encryptObject({ id, jenis }, user);
     
-    router.push(`/setting_jenis/edit_setting_jenis/mz?${key}=${encrypted}`);
+    router.push(`/setting_jenis/edit/mz?${key}=${encrypted}`);
   };
 
   const handleDeleteClick = (id: number) => {
@@ -102,7 +140,7 @@ const MainPage = () => {
     setSuccess(false);
 
     try {
-      const response = await apiRequest(`/setting_types/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/master_jenis/${itemDelete}`, 'DELETE');
       const result = await response.json();
 
       if (!response.ok) {
@@ -130,6 +168,13 @@ const MainPage = () => {
       {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
         
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Data Dinas</h2>
+          <div className="text-sm text-gray-600">
+            Menampilkan {dataList.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data
+          </div>
+        </div>
+
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
@@ -154,7 +199,7 @@ const MainPage = () => {
             <tbody>
               {
                 loading ? (
-                  Array.from({ length: 5 }).map((_, index) => (
+                  Array.from({ length: itemsPerPage }).map((_, index) => (
                     <tr key={index}>
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
@@ -179,13 +224,13 @@ const MainPage = () => {
                       {error}
                     </td>
                   </tr>
-                ) : currentItems.length === 0 ? (
+                ) : dataList.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                    <td colSpan={5} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
                       Data belum tersedia
                     </td>
                   </tr>
-                ) : currentItems.map((item, index) => (
+                ) : dataList.map((item, index) => (
                   <tr key={index}>
                     <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                       <p className="text-dark dark:text-white">
@@ -265,12 +310,9 @@ const MainPage = () => {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
             itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={(val) => {
-              setItemsPerPage(val);
-              setCurrentPage(1);
-            }}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </div>
       </div>
@@ -285,7 +327,7 @@ const MainPage = () => {
                 Konfirmasi Hapus
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Apakah anda yakin ingin menghapus?
+                Apakah anda yakin ingin menghapus jenis ini?
               </p>
             </div>
             <div className="mt-6 flex justify-center space-x-4">

@@ -53,15 +53,15 @@ const DetailUraian = () => {
 
   const key = process.env.NEXT_PUBLIC_APP_KEY;
   const encrypted = searchParams.get(`${key}`);
-  const token = Cookies.get("token");
+  const user = Cookies.get("user");
 
 
   useEffect(() => {
     const initPage = async () => {
       try {
-        if (!encrypted || !token) throw new Error("Token atau data tidak tersedia.");
+        if (!encrypted || !user) throw new Error("Token atau data tidak tersedia.");
 
-        const result = decryptObject(encrypted, token);
+        const result = decryptObject(encrypted, user);
         if (!result) throw new Error("Gagal dekripsi atau data rusak.");
 
         const { typeID, uraian } = result;
@@ -88,7 +88,7 @@ const DetailUraian = () => {
     };
 
     initPage();
-  }, [encrypted, token]);
+  }, [encrypted, user]);
 
   // useEffect(() => {
   //   if (!encrypted || !token) {

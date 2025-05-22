@@ -7,7 +7,7 @@ import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
 } from "react-icons/hi2";
-import { Subjenis } from "@/types/subjenis";
+import { Subjenis, SubjenisResponse } from "@/types/subjenis";
 import Pagination from "@/components/pagination/Pagination";
 
 const MainPage = () => {
@@ -18,61 +18,101 @@ const MainPage = () => {
   const [dataList, setDataList] = useState<Subjenis[]>([]);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  const totalPages = Math.ceil(dataList.length / itemsPerPage);
-  const currentItems = dataList.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  const [itemDelete, setItemDelete] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemDelete, setItemDelete] = useState<number | string | null>(null);
+  
+  const [filters, setFilters] = useState({
+    sort_by: '',
+    sort_dir: 'DESC'
+  });
+  
+  // Function untuk fetch data dengan parameter
+  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Buat query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        ...filterParams
+      });
+
+      // Hapus parameter kosong
+      Array.from(queryParams.entries()).forEach(([key, value]) => {
+        if (!value) queryParams.delete(key);
+      });
+
+      const response = await apiRequest(`/master_subjenis/?${queryParams.toString()}`, "GET");
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Data jenis tidak ditemukan");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result: SubjenisResponse = await response.json();
+      
+      const res: Subjenis[] = result.responseData.items.map((item: any) => ({
+        id: item.subjenis,
+        idJenis: item.jenis,
+        jenis: item.nama_jenis,
+        subjenis: item.nama_subjenis,
+        roles: (item.roles || []).map((role: any) => ({
+          levelId: role.level_id,
+          role: role.role
+        })),
+        createdDate: item.created_at,
+        updatedDate: item.updated_at,
+      }));
+
+      // Set data dari response
+      setDataList(res);
+      setTotalPages(result.responseMeta.total_pages);
+      setTotalRecords(result.responseMeta.total_records);
+    } catch (err: any) {
+      setError(
+        err.message === "Failed to fetch"
+          ? "Gagal mengambil data dinas"
+          : err.message,
+      );
+      setDataList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await apiRequest("/setting_subtypes/", "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Setting subjenis data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        
-        const subtypes: Subjenis[] = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          idJenis: item.setting_jenis_id,
-          jenis: item.jenis,
-          subjenis: item.subjenis,
-          roles: (item.roles || []).map((role: any) => ({
-            levelId: role.level_id,
-            role: role.role
-          })),
-          createdDate: item.created_at,
-          updatedDate: item.updated_at,
-        }));
+    fetchData(currentPage, itemsPerPage, filters);
+  }, [currentPage, itemsPerPage, filters]);
+  
 
-        setDataList(subtypes);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Handler untuk perubahan halaman
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
 
-    fetchData();
-  }, []);
+  // Handler untuk perubahan items per page
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset ke halaman pertama
+  };
+
 
   const handleEdit = (id: number, subjenis: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
+    const user = Cookies.get("user");
+    if (!user) return alert("Token tidak ditemukan!");
 
-    const encrypted = encryptObject({ id, subjenis }, token);
+    const encrypted = encryptObject({ id, subjenis }, user);
     
-    router.push(`/setting_subjenis/edit_setting_subjenis/mz?${key}=${encrypted}`);
+    router.push(`/master_subjenis/edit/mz?${key}=${encrypted}`);
   };
 
   
@@ -91,7 +131,7 @@ const MainPage = () => {
     setSuccess(false);
 
     try {
-      const response = await apiRequest(`/setting_subtypes/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/master_subjenis/${itemDelete}`, 'DELETE');
       const result = await response.json();
 
       if (!response.ok) {
@@ -120,6 +160,12 @@ const MainPage = () => {
       {error && <p className="text-red-500 mt-2">{error}</p>}
       {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Data Dinas</h2>
+          <div className="text-sm text-gray-600">
+            Menampilkan {dataList.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data
+          </div>
+        </div>
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
@@ -163,13 +209,13 @@ const MainPage = () => {
                       {error}
                     </td>
                   </tr>
-                ) : currentItems.length === 0 ? (
+                ) : dataList.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
                       Data belum tersedia
                     </td>
                   </tr>
-                ) : currentItems.map((item, index) => (
+                ) : dataList.map((item, index) => (
                   <tr key={index}>
                     <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                       <p className="text-dark dark:text-white">
@@ -229,12 +275,9 @@ const MainPage = () => {
           <Pagination
             currentPage={currentPage}
             totalPages={totalPages}
-            onPageChange={setCurrentPage}
+            onPageChange={handlePageChange}
             itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={(val) => {
-              setItemsPerPage(val);
-              setCurrentPage(1);
-            }}
+            onItemsPerPageChange={handleItemsPerPageChange}
           />
         </div>
       </div>
@@ -249,7 +292,7 @@ const MainPage = () => {
                 Konfirmasi Hapus
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Apakah anda yakin ingin menghapus?
+                Apakah anda yakin ingin menghapus subjenis ini?
               </p>
             </div>
             <div className="mt-6 flex justify-center space-x-4">

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Edit Setting Jenis",
+  title: "Add Master Subjenis",
 };
 
 export default function Layout({

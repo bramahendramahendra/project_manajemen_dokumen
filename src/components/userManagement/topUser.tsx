@@ -1,6 +1,6 @@
-import { User } from "@/types/user";
+import { TempUser } from "@/types/user";
 
-const userData: User[] = [
+const userData: TempUser[] = [
   {
     userid: "M00001",
     username: "freepackage",

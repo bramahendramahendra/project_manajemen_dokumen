@@ -304,6 +304,12 @@ const MainPage = () => {
       {error && <p className="text-red-500 mt-2">{error}</p>}
       {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
       <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold">Data User</h2>
+          <div className="text-sm text-gray-600">
+            Menampilkan {dataList.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data
+          </div>
+        </div>
         <div className="flex flex-col overflow-x-auto">
           <table className="w-full table-auto">
             <thead>

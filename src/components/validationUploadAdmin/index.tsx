@@ -71,9 +71,9 @@ const MainPage = () => {
 
   const handleDetailClick = (id: number, skpd: string, total: number) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
-     const encrypted = encryptObject({ id, skpd, total }, token);
+    const user = Cookies.get("user");
+    if (!user) return alert("Token tidak ditemukan!");
+     const encrypted = encryptObject({ id, skpd, total }, user);
 
     const formattedSkpd = formatSkpdForUrl(skpd);
     router.push(`/validation_upload_admin/${formattedSkpd}?${key}=${encrypted}`);

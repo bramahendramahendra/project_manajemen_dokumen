@@ -6,7 +6,7 @@ import FormAddPage from "@/components/masterDinas/formAddPage";
 const AddPage = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Setting Dinas", href: "/setting_dinas" },
+    { name: "Master Dinas", href: "/master_dinas" },
     { name: "Tambah Dinas" },
   ];
 

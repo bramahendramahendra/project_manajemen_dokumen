@@ -10,7 +10,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
   useEffect(() => {
     if (dataEdit) {
-      setOfficial(dataEdit.dinas || '');
+      setOfficial(dataEdit.nama_dinas || '');
     }
   }, [dataEdit]);
   
@@ -25,7 +25,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/officials/${dataEdit.id}`, 'PUT', payload);
+      const response = await apiRequest(`/master_dinas/${dataEdit.dinas}`, 'PUT', payload);
       const result = await response.json();
 
       if (!response.ok) {

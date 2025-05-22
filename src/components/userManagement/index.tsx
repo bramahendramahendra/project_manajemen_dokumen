@@ -306,7 +306,7 @@ const MainPage = () => {
                 ) : dataList.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
-                        Data belum tersedia"
+                        Data belum tersedia
                     </td>
                   </tr>
                 ) : dataList.map((item, index) => (

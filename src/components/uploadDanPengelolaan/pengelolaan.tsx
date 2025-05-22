@@ -63,9 +63,9 @@ const PengelolaanDokumen = () => {
 
   const handleDetailsClick = (typeID: number, uraian: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
-    const encrypted = encryptObject({ typeID, uraian }, token);
+    const user = Cookies.get("user");
+    if (!user) return alert("Token tidak ditemukan!");
+    const encrypted = encryptObject({ typeID, uraian }, user);
 
     // Ganti spasi dengan tanda hubung untuk URL-friendly
     const formattedUraian = uraian.replace(/\s+/g, "-").toLowerCase();

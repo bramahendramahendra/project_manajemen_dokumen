@@ -6,7 +6,7 @@ import FormAddPage from "@/components/masterSubjenis/formAddPage";
 const AddPage = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Setting Subjenis", href: "/setting_subjenis" },
+    { name: "Master Subjenis", href: "/master_subjenis" },
     { name: "Tambah Subjenis" },
   ];
 

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Setting Dinas",
+  title: "Master Dinas",
 };
 
 export default function Layout({

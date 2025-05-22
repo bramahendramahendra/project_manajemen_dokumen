@@ -19,7 +19,7 @@ const FormAddPage = () => {
     };    
 
     try {
-      const response = await apiRequest('/officials/', 'POST', payload);
+      const response = await apiRequest('/master_dinas/', 'POST', payload);
 
       if (response.ok) {
         setSuccess(true);

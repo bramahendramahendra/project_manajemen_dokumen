@@ -27,7 +27,7 @@ const FormAddUser = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/officials/", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Officials data not found");
@@ -37,8 +37,8 @@ const FormAddUser = () => {
         const result = await response.json();
 
         const fetchedOfficials = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          dinas: item.dinas,
+          id: item.dinas,
+          dinas: item.nama_dinas,
         }));
 
         setOptionOfficials(fetchedOfficials);
@@ -107,18 +107,18 @@ const FormAddUser = () => {
     const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
 
     const payload = {
+      username: username,
+      password: password,
       firstname: firstName,
       lastname: lastName,
-      username: username,
       email,
       phone_number: phoneNumber,
+      dinas: accessUser === 'DNS' ? department : 0,
+      nama_dinas: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
       // department_id: department,
       // department_name: selectedDepartment?.dinas || "",
-      department_id: accessUser === 'DNS' ? department : 0,
-      department_name: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
       responsible_person: responsiblePerson,
       level_id: accessUser,
-      password: password,
     };
 
     try {

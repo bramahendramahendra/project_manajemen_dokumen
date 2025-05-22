@@ -2,7 +2,7 @@ export type User = {
   userid: string;
   username: string;
   name: string;
-  // level_id: string;
+  // level_id?: string;
   role: string;
   dinas: string;
   isActive: number;
@@ -21,3 +21,11 @@ export type UserResponse = {
     total_records: number;
   };
 }
+
+export type TempUser = {
+  userid: string;
+  username: string;
+  name: string;
+  level_id: string;
+  role: string;
+};
