@@ -26,16 +26,6 @@ export const apiRequest = async (
   retried: boolean = false // Flag untuk mencegah retry loop tak terbatas
 ): Promise<Response> => {
   try {
-    // Ambil token dari cookies
-    // const token = Cookies.get("token");
-    // if (!token) {
-    //   // console.error("Token is missing");
-    //   throw new Error("Token is missing");
-    // }
-    
-    // const headers: Record<string, string> = {
-    //   Authorization: `${token}`,
-    // };
     const headers: Record<string, string> = {};
 
     let finalBody: any = undefined;
@@ -54,16 +44,6 @@ export const apiRequest = async (
       // Penting: Sertakan credentials agar cookies dikirim dengan request
       credentials: "include",
     });
-
-    // Periksa jika token expired (status 401)
-    // if (response.status === 401) {
-    //   // Cookies.remove("token");
-    //   Cookies.remove("user");
-
-    //   window.location.href = "/login";
-    //   // return;
-    //   throw new Error("Authentication required, please log in again.");
-    // }
 
     // Periksa jika token expired (status 401)
     if (response.status === 401 && !retried) {
@@ -120,6 +100,87 @@ export const apiRequest = async (
     throw error;
   }
 };
+
+
+/**
+ * Helper function khusus untuk download file
+ * @param endpoint URL endpoint yang dituju untuk download
+ * @param retried Flag untuk mencegah retry loop tak terbatas
+ * @returns Response dari fetch
+ */
+export const downloadFileRequest = async (
+  endpoint: string,
+  retried: boolean = false
+): Promise<Response> => {
+  try {
+    console.log(`Making download request: ${process.env.NEXT_PUBLIC_API_URL}${endpoint}`);
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      method: "GET",
+      credentials: "include",
+      // Tidak perlu set headers khusus untuk download
+    });
+
+    console.log(`Download response status: ${response.status} for ${endpoint}`);
+    
+    // Periksa jika token expired (status 401) - sama seperti apiRequest
+    if (response.status === 401 && !retried) {
+      console.log('Token expired during download, attempting refresh...');
+      
+      // Jika tidak sedang refresh token, lakukan refresh
+      if (!isRefreshing) {
+        isRefreshing = true;
+        
+        try {
+          const refreshResponse = await refreshAccessToken();
+          
+          if (refreshResponse.ok) {
+            isRefreshing = false;
+            
+            // Update waktu login terakhir
+            localStorage.setItem('lastLoginTime', Date.now().toString());
+            
+            // Retry semua request yang gagal
+            processFailedRequests(true);
+            
+            // Retry download request saat ini
+            return downloadFileRequest(endpoint, true);
+          } else {
+            // Jika refresh gagal, redirect ke login
+            isRefreshing = false;
+            Cookies.remove("user");
+            localStorage.removeItem('lastLoginTime');
+            window.location.href = "/login";
+            throw new Error("Session expired, please log in again.");
+          }
+        } catch (error) {
+          isRefreshing = false;
+          Cookies.remove("user");
+          localStorage.removeItem('lastLoginTime');
+          window.location.href = "/login";
+          throw error;
+        }
+      } else {
+        // Jika sedang refresh, tambahkan request ke antrian
+        return new Promise((resolve, reject) => {
+          failedRequests.push((success: boolean) => {
+            if (success) {
+              resolve(downloadFileRequest(endpoint, true));
+            } else {
+              reject("Session expired");
+            }
+          });
+        });
+      }
+    }
+    
+    return response;
+  } catch (error) {
+    console.error("Download request error:", error);
+    throw error;
+  }
+};
+
 
 /**
  * Helper function untuk request API dengan token

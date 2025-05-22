@@ -1,36 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import ClickOutside from "@/components/ClickOutside";
 import Image from "next/image";
 import { apiRequest } from "@/helpers/apiClient";
-
-// const notificationList = [
-//   {
-//     image: "/images/profile.png",
-//     title: "Piter Joined the Team!",
-//     subTitle: "Congratulate him",
-//   },
-//   {
-//     image: "/images/profile.png",
-//     title: "New message received",
-//     subTitle: "Devid sent you new message",
-//   },
-//   {
-//     image: "/images/profile.png",
-//     title: "New Payment received",
-//     subTitle: "Check your earnings",
-//   },
-//   {
-//     image: "/images/profile.png",
-//     title: "Jolly completed tasks",
-//     subTitle: "Assign her newtasks",
-//   },
-//   {
-//     image: "/images/profile.png",
-//     title: "Roman Joined the Team!",
-//     subTitle: "Congratulate him",
-//   },
-// ];
+import notificationClient from "@/helpers/notificationClient";
 
 type NotificationItem = {
   url: string;
@@ -48,35 +21,64 @@ const DropdownNotification = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
 
-   useEffect(() => {
-      const fetchData = async () => {
-        try {
-          const response = await apiRequest("/notifications/header", "GET");
-          if (!response.ok) {
-            if (response.status === 404) {
-              throw new Error("Notification data not found");
-            }
-            throw new Error(`HTTP error! status: ${response.status}`);
+  // Initial fetch untuk notifikasi
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        const response = await apiRequest("/notifications/header", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Notification data not found");
           }
-          const result = await response.json();
-          
-          const notif: NotificationItem[] = result.responseData.items.map((item: any) => ({
-            url: item.url,
-            image: item.image,
-            title: item.title,
-            subTitle: item.subtitle,
-          }));
-  
-          setNotifications(notif);
-        } catch (err: any) {
-          setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-        } finally {
-          setLoading(false);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-      };
-  
-      fetchData();
-    }, []);
+        const result = await response.json();
+        
+        const notif: NotificationItem[] = result.responseData.items.map((item: any) => ({
+          url: item.url,
+          image: item.image,
+          title: item.title,
+          subTitle: item.subtitle,
+        }));
+
+        setNotifications(notif);
+        setNotifying(notif.length > 0); // Set notifying berdasarkan keberadaan notifikasi
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, []);
+
+  // Efek untuk mengelola koneksi SSE
+  useEffect(() => {
+    // Subscribe ke event header untuk mendapatkan notifikasi secara real-time
+    const unsubscribe = notificationClient.subscribe('header', (data: any) => {
+      if (data && Array.isArray(data.items)) {
+        const notif: NotificationItem[] = data.items.map((item: any) => ({
+          url: item.url,
+          image: item.image,
+          title: item.title,
+          subTitle: item.subtitle,
+        }));
+        
+        setNotifications(notif);
+        setNotifying(notif.length > 0); // Update status notifying
+      }
+    });
+
+    // Mulai koneksi SSE jika belum terhubung
+    notificationClient.connect();
+
+    // Cleanup: unsubscribe ketika komponen unmount
+    return () => {
+      unsubscribe();
+    };
+  }, []);
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative hidden sm:block">

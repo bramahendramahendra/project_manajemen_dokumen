@@ -25,8 +25,10 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [filteredOptions, setFilteredOptions] = useState<Option[]>([]);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [isFocused, setIsFocused] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Reset state when resetKey changes
   useEffect(() => {
@@ -34,6 +36,7 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
     setSearchTerm("");
     setFilteredOptions([]);
     setIsDropdownOpen(false);
+    setIsFocused(false);
   }, [resetKey]);
 
   // Filter options based on search term
@@ -44,23 +47,25 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
       );
       setFilteredOptions(filtered);
       
-      // Only open dropdown if we have results or need to show "no results"
-      setIsDropdownOpen(true);
+      // Only open dropdown if input is focused and we have results
+      if (isFocused) {
+        setIsDropdownOpen(true);
+      }
     } else {
       setFilteredOptions([]);
       setIsDropdownOpen(false);
     }
-  }, [searchTerm, options]);
+  }, [searchTerm, options, isFocused]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
-        inputRef.current !== event.target
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
+        setIsFocused(false);
       }
     };
 
@@ -76,8 +81,14 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
   const handleSelectOption = (option: Option) => {
     setSelectedOption(option);
     setSearchTerm(String(option.name));
-    setIsDropdownOpen(false); // Close dropdown after selection
+    setIsDropdownOpen(false);
+    setIsFocused(false);
     onChange(option.id !== undefined ? option.id : option.name);
+    
+    // Blur the input to remove focus
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
   };
 
   /**
@@ -95,9 +106,10 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
   };
 
   /**
-   * Handle input focus to show dropdown if search term is already 3+ chars
+   * Handle input focus
    */
   const handleFocus = () => {
+    setIsFocused(true);
     if (searchTerm.length >= 3) {
       const filtered = options.filter((option) =>
         String(option.name).toLowerCase().includes(searchTerm.toLowerCase())
@@ -107,8 +119,19 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
     }
   };
 
+  /**
+   * Handle input blur
+   */
+  const handleBlur = () => {
+    // Delay the blur to allow for dropdown clicks
+    setTimeout(() => {
+      setIsFocused(false);
+      setIsDropdownOpen(false);
+    }, 150);
+  };
+
   return (
-    <div className="mb-4.5">
+    <div className="mb-4.5" ref={containerRef}>
       <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
         {label}
       </label>
@@ -121,17 +144,18 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={handleFocus}
+          onBlur={handleBlur}
         />
 
         {/* Status indicator for min 3 chars */}
-        {searchTerm.length > 0 && searchTerm.length < 3 && (
+        {isFocused && searchTerm.length > 0 && searchTerm.length < 3 && (
           <div className="text-xs text-[#1D92F9] mt-1">
             Ketik minimal 3 karakter untuk mencari
           </div>
         )}
 
         {/* Dropdown with z-index to ensure it's on top */}
-        {isDropdownOpen && (
+        {isDropdownOpen && isFocused && (
           <div 
             ref={dropdownRef}
             className="absolute z-50 mt-1 w-full origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-2"
@@ -147,7 +171,11 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
                         ? "bg-[#1D92F9]/10 text-[#1D92F9]"
                         : "text-gray-700 dark:text-gray-200"
                     }`}
-                    onClick={() => handleSelectOption(option)}
+                    onMouseDown={(e) => {
+                      // Prevent blur event from firing
+                      e.preventDefault();
+                      handleSelectOption(option);
+                    }}
                   >
                     {option.name}
                   </div>

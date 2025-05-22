@@ -82,9 +82,9 @@ const MainPage = () => {
 
   const handleDetailsClick = (id: number, nama: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
-    const encrypted = encryptObject({ id, nama }, token);
+    const user = Cookies.get("user");
+    if (!user) return alert("Token tidak ditemukan!");
+    const encrypted = encryptObject({ id, nama }, user);
     const formattedNama = encodeURIComponent(
       nama.toLowerCase().replace(/\s+/g, "-")
     );

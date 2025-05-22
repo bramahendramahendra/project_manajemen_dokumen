@@ -10,7 +10,6 @@ import ValidationUploadTable from "@/components/validationUploadAdmin/validation
 import { ValidationUploadUraianAdmin } from "@/types/validationUploadUraian";
 
 const ValidationUploadDetail = () => {
-
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
@@ -23,14 +22,14 @@ const ValidationUploadDetail = () => {
 
   const key = process.env.NEXT_PUBLIC_APP_KEY;
   const encrypted = searchParams.get(`${key}`);
-  const token = Cookies.get("token");
+  const user = Cookies.get("user");
 
   useEffect(() => {
-    if (!encrypted || !token) {
+    if (!encrypted || !user) {
       setError("Token atau data tidak tersedia.");
       return;
     }
-    const result = decryptObject(encrypted, token);
+    const result = decryptObject(encrypted, user);
     if (!result) {
       setError("Gagal dekripsi atau data rusak.");
       return;
@@ -39,7 +38,7 @@ const ValidationUploadDetail = () => {
     setID(id);
     setSkpd(skpd);
     setTotalPending(total);
-  }, [encrypted, token]);
+  }, [encrypted, user]);
 
   useEffect(() => {
     const fetchData = async () => {

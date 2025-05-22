@@ -77,7 +77,7 @@ const UploadDokumen = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/officials/", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Officials data not found");
@@ -87,8 +87,8 @@ const UploadDokumen = () => {
         const result = await response.json();
 
         const fetchedOfficials = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          dinas: item.dinas,
+          id: item.dinas,
+          dinas: item.nama_dinas,
         }));
 
         setOptionOfficials(fetchedOfficials);
@@ -113,7 +113,7 @@ const UploadDokumen = () => {
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
         const response = await apiRequest(
-          `/setting_types/all-data/by-role/${user.level_id}`,
+          `/master_jenis/all-data/by-role/${user.level_id}`,
           "GET",
         );
         if (!response.ok) {
@@ -126,8 +126,8 @@ const UploadDokumen = () => {
 
         const fetchOptionSettingTypes = result.responseData.items.map(
           (item: any) => ({
-            id: item.id,
-            jenis: item.jenis,
+            id: item.jenis,
+            jenis: item.nama_jenis,
           }),
         );
 
@@ -155,7 +155,7 @@ const UploadDokumen = () => {
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
         const response = await apiRequest(
-          `/setting_subtypes/all-data/by-role/${type}/${user.level_id}`,
+          `/master_subjenis/all-data/by-role/${type}/${user.level_id}`,
           "GET",
         );
         if (!response.ok) {
@@ -168,8 +168,8 @@ const UploadDokumen = () => {
 
         const fetchOptionSettingSubtypes = result.responseData.items.map(
           (item: any) => ({
-            id: item.id,
-            subjenis: item.subjenis,
+            id: item.subjenis,
+            subjenis: item.nama_subjenis,
           }),
         );
 
@@ -290,7 +290,7 @@ const UploadDokumen = () => {
 
     // Gunakan userData.userid langsung sebagai dinas_id
     const payload = {
-      dinas_id: userData.userid || dinas,
+      dinas_id: userData.department_id || dinas,
       type_id: type,
       subtype_id: subtype,
       tahun: tahun,

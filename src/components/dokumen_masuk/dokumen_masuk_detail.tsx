@@ -1,287 +1,263 @@
 "use client";
-import { useState } from "react";
 import Pagination from "../pagination/Pagination";
+import { apiRequest, downloadFileRequest  } from "@/helpers/apiClient";
+import Cookies from "js-cookie";
+import { decryptObject } from "@/utils/crypto";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
-// Data Dinas yang berhubungan dengan Data Kiriman
-type DataDinas = {
-  id: number;
-  nama: string;
-  namaDinas: string;
-  notificationCount: number;
-};
+// Interface untuk data API response
+interface KirimanDokumen {
+  dokumen: string;
+  pengirim_nama: string;
+  pengirim_date: string;
+  judul: string;
+  lampiran: string;
+  file_name: string;
+}
 
-const dataDinas: DataDinas[] = [
-  { id: 1, nama: "Andi Wijaya", namaDinas: "Dinas Pendidikan Pemuda dan Olahraga", notificationCount: 5 },
-  { id: 2, nama: "Rina Suryani", namaDinas: "Dinas Kesehatan", notificationCount: 3 },
-  { id: 3, nama: "Dewi Lestari", namaDinas: "Dinas Lingkungan Hidup", notificationCount: 0 },
-  { id: 4, nama: "Budi Santoso", namaDinas: "Dinas Perhubungan", notificationCount: 8 },
-  { id: 5, nama: "Siti Aminah", namaDinas: "Dinas Sosial", notificationCount: 2 },
-  { id: 6, nama: "Eko Prasetyo", namaDinas: "Dinas Pekerjaan Umum", notificationCount: 0 },
-  { id: 7, nama: "Yulianto", namaDinas: "Dinas Kebudayaan dan Pariwisata", notificationCount: 1 },
-  { id: 8, nama: "Lina Marlina", namaDinas: "Dinas Perindustrian dan Perdagangan", notificationCount: 4 },
-  { id: 9, nama: "Agus Saputra", namaDinas: "Dinas Ketahanan Pangan", notificationCount: 7 },
-  { id: 10, nama: "Ratna Dewi", namaDinas: "Dinas Kependudukan dan Pencatatan Sipil", notificationCount: 0 },
-  { id: 11, nama: "Joko Pranoto", namaDinas: "Dinas Tenaga Kerja", notificationCount: 9 },
-  { id: 12, nama: "Maria Lestari", namaDinas: "Dinas Pariwisata dan Ekonomi Kreatif", notificationCount: 2 }
-];
+// Interface untuk data yang sudah diformat
+interface FormattedKirimanDokumen {
+  id: string;
+  sender: string;
+  senderDinas: string;
+  date: string;
+  lampiran: string;
+  messageTitle: string;
+  messageContent: string;
+  fileName: string;
+}
 
-// Menambahkan properti messageTitle dan messageContent ke data dummy
-const dummyKirimanDokumen = [
-  {
-    "id": 1,
-    "sender": "Andi Wijaya",
-    "senderDinas": "Dinas Pendidikan Pemuda dan Olahraga",
-    "date": "2024-06-17",
-    "lampiran": "DPA",
-    "messageTitle": "Pengiriman DPA Terbaru",
-    "messageContent": "Dengan hormat, bersama ini saya lampirkan dokumen DPA terbaru yang telah direvisi sesuai dengan permintaan. Mohon ditinjau kembali."
-  },
-  {
-    "id": 2,
-    "sender": "Andi Wijaya",
-    "senderDinas": "Dinas Pendidikan Pemuda dan Olahraga",
-    "date": "2024-06-17",
-    "lampiran": "Anggaran Kas",
-    "messageTitle": "Dokumen Anggaran Kas",
-    "messageContent": "Berikut saya kirimkan dokumen anggaran kas periode Juli-Desember 2024 untuk direview. Mohon masukan dan persetujuannya."
-  },
-  {
-    "id": 3,
-    "sender": "Andi Wijaya",
-    "senderDinas": "Dinas Pendidikan Pemuda dan Olahraga",
-    "date": "2024-06-17",
-    "lampiran": "RKA",
-    "messageTitle": "RKA Tahun Anggaran 2024",
-    "messageContent": "Terlampir RKA tahun anggaran 2024 yang sudah disesuaikan dengan kebijakan terbaru. Mohon ditinjau dan disetujui."
-  },
-  {
-    "id": 4,
-    "sender": "Dewi Lestari",
-    "senderDinas": "Dinas Lingkungan Hidup",
-    "date": "2024-06-18",
-    "lampiran": "DPA",
-    "messageTitle": "Pengajuan DPA Dinas Lingkungan Hidup",
-    "messageContent": "Dengan ini kami sampaikan dokumen DPA Dinas Lingkungan Hidup untuk tahun anggaran 2024 untuk mendapatkan persetujuan."
-  },
-  {
-    "id": 5,
-    "sender": "Dewi Lestari",
-    "senderDinas": "Dinas Lingkungan Hidup",
-    "date": "2024-06-18",
-    "lampiran": "Anggaran Kas",
-    "messageTitle": "Revisi Anggaran Kas",
-    "messageContent": "Berikut revisi anggaran kas sesuai dengan hasil rapat koordinasi tanggal 15 Juni 2024. Mohon untuk ditinjau kembali."
-  },
-  {
-    "id": 6,
-    "sender": "Dewi Lestari",
-    "senderDinas": "Dinas Lingkungan Hidup",
-    "date": "2024-06-18",
-    "lampiran": "RKA",
-    "messageTitle": "Dokumen RKA Terbaru",
-    "messageContent": "Terlampir dokumen RKA terbaru yang telah diperbaharui sesuai masukan dari tim keuangan."
-  },
-  {
-    "id": 7,
-    "sender": "Rina Suryani",
-    "senderDinas": "Dinas Kesehatan",
-    "date": "2024-06-19",
-    "lampiran": "DPA",
-    "messageTitle": "DPA Dinas Kesehatan",
-    "messageContent": "Bersama ini kami kirimkan dokumen DPA Dinas Kesehatan untuk direview dan disetujui."
-  },
-  {
-    "id": 8,
-    "sender": "Rina Suryani",
-    "senderDinas": "Dinas Kesehatan",
-    "date": "2024-06-19",
-    "lampiran": "Anggaran Kas",
-    "messageTitle": "Penyesuaian Anggaran Kas",
-    "messageContent": "Berikut penyesuaian anggaran kas setelah adanya realokasi anggaran. Mohon untuk diperiksa dan disetujui."
-  },
-  {
-    "id": 9,
-    "sender": "Rina Suryani",
-    "senderDinas": "Dinas Kesehatan",
-    "date": "2024-06-19",
-    "lampiran": "RKA",
-    "messageTitle": "Pengiriman RKA",
-    "messageContent": "Terlampir dokumen RKA untuk program pengembangan kurikulum. Mohon untuk direview."
-  },
-  {
-    "id": 10,
-    "sender": "Budi Santoso",
-    "senderDinas": "Dinas Perhubungan",
-    "date": "2024-06-20",
-    "lampiran": "DPA",
-    "messageTitle": "DPA Dinas Perhubungan",
-    "messageContent": "Dengan hormat, bersama ini saya lampirkan DPA Dinas Perhubungan untuk tahun anggaran 2024."
-  },
-  {
-    "id": 11,
-    "sender": "Budi Santoso",
-    "senderDinas": "Dinas Perhubungan",
-    "date": "2024-06-20",
-    "lampiran": "Anggaran Kas",
-    "messageTitle": "Anggaran Kas Triwulan III",
-    "messageContent": "Bersama ini disampaikan dokumen anggaran kas untuk triwulan III tahun 2024."
-  },
-  {
-    "id": 12,
-    "sender": "Budi Santoso",
-    "senderDinas": "Dinas Perhubungan",
-    "date": "2024-06-20",
-    "lampiran": "RKA",
-    "messageTitle": "Pengiriman RKA Terbaru",
-    "messageContent": "Terlampir RKA terbaru yang sudah disesuaikan dengan perubahan APBD."
-  },
-  {
-    "id": 13,
-    "sender": "Eko Prasetyo",
-    "senderDinas": "Dinas Pekerjaan Umum",
-    "date": "2024-06-21",
-    "lampiran": "DPA",
-    "messageTitle": "DPA Dinas Pekerjaan Umum",
-    "messageContent": "Bersama ini kami kirimkan DPA Dinas Pekerjaan Umum tahun anggaran 2024."
-  },
-  {
-    "id": 14,
-    "sender": "Eko Prasetyo",
-    "senderDinas": "Dinas Pekerjaan Umum",
-    "date": "2024-06-21",
-    "lampiran": "Anggaran Kas",
-    "messageTitle": "Anggaran Kas Semester II",
-    "messageContent": "Terlampir dokumen anggaran kas semester II tahun 2024 untuk direview dan disetujui."
-  },
-  {
-    "id": 15,
-    "sender": "Eko Prasetyo",
-    "senderDinas": "Dinas Pekerjaan Umum",
-    "date": "2024-06-21",
-    "lampiran": "RKA",
-    "messageTitle": "RKA Proyek Infrastruktur",
-    "messageContent": "Berikut RKA untuk proyek infrastruktur jalan dan jembatan tahun anggaran 2024."
-  },
-  {
-    "id": 16,
-    "sender": "Yulianto",
-    "senderDinas": "Dinas Kebudayaan dan Pariwisata",
-    "date": "2024-06-22",
-    "lampiran": "DPA",
-    "messageTitle": "DPA Dinas Kebudayaan",
-    "messageContent": "Dengan hormat, terlampir DPA Dinas Kebudayaan untuk tahun anggaran 2024."
-  },
-  {
-    "id": 17,
-    "sender": "Yulianto",
-    "senderDinas": "Dinas Kebudayaan dan Pariwisata",
-    "date": "2024-06-22",
-    "lampiran": "Anggaran Kas",
-    "messageTitle": "Revisi Anggaran Kas Festival",
-    "messageContent": "Berikut revisi anggaran kas untuk kegiatan festival budaya tahunan."
-  },
-  {
-    "id": 18,
-    "sender": "Yulianto",
-    "senderDinas": "Dinas Kebudayaan dan Pariwisata",
-    "date": "2024-06-22",
-    "lampiran": "RKA",
-    "messageTitle": "RKA Program Pelestarian Budaya",
-    "messageContent": "Terlampir RKA untuk program pelestarian budaya tahun 2024."
-  },
-  {
-    "id": 19,
-    "sender": "Lina Marlina",
-    "senderDinas": "Dinas Perindustrian dan Perdagangan",
-    "date": "2024-06-23",
-    "lampiran": "DPA",
-    "messageTitle": "DPA Dinas Perindustrian",
-    "messageContent": "Bersama ini disampaikan DPA Dinas Perindustrian tahun anggaran 2024."
-  },
-  {
-    "id": 20,
-    "sender": "Lina Marlina",
-    "senderDinas": "Dinas Perindustrian dan Perdagangan",
-    "date": "2024-06-23",
-    "lampiran": "Anggaran Kas",
-    "messageTitle": "Anggaran Kas Program UMKM",
-    "messageContent": "Terlampir anggaran kas untuk program pengembangan UMKM tahun 2024."
-  },
-  {
-    "id": 21,
-    "sender": "Agus Saputra",
-    "senderDinas": "Dinas Ketahanan Pangan",
-    "date": "2024-06-24",
-    "lampiran": "Proposal Proyek",
-    "messageTitle": "Proposal Proyek Pengembangan",
-    "messageContent": "Dengan ini saya lampirkan proposal proyek pengembangan infrastruktur untuk tahun 2025."
-  },
-  {
-    "id": 22,
-    "sender": "Agus Saputra",
-    "senderDinas": "Dinas Ketahanan Pangan",
-    "date": "2024-06-25",
-    "lampiran": "Laporan Tahunan",
-    "messageTitle": "Laporan Tahunan 2023",
-    "messageContent": "Bersama ini saya kirimkan laporan tahunan 2023 yang sudah difinalisasi."
-  },
-  {
-    "id": 23,
-    "sender": "Ratna Dewi",
-    "senderDinas": "Dinas Kependudukan dan Pencatatan Sipil",
-    "date": "2024-06-26",
-    "lampiran": "Agenda Meeting",
-    "messageTitle": "Agenda Rapat Koordinasi",
-    "messageContent": "Terlampir agenda rapat koordinasi antar dinas yang akan dilaksanakan pada tanggal 5 Juli 2024."
-  },
-  {
-    "id": 24,
-    "sender": "Joko Pranoto",
-    "senderDinas": "Dinas Tenaga Kerja",
-    "date": "2024-06-27",
-    "lampiran": "Surat Pengajuan",
-    "messageTitle": "Surat Pengajuan Dana Tambahan",
-    "messageContent": "Dengan hormat, bersama ini saya lampirkan surat pengajuan dana tambahan untuk program prioritas tahun 2024."
-  }
-  ];
-  
-  
+const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: string | null }) => {
+  const searchParams = useSearchParams();
 
-const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: string }) => {
-    // Filter berdasarkan nama dinas
-    const filteredData = dummyKirimanDokumen.filter(
-        (item) => item.senderDinas === senderNamaDinas
-      );
-    
-      const [currentPage, setCurrentPage] = useState(1);
-      const [itemsPerPage, setItemsPerPage] = useState(5);
-    
-      // State untuk modal
-      const [isModalOpen, setIsModalOpen] = useState(false);
-      const [selectedMessage, setSelectedMessage] = useState<{
-        title: string;
-        content: string;
-      } | null>(null);
-    
-      const totalPages = Math.ceil(filteredData.length / itemsPerPage);
-    
-      // Data yang ditampilkan pada halaman saat ini
-      const currentData = filteredData.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-      );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dataKiriman, setDataKiriman] = useState<FormattedKirimanDokumen[]>([]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  // State untuk modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
+
+  const [dinas, setDinas] = useState<number | null>(null);
+  const [namaDinas, setNamaDinas] = useState<string | null>(null);
+
+  const key = process.env.NEXT_PUBLIC_APP_KEY;
+  const encrypted = searchParams.get(`${key}`);
+  const user = Cookies.get("user");
+
+  // Filter data berdasarkan nama dinas
+  const filteredData = dataKiriman.filter(
+    (item) => item.senderDinas === senderNamaDinas
+  );
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  // Data yang ditampilkan pada halaman saat ini
+  const currentData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  // Dekripsi parameter URL
+  useEffect(() => {
+    if (!encrypted || !user) {
+      setError("Token atau data tidak tersedia.");
+      setLoading(false);
+      return;
+    }
+    const result = decryptObject(encrypted, user);
+    if (!result) {
+      setError("Gagal dekripsi atau data rusak.");
+      setLoading(false);
+      return;
+    }
+    const { dinas, nama_dinas } = result;
+    setDinas(dinas);
+    setNamaDinas(nama_dinas);
+  }, [encrypted, user]);
+
+  // Fetch data dari API
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!dinas) return;
       
-      // Fungsi untuk membuka modal pesan
-      const openMessageModal = (title: string, content: string) => {
-        setSelectedMessage({ title, content });
-        setIsModalOpen(true);
-      };
+      try {
+        setLoading(true);
+        const response = await apiRequest(`/kotak_masuk/all-dinas/${dinas}`, "GET");
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Data kiriman dokumen tidak ditemukan");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Format data sesuai dengan interface
+        const formattedData: FormattedKirimanDokumen[] = result.responseData.items.map((item: KirimanDokumen, index: number) => ({
+          id: `${dinas}_${index}`, // Membuat ID unik dari dinas dan index
+          sender: item.pengirim_nama,
+          senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
+          date: new Date(item.pengirim_date).toLocaleDateString('id-ID'), // Format tanggal Indonesia
+          lampiran: item.dokumen,
+          messageTitle: item.judul,
+          messageContent: item.lampiran,
+          fileName: item.file_name,
+        }));
+
+        setDataKiriman(formattedData);
+        
+      } catch (err: any) {
+        console.error("Error fetching data:", err);
+        setError(err.message === "Failed to fetch" ? "Gagal memuat data dari server" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [dinas, namaDinas, senderNamaDinas]);
+
+  // Fungsi untuk membuka modal pesan
+  const openMessageModal = (title: string, content: string) => {
+    setSelectedMessage({ title, content });
+    setIsModalOpen(true);
+  };
+
+  // Fungsi untuk menutup modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setSelectedMessage(null);
+  };
+// Fungsi untuk download file - VERSI YANG DIPERBAIKI
+  const handleDownload = async (filePath: string, documentName: string) => {
+    try {
+      console.log('Downloading file from path:', filePath);
       
-      // Fungsi untuk menutup modal
-      const closeModal = () => {
-        setIsModalOpen(false);
-        setSelectedMessage(null);
-      };
+      // Pastikan filePath tidak kosong
+      if (!filePath || filePath.trim() === '') {
+        throw new Error('Path file tidak valid');
+      }
+
+      // Hapus leading slash jika ada dan encode path
+      const cleanFilePath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
+      const encodedFilePath = encodeURIComponent(cleanFilePath);
+      
+      console.log('Clean file path:', cleanFilePath);
+      console.log('Encoded file path:', encodedFilePath);
+      
+      // Menggunakan downloadFileRequest helper untuk download dengan path yang sudah di-encode
+      const response = await downloadFileRequest(`/kotak_masuk/download/${encodedFilePath}`);
+      
+      console.log('Download response status:', response.status);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Coba ambil detail error dari response
+          try {
+            const errorData = await response.json();
+            console.error('File not found details:', errorData);
+            throw new Error(`File tidak ditemukan: ${cleanFilePath}`);
+          } catch (parseError) {
+            console.error('Error parsing error response:', parseError);
+            throw new Error(`File tidak ditemukan di server: ${cleanFilePath}`);
+          }
+        } else if (response.status === 400) {
+          try {
+            const errorData = await response.json();
+            console.error('Bad request details:', errorData);
+            throw new Error(errorData.ResponseDesc || 'Format file tidak valid');
+          } catch (parseError) {
+            throw new Error('Format file tidak valid');
+          }
+        } else {
+          throw new Error(`Error ${response.status}: Gagal mengunduh file`);
+        }
+      }
+
+      // Membuat blob dari response
+      const blob = await response.blob();
+      
+      if (blob.size === 0) {
+        throw new Error('File kosong atau tidak dapat dibaca');
+      }
+      
+      console.log('Blob size:', blob.size, 'bytes');
+      
+      // Membuat URL object untuk blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Tentukan nama file untuk download
+      let downloadFileName = documentName || 'download';
+      
+      // Jika documentName tidak ada ekstensi, ambil dari filePath
+      if (documentName && !documentName.includes('.')) {
+        const fileExtension = cleanFilePath.split('.').pop();
+        if (fileExtension) {
+          downloadFileName = `${documentName}.${fileExtension}`;
+        }
+      } else if (!documentName) {
+        // Jika tidak ada documentName, gunakan nama file dari path
+        downloadFileName = cleanFilePath.split('/').pop() || 'download';
+      }
+      
+      console.log('Download filename:', downloadFileName);
+      
+      // Membuat link download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = downloadFileName;
+      link.style.display = 'none'; // Sembunyikan link
+      
+      // Tambahkan ke DOM, klik, lalu hapus
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      
+      console.log('Download completed successfully');
+      
+      // Tampilkan notifikasi sukses (opsional)
+      // alert(`File "${downloadFileName}" berhasil diunduh!`);
+      
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengunduh file';
+      alert(`Gagal mengunduh file: ${errorMessage}`);
+    }
+  };
+
+  // Loading skeleton
+  const LoadingSkeleton = () => (
+    <div className="divide-y divide-gray-100">
+      {Array.from({ length: 3 }).map((_, index) => (
+        <div key={index} className="flex items-center justify-between py-5 px-4">
+          <div>
+            <div className="h-6 w-32 animate-pulse rounded bg-gray-200 mb-2"></div>
+            <div className="flex items-center space-x-3">
+              <div className="h-4 w-24 animate-pulse rounded bg-gray-200"></div>
+              <div className="h-4 w-20 animate-pulse rounded bg-gray-200"></div>
+            </div>
+          </div>
+          <div className="flex space-x-3">
+            <div className="h-8 w-20 animate-pulse rounded bg-gray-200"></div>
+            <div className="h-8 w-24 animate-pulse rounded bg-gray-200"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <div className="col-span-12 xl:col-span-12">
@@ -289,7 +265,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         {/* Header dengan nama dinas */}
         <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{senderNamaDinas}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{senderNamaDinas || namaDinas}</h2>
             <p className="mt-1 text-sm text-gray-500">
               Dokumen Masuk: <span className="font-medium text-blue-600">{filteredData.length}</span> item
             </p>
@@ -299,78 +275,98 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           </div>
         </div>
 
-        <div className="divide-y divide-gray-100">
-          {currentData.length > 0 ? (
-            currentData.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between py-5 hover:bg-gray-50 transition rounded-lg px-4"
-              >
-                {/* Informasi Utama */}
-                <div>
-                  <p className="text-xl font-medium text-blue-600">{item.lampiran}</p>
-                  <div className="flex items-center mt-1">
-                    <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                      </svg>
+        {/* Konten */}
+        {loading ? (
+          <LoadingSkeleton />
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-10">
+            <div className="h-16 w-16 text-red-300 mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <p className="text-red-500 font-medium text-center">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {currentData.length > 0 ? (
+              currentData.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between py-5 hover:bg-gray-50 transition rounded-lg px-4"
+                >
+                  {/* Informasi Utama */}
+                  <div>
+                    <p className="text-xl font-medium text-blue-600">{item.lampiran}</p>
+                    <div className="flex items-center mt-1">
+                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-600 mr-3">{item.sender}</span>
+                      
+                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-600">{item.date}</span>
                     </div>
-                    <span className="text-sm text-gray-600 mr-3">{item.sender}</span>
+                  </div>
+                
+                  {/* Tombol Aksi */}
+                  <div className="flex space-x-3">
+                    {/* Tombol Isi Pesan */}
+                    <button
+                      onClick={() => openMessageModal(item.messageTitle, item.messageContent)}
+                      className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
+                        </svg>
+                        Isi Pesan
+                      </div>
+                    </button>
                     
-                    <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <span className="text-sm text-gray-600">{item.date}</span>
+                    {/* Tombol Download */}
+                    <button
+                      onClick={() => handleDownload(item.fileName, item.lampiran)}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                        Download
+                      </div>
+                    </button>
                   </div>
                 </div>
-              
-                {/* Tombol Aksi */}
-                <div className="flex space-x-3">
-                  {/* Tombol Isi Pesan */}
-                  <button
-                    onClick={() => openMessageModal(item.messageTitle, item.messageContent)}
-                    className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors"
-                  >
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                      </svg>
-                      Isi Pesan
-                    </div>
-                  </button>
-                  
-                  {/* Tombol Download */}
-                  <button
-                    onClick={() => console.log(`Melihat dokumen ${item.id}`)}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                  >
-                    <div className="flex items-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                      Download
-                    </div>
-                  </button>
+              ))
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10">
+                <div className="h-16 w-16 text-gray-300 mb-4">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
                 </div>
+                <p className="text-gray-500 font-medium">Tidak ada dokumen dari dinas ini</p>
+                <p className="text-gray-400 text-sm mt-1">Dokumen akan muncul saat dinas mengirimkan dokumen</p>
               </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10">
-              <div className="h-16 w-16 text-gray-300 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <p className="text-gray-500 font-medium">Tidak ada dokumen dari dinas ini</p>
-              <p className="text-gray-400 text-sm mt-1">Dokumen akan muncul saat dinas mengirimkan dokumen</p>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
         
         {/* Pagination - hanya tampil jika ada data */}
-        {currentData.length > 0 && (
+        {currentData.length > 0 && !loading && (
           <div className="mt-6 border-t border-gray-100 pt-4">
             <Pagination
               currentPage={currentPage}

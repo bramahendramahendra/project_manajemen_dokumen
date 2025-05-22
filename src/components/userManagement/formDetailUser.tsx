@@ -3,17 +3,55 @@ import { apiRequest } from "@/helpers/apiClient";
 import { FaUser, FaEnvelope, FaBuilding, FaUserTie, FaShieldAlt, FaCheck } from 'react-icons/fa';
 
 const FormDetailUser = ({ user }: { user?: any }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [departmentName, setDepartmentName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [department, setDepartment] = useState('');
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [accessUser, setAccessUser] = useState('');
   const [roles, setRoles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
+  // const [changePassword, setChangePassword] = useState(false);
+  // const [isDefaultPassword, setIsDefaultPassword] = useState(false);
+  const [optionOfficials, setOptionOfficials] = useState<any[]>([]);
+  const [optionRoles, setOptionRoles] = useState<any[]>([]);
+
+
+   useEffect(() => {
+    const fetchDinas = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest("/officials/", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Officials data not found");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+
+        const fetchedOfficials = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          dinas: item.dinas,
+        }));
+
+        setOptionOfficials(fetchedOfficials);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDinas();
+  }, []);
+  
   useEffect(() => {
     const fetchRoles = async () => {
       setLoading(true);
@@ -50,7 +88,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
       setLastName(user.lastname || user.name?.split(' ')[1] || '');
       setUsername(user.username);
       setEmail(user.email || '');
-      setDepartmentName(user.department_name || '');
+      setDepartment(user.department_name || '');
       setResponsiblePerson(user.responsible_person || '');
       setAccessUser(user.level_id || '');
     }
@@ -133,7 +171,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 font-medium">Nama Dinas</p>
-                    <p className="text-gray-800 font-medium">{departmentName}</p>
+                    <p className="text-gray-800 font-medium">{department}</p>
                   </div>
                 </div>
               </div>
