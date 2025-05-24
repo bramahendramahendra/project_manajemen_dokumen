@@ -92,11 +92,11 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
     const payload = {
       jenis: type,
-      level_id: cleanedAccessUsers,
+      level: cleanedAccessUsers,
     };
 
     try {
-      const response = await apiRequest(`/setting_types/${dataEdit.id}`, 'PUT', payload);
+      const response = await apiRequest(`/master_jenis/${dataEdit.id}`, 'PUT', payload);
       const result = await response.json();
 
       if (!response.ok) {

@@ -140,7 +140,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
 // Fungsi untuk download file - VERSI YANG DIPERBAIKI
   const handleDownload = async (filePath: string, documentName: string) => {
     try {
-      console.log('Downloading file from path:', filePath);
+      // console.log('Downloading file from path:', filePath);
       
       // Pastikan filePath tidak kosong
       if (!filePath || filePath.trim() === '') {
@@ -151,8 +151,8 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
       const cleanFilePath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
       const encodedFilePath = encodeURIComponent(cleanFilePath);
       
-      console.log('Clean file path:', cleanFilePath);
-      console.log('Encoded file path:', encodedFilePath);
+      // console.log('Clean file path:', cleanFilePath);
+      // console.log('Encoded file path:', encodedFilePath);
       
       // Menggunakan downloadFileRequest helper untuk download dengan path yang sudah di-encode
       const response = await downloadFileRequest(`/kotak_masuk/download/${encodedFilePath}`);

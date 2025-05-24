@@ -51,7 +51,7 @@ const ValidationUploadDetail = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        setDataDetail(result.responseData);
+        // setDataDetail(result.responseData);
         const formattedData: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({
           id: item.id,
           uraian: item.subjenis,

@@ -19,10 +19,10 @@ const FormAddPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/setting_types/", "GET");
+        const response = await apiRequest("/master_jenis/", "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Setting type data not found");
+            throw new Error("Master Jenis data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -113,13 +113,13 @@ const FormAddPage = () => {
     }
 
     const payload = {
-      setting_jenis_id: type,
+      jenis: type,
       subjenis: subtype,
-      level_id: cleanedAccessUsers,
+      level: cleanedAccessUsers,
     };
 
     try {
-      const response = await apiRequest('/setting_subtypes/', 'POST', payload);
+      const response = await apiRequest('/master_subjenis/', 'POST', payload);
 
       if (response.ok) {
         setSuccess(true);

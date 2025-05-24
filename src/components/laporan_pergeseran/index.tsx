@@ -4,6 +4,7 @@ import Pagination from "../pagination/Pagination";
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { apiRequest } from "@/helpers/apiClient";
 import { encryptObject } from "@/utils/crypto";
 
 type LaporanPergeseran = {
@@ -11,26 +12,26 @@ type LaporanPergeseran = {
   nama: string;
 };
 
-// Data hardcode untuk pengujian
-const hardcodedData: LaporanPergeseran[] = [
-  { id: 1, nama: "Dinas Pendidikan Pemuda dan Olahraga" },
-  { id: 2, nama: "Dinas Kesehatan" },
-  { id: 3, nama: "Dinas Pekerjaan Umum dan Penataan Ruang" },
-  { id: 4, nama: "Dinas Sosial" },
-  { id: 5, nama: "Dinas Perhubungan" },
-  { id: 6, nama: "Dinas Pariwisata dan Kebudayaan" },
-  { id: 7, nama: "Dinas Lingkungan Hidup" },
-  { id: 8, nama: "Dinas Tenaga Kerja dan Transmigrasi" },
-  { id: 9, nama: "Dinas Komunikasi dan Informatika" },
-  // { id: 10, nama: "Dinas Perindustrian dan Perdagangan" },
-];
+// // Data hardcode untuk pengujian
+// const hardcodedData: LaporanPergeseran[] = [
+//   { id: 1, nama: "Dinas Pendidikan Pemuda dan Olahraga" },
+//   { id: 2, nama: "Dinas Kesehatan" },
+//   { id: 3, nama: "Dinas Pekerjaan Umum dan Penataan Ruang" },
+//   { id: 4, nama: "Dinas Sosial" },
+//   { id: 5, nama: "Dinas Perhubungan" },
+//   { id: 6, nama: "Dinas Pariwisata dan Kebudayaan" },
+//   { id: 7, nama: "Dinas Lingkungan Hidup" },
+//   { id: 8, nama: "Dinas Tenaga Kerja dan Transmigrasi" },
+//   { id: 9, nama: "Dinas Komunikasi dan Informatika" },
+//   // { id: 10, nama: "Dinas Perindustrian dan Perdagangan" },
+// ];
 
 const MainPage = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(false); // Diubah menjadi false karena tidak ada loading API
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(true); // Diubah menjadi true karena data hardcode selalu berhasil
-  const [dataList, setDataList] = useState<LaporanPergeseran[]>(hardcodedData); // Langsung gunakan data hardcode
+  const [dataList, setDataList] = useState<LaporanPergeseran[]>([]); // Langsung gunakan data hardcode
   
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -50,20 +51,45 @@ const MainPage = () => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // Hapus useEffect untuk fetchData karena kita langsung menggunakan data hardcode
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await apiRequest("/reports/pergeseran", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Report Document data not found");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        
+        const documents: LaporanPergeseran[] = result.responseData.items.map((item: any) => ({
+          id: item.dinas,
+          nama: item.nama_dinas,
+        }));
+
+        setDataList(documents);
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const formatNamaForUrl = (nama: string) =>
     encodeURIComponent(nama.toLowerCase().replace(/\s+/g, "-"));
 
   const handleDetailsClick = (id: number, nama: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY || "defaultKey"; // Tambahkan nilai default
-    const token = Cookies.get("token");
+    const user = Cookies.get("user");
     
     let queryParam = "";
     
-    if (token) {
+    if (user) {
       // Jika token ada, gunakan enkripsi
-      const encrypted = encryptObject({ id, nama }, token);
+      const encrypted = encryptObject({ id, nama }, user);
       queryParam = `?${key}=${encrypted}`;
     } else {
       // Jika token tidak ada, gunakan parameter ID langsung

@@ -339,7 +339,7 @@ const FormPengirimanLangsungAdmin = () => {
       const payload = {
         kepada_id: dinas,
         kepada_dinas: foundNamaDinas?.dinas || "",
-        judul: judul,
+        judul: judul, 
         dokumen_ids: documentIds,
         lampiran: lampiran,
         file_path: tempFilePath, // Kirim single file path

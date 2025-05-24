@@ -1,57 +1,19 @@
 "use client";
-import { useState, useEffect, ChangeEvent } from "react";
-import { apiRequest } from "@/helpers/apiClient";
+import { useState, ChangeEvent } from "react";
 import * as XLSX from "xlsx";
-import Cookies from "js-cookie";
 
 const MainPage = () => {
-  // State untuk loading dan error
-  const [loading, setLoading] = useState<boolean>(false); // State loading
-  const [error, setError] = useState<string | null>(null); // Error state
-  const [success, setSuccess] = useState<boolean>(false);
-
-  // State untuk data
-  const [optionPerihal, setOptionPerihal] = useState<any[]>([]);
-
   const [prihal, setPrihal] = useState<string>("");
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [deskripsi, setDeskripsi] = useState<string>("");
   const [tableData, setTableData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
 
-  // State untuk file upload
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-
-  // Mengambil data option perihal dari API
-  useEffect(() => {
-    const fetchOptPerihal = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await apiRequest("/pergeseran/opt-perihal", "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Perihal data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        
-        const output = result.responseData.items.map((item: any) => ({
-          id: item.perihal,
-          perihal: item.nama_perihal,
-        }));
-        setOptionPerihal(output);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Dinas data not found" : err.message);
-      } finally {
-        setLoading(false);
-
-      }
-    };
-
-    fetchOptPerihal();
-  }, []);
+  const prihalOptions = [
+    "Pergeseran anggaran atas uraian dari sub rincian obyek belanja",
+    "Pergeseran anggaran antar rincian obyek belanja dalam obyek belanja yang sama dan/atau pergeseran anggaran antar sub rincian obyek belanja dalam obyek belanja yang sama",
+    "Usulan pergeseran anggaran antar obyek belanja dalam jenis belanja yang sama",
+  ];
 
   const handlePrihalSelect = (option: string) => {
     setPrihal(option);
@@ -65,9 +27,6 @@ const MainPage = () => {
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Simpan file untuk dikirim ke API
-    setSelectedFile(file);
 
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -87,93 +46,10 @@ const MainPage = () => {
     reader.readAsBinaryString(file);
   };
 
-   const handleSimpan = async () => {
-    console.log("Form submission started");
-    console.log("Prihal:", prihal);
-    console.log("Deskripsi:", deskripsi);
-    console.log("Selected File:", selectedFile);
-
-    // Validasi form
-    if (!prihal.trim()) {
-      alert("Perihal harus dipilih");
-      return;
-    }
-    
-    if (!deskripsi.trim()) {
-      alert("Deskripsi alasan pergeseran harus diisi");
-      return;
-    }
-
-    if (!selectedFile) {
-      alert("File Excel harus diupload");
-      return;
-    }
-    
-    // Set loading
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-
-      // Cari perihal_id berdasarkan perihal yang dipilih
-      const selectedPerihal = optionPerihal.find(item => item.perihal === prihal);
-      const perihal_id = selectedPerihal ? selectedPerihal.id : null;
-
-      if (!perihal_id) {
-        throw new Error("Perihal ID tidak ditemukan");
-      }
-
-      // Buat FormData untuk upload file
-      const formData = new FormData();
-      formData.append('perihal', perihal_id.toString());
-      formData.append('deskripsi', deskripsi);
-      formData.append('file', selectedFile);
-      formData.append('pembuat_userid', user.userid);
-      formData.append('pembuat_nama', user.name);
-      formData.append('pembuat_id_dinas', user.department_id);
-      formData.append('pembuat_dinas', user.department_name);
-      
-      console.log("Starting API call with FormData");
-
-      // Gunakan apiRequest yang sudah ada (sudah support FormData)
-      const response = await apiRequest("/pergeseran/", "POST", formData);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.responseDesc || "Gagal menyimpan data pergeseran");
-      }
-
-      const result = await response.json();
-      console.log("API response:", result);
-      
-      // Jika berhasil
-      alert("Data pergeseran berhasil disimpan!");
-      setSuccess(true);
-      
-      // Reset form setelah berhasil
-      setPrihal("");
-      setDeskripsi("");
-      setTableData([]);
-      setHeaders([]);
-      setSelectedFile(null);
-      
-      // Reset file input
-      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
-      }
-      
-    } catch (error) {
-      // Handle error
-      console.error("Error saving data:", error);
-      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan data";
-      alert(`Penyimpanan Gagal: ${errorMessage}`);
-      setError(errorMessage);
-      setSuccess(false);
-    } finally {
-      setLoading(false);
-    }
+  const handleSimpan = () => {
+    // Implementasi penyimpanan data
+    console.log("Data disimpan:", { prihal, deskripsi, tableData });
+    alert("Data berhasil disimpan!");
   };
 
   // Modifikasi pada fungsi handleCetak()
@@ -415,14 +291,12 @@ const MainPage = () => {
             <div className="relative">
               <div
                 className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
-                // onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                onClick={() => !loading && setIsDropdownOpen(!isDropdownOpen)}
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               >
                 <span
                   className={`truncate ${prihal ? "text-gray-900" : "text-gray-400"}`}
                 >
-                  {/* {prihal || "Perihal"} */}
-                  {loading ? "Memuat perihal..." : prihal || "Pilih Perihal"}
+                  {prihal || "Perihal"}
                 </span>
                 <svg
                   className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
@@ -438,26 +312,17 @@ const MainPage = () => {
               </div>
 
               {/* Dropdown Options */}
-              {isDropdownOpen && !loading && (
+              {isDropdownOpen && (
                 <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                  {optionPerihal.length > 0 ? (
-                    optionPerihal.map((option) => (
-                      <div
-                        // key={index}
-                         key={option.id}
-                        className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
-                        // onClick={() => handlePrihalSelect(option)}
-                        onClick={() => handlePrihalSelect(option.perihal)}
-                      >
-                        {/* {option} */}
-                        {option.perihal}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-4 py-2 text-sm text-gray-500">
-                      {error ? "Gagal memuat data perihal" : "Tidak ada data perihal"}
+                  {prihalOptions.map((option, index) => (
+                    <div
+                      key={index}
+                      className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
+                      onClick={() => handlePrihalSelect(option)}
+                    >
+                      {option}
                     </div>
-                  )}
+                  ))}
                 </div>
               )}
             </div>
@@ -490,7 +355,6 @@ const MainPage = () => {
                 upload excel
                 <input
                   type="file"
-                   id="file-upload"
                   accept=".xlsx, .xls"
                   onChange={handleFileUpload}
                   className="hidden"
@@ -498,10 +362,9 @@ const MainPage = () => {
               </label>
               <button
                 onClick={handleSimpan}
-                disabled={loading}
                 className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
               >
-                {loading ? "Menyimpan..." : "Simpan"}
+                simpan
               </button>
             </div>
 
