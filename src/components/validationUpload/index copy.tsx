@@ -1,43 +1,33 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ValidationUpload } from "@/types/validationUpload";
 import Pagination from "../pagination/Pagination";
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
-import { apiRequest } from "@/helpers/apiClient";
 
 // Tambahkan properti status pada tipe ValidationUpload
-// interface EnhancedValidationUpload extends ValidationUpload {
-//   status: 'Proses' | 'Tolak' | 'Diterima';
-// }
+interface EnhancedValidationUpload extends ValidationUpload {
+  status: 'Proses' | 'Tolak' | 'Diterima';
+}
 
-// const validationUpload: EnhancedValidationUpload[] = [
-//   { skpd: "Dinas Pendidikan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 1, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Proses" },
-//   { skpd: "Dinas Kesehatan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 3, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Diterima" },
-//   { skpd: "Dinas Pertanian", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 5, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Tolak" },
-//   { skpd: "Dinas Kelautan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 0, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Diterima" },
-//   { skpd: "Dinas Kesejahteraan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 1, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Proses" },
-//   { skpd: "Dinas Politik", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 4, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Tolak" },
-//   { skpd: "Dinas Pertahanan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 1, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Proses" },
-//   { skpd: "Dinas Keuangan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 5, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Diterima" },
-// ];
-
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
+const validationUpload: EnhancedValidationUpload[] = [
+  { skpd: "Dinas Pendidikan", belumValidasi: 1, status: "Proses" },
+  { skpd: "Dinas Kesehatan", belumValidasi: 3, status: "Diterima" },
+  { skpd: "Dinas Pertanian", belumValidasi: 5, status: "Tolak" },
+  { skpd: "Dinas Kelautan", belumValidasi: 0, status: "Diterima" },
+  { skpd: "Dinas Kesejahteraan", belumValidasi: 1, status: "Proses" },
+  { skpd: "Dinas Politik", belumValidasi: 4, status: "Tolak" },
+  { skpd: "Dinas Pertahanan", belumValidasi: 1, status: "Proses" },
+  { skpd: "Dinas Keuangan", belumValidasi: 5, status: "Diterima" },
+];
 
 const getStatusColor = (status: string) => {
   switch (status) {
-    case '001':
+    case 'Proses':
       return 'bg-yellow-100 text-yellow-800'; // Warna kuning untuk Proses
-    case '002':
+    case 'Tolak':
       return 'bg-red-100 text-red-800'; // Warna merah untuk Tolak
-    case '003':
+    case 'Diterima':
       return 'bg-green-100 text-green-800'; // Warna hijau untuk Diterima
     default:
       return 'bg-gray-100 text-gray-800';
@@ -46,83 +36,38 @@ const getStatusColor = (status: string) => {
 
 const MainPage = () => {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [dataList, setDataList] = useState<ValidationUpload[]>([]);
-
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const totalPages = Math.ceil(validationUpload.length / itemsPerPage);
 
-  const totalPages = Math.ceil(dataList.length / itemsPerPage);
-  const currentItems = dataList.slice(
+  const currentItems = validationUpload.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
 
-  // const user = Cookies.get("user");
+  const formatSkpdForUrl = (skpd: string) =>
+    skpd.toLowerCase().replace(/\s+/g, "-");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const user = JSON.parse(Cookies.get("user") || "{}");
-        
-        const response = await apiRequest(`/document_managements/all-data/dinas/${user.department_id}`, "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Jenis data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        console.log(result);
-        
-        // setDataDetail(result.responseData);
-        const res: ValidationUpload[] = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          uraian: item.subjenis,
-          tanggal: new Date(item.maker_date),
-          status_code: item.status_code,
-          status_doc: item.status_doc,
-        }));
-    
-        setDataList(res);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, []);
-  
-
-  const formatSkpdForUrl = (document_name: string) =>
-    document_name.toLowerCase().replace(/\s+/g, "-");
-
-  const handleDetailsClick = (document: number, document_name: string) => {
-    const formattedUrl = formatSkpdForUrl(document_name);
-    router.push(`/validation_upload/${formattedUrl}`);
+  const handleDetailsClick = (skpd: string) => {
+    const formattedSkpd = formatSkpdForUrl(skpd);
+    router.push(`/validation_upload/${formattedSkpd}`);
   };
 
   return (
     <div className="col-span-12 xl:col-span-12">
       <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-          Monitoring validasi dokumen
+          Lakukan validasi dokumen dengan cermat
         </h4>
         <div className="overflow-x-auto">
           <table className="w-full min-w-max table-auto">
             <thead>
               <tr className="bg-[#F7F9FC]">
                 <th className="px-2 py-4 text-left font-medium text-dark dark:bg-gray-dark xl:pl-7.5">
-                  No
+                  SKPD
                 </th>
                 <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
-                  Uraian
-                </th>
-                <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
-                  Tanggal Upload
+                  Belum di validasi
                 </th>
                 <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
                   Status
@@ -134,7 +79,7 @@ const MainPage = () => {
             </thead>
 
             <tbody>
-              {currentItems.map((item, key) => (
+              {currentItems.map((brand, key) => (
                 <tr
                   className={`hover:bg-gray-2 ${
                     key === currentItems.length - 1
@@ -143,18 +88,10 @@ const MainPage = () => {
                   }`}
                   key={key}
                 >
-                  <td className="border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5">
-                    <div className="flex items-center gap-3.5">
-                      <p className="font-medium text-dark dark:text-white">
-                        {key+1}
-                      </p>
-                    </div>
-                  </td>
-
                   <td className="px-2 py-4 dark:bg-gray-dark 2xsm:w-7 sm:w-60 md:w-90 xl:pl-7.5">
                     <div className="flex items-center gap-3.5">
                       <p className="font-medium text-dark dark:text-white">
-                        {item.uraian}
+                        {brand.skpd.replace(/_/g, " ")}
                       </p>
                     </div>
                   </td>
@@ -162,16 +99,15 @@ const MainPage = () => {
                   <td className="px-3 py-4">
                     <div className="flex items-center justify-center">
                       <div className="pl-1 capitalize text-dark dark:text-white">
-                        {/* {brand.tanggal} */}
-                        {formatDate(new Date(item.tanggal))}
+                        {brand.belumValidasi}
                       </div>
                     </div>
                   </td>
 
                   <td className="px-3 py-4">
                     <div className="flex items-center justify-center">
-                      <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status_code)}`}>
-                        {item.status_doc}
+                      <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(brand.status)}`}>
+                        {brand.status}
                       </span>
                     </div>
                   </td>
@@ -182,7 +118,7 @@ const MainPage = () => {
                         <button className="group active:scale-[.97] 2xsm:col-span-12 md:col-span-3 md:col-start-10 lg:col-span-3 lg:col-start-10 xl:col-span-2 xl:col-start-11">
                           <div
                             className="flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
-                            onClick={() => handleDetailsClick(item.id, item.uraian)}
+                            onClick={() => handleDetailsClick(brand.skpd)}
                           >
                             <span className="text-[20px]">
                               <HiOutlineArrowTopRightOnSquare />

@@ -1,6 +1,9 @@
 export type ValidationUpload = {
-    skpd: string;
-    belumValidasi: number;
+    id: number;
+    uraian: string;
+    tanggal: Date;
+    status_code: string;
+    status_doc: string;
 };
 
 export type ValidationUploadAdmin = {

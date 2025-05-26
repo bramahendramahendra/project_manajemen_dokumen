@@ -148,7 +148,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               alt="Logo"
               priority
               className="dark:hidden"
-              style={{ width: "174px", height: "30px" }}
+              style={{ width: "auto", height: "auto" }}
+              // style={{ width: "174px", height: "30px" }}
             />
             <Image
               width={176}

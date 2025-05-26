@@ -236,3 +236,30 @@ export const logoutRequest = async (endpoint: string) => {
     throw error;
   }
 };
+
+/**
+ * Helper function untuk request API dengan token
+ * @param endpoint URL endpoint yang dituju
+ * @param method HTTP method (GET, POST, PUT, DELETE)
+ * @param body Payload data untuk request (optional)
+ * @returns Response dari fetch
+ */
+export const lupaPassRequest = async (endpoint: string, method: string = "POST") => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          accept: "application/json",
+        },
+        // body: body ? JSON.stringify(body) : undefined,
+        // Sertakan credentials untuk menerima cookies
+        credentials: "include", 
+      });
+
+      return response;
+    } catch (error) {
+      console.error("Lupa Password request error:", error);
+      throw error;
+    }
+};

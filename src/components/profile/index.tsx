@@ -9,19 +9,33 @@ import {
   FaUserTie, 
   FaShieldAlt, 
   FaCheck,
-  FaLock 
+  FaLock, 
+  FaPhone
 } from 'react-icons/fa';
 import SuccessModal from '../modals/successModal';
 import ConfirmationModal from '../modals/confirmationModal';
+import Cookies from "js-cookie";
+
+type ProfileAkses = {
+  menu: string;
+};
 
 const MainPage = () => {
+  // const [dataDetail, setDataDetail] = useState('');
+  const [userid, setUserid] = useState('');
+  const [fullname, setFullname] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [departmentName, setDepartmentName] = useState('');
+  const [dinas, setDinas] = useState('');
   const [responsiblePerson, setResponsiblePerson] = useState('');
-  const [accessUser, setAccessUser] = useState('');
+  const [role, setRole] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  // const [level, setLevel] = useState('');
+  const [profileAkses, setProfileAkses] = useState<ProfileAkses[]>([]); // Langsung gunakan data hardcode
+  
+
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roles, setRoles] = useState<any[]>([]);
@@ -35,72 +49,77 @@ const MainPage = () => {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchRoles = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await apiRequest("/user_roles/", "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Roles data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-
-        const fetchedRoles = result.responseData.items.map((item: any) => ({
-          level_id: item.level_id,
-          role: item.role,
-        }));
-
-        setRoles(fetchedRoles);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRoles();
+    // fetchRoles();
     fetchUserData();
+    // if(level) fetchAksesData(level);
   }, []);
 
   const fetchUserData = async () => {
     // Simulasi data pengguna untuk demo
     // Dalam implementasi sebenarnya, Anda akan mengambil data dari API
-    const userData = {
-      firstname: 'John',
-      lastname: 'Doe',
-      username: 'johndoe',
-      email: 'john.doe@example.com',
-      department_name: 'Dinas Pendidikan',
-      responsible_person: 'Jane Smith',
-      level_id: '1' // Misalnya, 1 untuk Admin
-    };
+    try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
 
-    setFirstName(userData.firstname);
-    setLastName(userData.lastname);
-    setUsername(userData.username);
-    setEmail(userData.email);
-    setDepartmentName(userData.department_name);
-    setResponsiblePerson(userData.responsible_person);
-    setAccessUser(userData.level_id);
+      // console.log(user);
+      const response = await apiRequest(`/profile/${user.userid}`, "GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Jenis data not found");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      console.log(result.responseData);
+     
+      setUserid(result.responseData.userid);
+      setFullname(result.responseData.fullname);
+      setFirstName(result.responseData.firstname);
+      setLastName(result.responseData.lastname);
+      setUsername(result.responseData.username);
+      setPhoneNumber(result.responseData.phone_number);
+      setEmail(result.responseData.email);
+      setDinas(result.responseData.dinas);
+      setResponsiblePerson(result.responseData.responsible_person);
+      setRole(result.responseData.role);
+      // setLevel(result.responseData.level);
+
+      // Panggil fetchAksesData setelah level di-set
+      if(result.responseData.level) {
+        await fetchAksesData(result.responseData.level);
+      }
+    } catch (err: any) {
+      setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Mendapatkan nama role dari level_id
-  const getRoleName = (levelId: string) => {
-    const role = roles.find(r => r.level_id === levelId);
-    return role ? role.role : 'Unknown Role';
-  };
+  const fetchAksesData = async (level : string) => {
+    // Simulasi data pengguna untuk demo
+    // Dalam implementasi sebenarnya, Anda akan mengambil data dari API
+    try {
+      const response = await apiRequest(`/profile/akses/${level}`, "GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Jenis data not found");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      // console.log(result);
 
-  // Dummy user permissions for visual demo
-  const userPermissions = [
-    "Pengelolaan Data",
-    "Validasi Dokumen",
-    "Upload Dokumen",
-    "Melihat Laporan",
-    "Akses Dashboard"
-  ];
+       const documents: ProfileAkses[] = result.responseData.items.map((item: any) => ({
+          menu: item.menu,
+        }));
+
+        setProfileAkses(documents);
+     
+    } catch (err: any) {
+      setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
@@ -132,29 +151,51 @@ const MainPage = () => {
   };
   
   // Fungsi untuk mengkonfirmasi perubahan password
-  const confirmPasswordChange = () => {
+  const confirmPasswordChange = async() => {
+    // e.preventDefault();
     // Tutup modal konfirmasi
     setIsConfirmModalOpen(false);
     
     // Implementasi pengiriman data ke API
     console.log('Data siap dikirim:', {
-      firstName,
-      lastName,
-      username,
-      email,
-      departmentName,
-      responsiblePerson,
-      accessUser,
-      password
+      // firstName,
+      // lastName,
+      // username,
+      // email,
+      // dinas,
+      // responsiblePerson,
+      // role,
+      password,
+      confirmPassword
     });
+
+    const payload = {
+      password,
+    };
+
+    try {
+      const response = await apiRequest(`/profile/${userid}`, 'PUT', payload);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan');
+      }
+
+      // Reset form dan error
+      setPassword('');
+      setConfirmPassword('');
+      setError(null);
+      
+      // Tampilkan modal sukses
+      setIsSuccessModalOpen(true);
+      // setSuccess(true);
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat mengirim data');
+    } finally {
+      setLoading(false);
+    }
     
-    // Reset form dan error
-    setPassword('');
-    setConfirmPassword('');
-    setError(null);
-    
-    // Tampilkan modal sukses
-    setIsSuccessModalOpen(true);
+ 
   };
   
   // Fungsi untuk menutup modal konfirmasi
@@ -171,7 +212,7 @@ const MainPage = () => {
     <div className="p-6 bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-md">
       <div className="flex justify-between items-center mb-8">
         <div className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-1 rounded-full">
-          <span className="text-white text-sm font-medium">{getRoleName(accessUser)}</span>
+          <span className="text-white text-sm font-medium">{role}</span>
         </div>
       </div>
 
@@ -180,11 +221,12 @@ const MainPage = () => {
         <div className="bg-gradient-to-r from-[#0C479F]/5 to-[#1D92F9]/5 p-6 border-b border-gray-100">
           <div className="flex items-center">
             <div className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] h-16 w-16 rounded-full flex items-center justify-center text-white text-2xl mr-4">
-              {firstName.charAt(0)}{lastName.charAt(0)}
+              {firstName.charAt(0)}{lastName.charAt(0)} 
+              
             </div>
             <div>
-              <h3 className="text-xl font-semibold text-gray-800">{firstName} {lastName}</h3>
-              <p className="text-gray-500">{username}</p>
+              <h3 className="text-xl font-semibold text-gray-800">{fullname}</h3>
+              <p className="text-gray-500">{userid}</p>
             </div>
           </div>
         </div>
@@ -201,12 +243,38 @@ const MainPage = () => {
                     <FaUser className="text-[#0C479F]" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 font-medium">Nama Lengkap</p>
-                    <p className="text-gray-800 font-medium">{firstName} {lastName}</p>
+                    <p className="text-xs text-gray-500 font-medium">Username</p>
+                    <p className="text-gray-800 font-medium">{username}</p>
                   </div>
                 </div>
               </div>
               
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
+                    <FaPhone className="text-[#1D92F9]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Nomor Telepon</p>
+                    <p className="text-gray-800 font-medium">{phoneNumber}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+                <div className="flex items-center">
+                  <div className="bg-[#0C479F]/10 p-2 rounded-lg mr-3">
+                    <FaShieldAlt className="text-[#0C479F]" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 font-medium">Role</p>
+                    <p className="text-gray-800 font-medium">{role}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-6">
               <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
                 <div className="flex items-center">
                   <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
@@ -225,46 +293,20 @@ const MainPage = () => {
                     <FaBuilding className="text-[#0C479F]" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 font-medium">Nama Dinas</p>
-                    <p className="text-gray-800 font-medium">{departmentName}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-6">
-              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
-                <div className="flex items-center">
-                  <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
-                    <FaUser className="text-[#1D92F9]" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Username</p>
-                    <p className="text-gray-800 font-medium">{username}</p>
+                    <p className="text-xs text-gray-500 font-medium">Dinas</p>
+                    <p className="text-gray-800 font-medium">{dinas}</p>
                   </div>
                 </div>
               </div>
               
               <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
                 <div className="flex items-center">
-                  <div className="bg-[#0C479F]/10 p-2 rounded-lg mr-3">
-                    <FaUserTie className="text-[#0C479F]" />
+                  <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
+                    <FaUserTie className="text-[#1D92F9]" />
                   </div>
                   <div>
                     <p className="text-xs text-gray-500 font-medium">Penanggung Jawab</p>
                     <p className="text-gray-800 font-medium">{responsiblePerson}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
-                <div className="flex items-center">
-                  <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
-                    <FaShieldAlt className="text-[#1D92F9]" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 font-medium">Role</p>
-                    <p className="text-gray-800 font-medium">{getRoleName(accessUser)}</p>
                   </div>
                 </div>
               </div>
@@ -357,12 +399,12 @@ const MainPage = () => {
           <h4 className="text-lg font-medium mb-4 text-gray-700">Akses & Hak Istimewa</h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {userPermissions.map((permission, index) => (
+            {profileAkses.map((permission, index) => (
               <div key={index} className="bg-white bg-opacity-70 backdrop-blur-sm rounded-lg p-3 flex items-center">
                 <div className="h-8 w-8 rounded-full bg-gradient-to-r from-[#0C479F] to-[#1D92F9] flex items-center justify-center mr-3">
                   <FaCheck className="text-white text-xs" />
                 </div>
-                <span className="text-gray-700">{permission}</span>
+                <span className="text-gray-700">{permission.menu}</span>
               </div>
             ))}
           </div>

@@ -26,7 +26,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/officials/", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Officials data not found");
@@ -36,8 +36,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
         const result = await response.json();
 
         const fetchedOfficials = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          dinas: item.dinas,
+          id: item.dinas,
+          dinas: item.nama_dinas,
         }));
 
         setOptionOfficials(fetchedOfficials);
