@@ -18,7 +18,8 @@ const AddUser = () => {
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       {/* <div className="mb-6 grid grid-cols-12">
         <div className="2xsm:col-span-12 2xsm:mb-2 md:col-span-9 md:mb-0 lg:col-span-9 xl:col-span-12">
@@ -39,7 +40,8 @@ const AddUser = () => {
 
         {/* </div> */}
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

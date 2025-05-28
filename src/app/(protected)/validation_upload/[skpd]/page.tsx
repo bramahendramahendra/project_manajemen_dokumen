@@ -46,12 +46,14 @@ const ValidationUploadDetail = ({ params }: Props) => {
   }
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <h1>Detail Page for {skpd}</h1>
       <p>Belum di validasi: {foundSkpd.belumValidasi}</p>
       <ValidationUploadTable />
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

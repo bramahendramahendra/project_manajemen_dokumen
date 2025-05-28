@@ -13,7 +13,8 @@ const UserManagement = () => {
   ];  
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mb-6 grid grid-cols-12">
         <button
@@ -33,7 +34,8 @@ const UserManagement = () => {
           <MainPage />
         </div>
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

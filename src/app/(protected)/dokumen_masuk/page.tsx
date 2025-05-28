@@ -19,10 +19,12 @@ const DokumenMasuk = () => {
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-        <MainPage/>
-    </DefaultLayout>
+      <MainPage/>
+    </>
+    // </DefaultLayout>
   );
 };
 

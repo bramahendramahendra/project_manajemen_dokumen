@@ -27,7 +27,8 @@ const Dashboard = () => {
   };
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <ModalPopup isOpen={isModalOpen} onClose={handleCloseModal} />
 
       <div className="mb-6 grid grid-cols-12">
@@ -47,7 +48,8 @@ const Dashboard = () => {
           <TablePage />
         </div>
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

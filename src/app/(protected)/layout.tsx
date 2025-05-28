@@ -7,6 +7,8 @@ import TokenRefresher from '@/components/common/TokenRefresher';
 import Cookies from 'js-cookie';
 import { initNotificationManager } from "@/utils/notificationManager";
 import { ToastProvider } from "@/components/Toast";
+import DefaultLayout from "@/components/Layouts/DefaultLayout";
+
 
 export default function ProtectedLayout({
   children,
@@ -34,7 +36,10 @@ export default function ProtectedLayout({
       <TokenRefresher />
       
       {/* Render children (konten halaman) */}
-      {children}
+      <DefaultLayout>
+        {children}
+      </DefaultLayout>
+      
       {/* </ToastProvider> */}
     </>
   );

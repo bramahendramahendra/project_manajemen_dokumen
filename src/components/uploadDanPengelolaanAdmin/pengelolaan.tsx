@@ -27,7 +27,7 @@ import { DokumenTerupload } from "@/types/dokumenTerupload";
 
 const PengelolaanDokumen = () => {
   const router = useRouter();
-   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const [dataList, setDataList] = useState<DokumenTerupload[]>([]);

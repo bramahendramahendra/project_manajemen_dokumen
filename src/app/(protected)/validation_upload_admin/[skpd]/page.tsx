@@ -76,7 +76,8 @@ const ValidationUploadDetail = () => {
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
 
       {loading ? (
@@ -94,7 +95,8 @@ const ValidationUploadDetail = () => {
           Data untuk menu dengan skpd <strong>{skpd}</strong> tidak ada.
         </div>
       )}
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 
