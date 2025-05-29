@@ -5,8 +5,8 @@ import Image from "next/image";
 import SidebarItem from "@/components/Sidebar/SidebarItem";
 import ClickOutside from "@/components/ClickOutside";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
+import { useMenu } from "@/contexts/MenuContext";
 import DashboardIcon from "@/components/Icons/DashboardIcon";
 import UploadIcon from "@/components/Icons/UploadIcon";
 import ValidationIcon from "@/components/Icons/ValidationIcon";
@@ -40,9 +40,10 @@ const iconMap: Record<string, JSX.Element> = {
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
-  const [menuGroups, setMenuGroups] = useState<any[]>([]);
   const [notifCount, setNotifCount] = useState<number>(0);
-  const [user, setUser] = useState<any>({});
+  
+  // Gunakan menu context
+  const { menuGroups, loading: menuLoading, error: menuError } = useMenu();
 
   const fetchNotifCount = async () => {
     try {
@@ -56,79 +57,58 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     }
   };
 
-
-  const transformMenuData = (items: any[]) => {
-    const lookup: Record<string, any> = {};
-    items.forEach((item) => {
-      lookup[item.code_menu] = {
+  // Update menu groups dengan notification count
+  const updateMenuWithNotifications = (groups: any[]) => {
+    return groups.map(group => ({
+      ...group,
+      menuItems: group.menuItems.map((item: any) => ({
         ...item,
-        children: [],
-      };
-    });
-
-    const roots: any[] = [];
-    items.forEach((item) => {
-      const parentCode = item.code_parent;
-      if (parentCode === "00") {
-        roots.push(lookup[item.code_menu]);
-      } else if (lookup[parentCode]) {
-        lookup[parentCode].children.push(lookup[item.code_menu]);
-      }
-    });
-
-    const menuGroups = roots.map((group) => {
-      const menuItems = group.children
-        .sort((a: any, b: any) => parseInt(a.urutan) - parseInt(b.urutan))
-        .map((item: any) => {
-          const children = item.children
-            .sort((a: any, b: any) => parseInt(a.urutan) - parseInt(b.urutan))
-            .map((child: any) => ({
-              label: child.menu,
-              pro: child.pro,
-              message: child.code_menu === "0105" ? notifCount : "",
-              route: child.url || "#",
-              icon: iconMap[child.icon] || null,
-            }));
-
-          return {
-            label: item.menu,
-            pro: item.pro,
-            message: item.code_menu === "0105" ? notifCount : "",
-            route: item.url || "#",
-            icon: iconMap[item.icon] || null,
-            ...(children.length > 0 ? { children } : {}),
-          };
-        });
-
-      return {
-        name: group.menu,
-        menuItems,
-      };
-    });
-
-    return menuGroups;
+        message: item.code_menu === "0105" ? notifCount : "",
+        icon: iconMap[item.icon] || null,
+        children: item.children ? item.children.map((child: any) => ({
+          ...child,
+          message: child.code_menu === "0105" ? notifCount : "",
+          icon: iconMap[child.icon] || null,
+        })) : undefined,
+      }))
+    }));
   };
 
+  // useEffect untuk fetch notification count
   useEffect(() => {
-    // const currentUser = JSON.parse(Cookies.get("user") || "{}");
-    // setUser(currentUser);
-
-    const fetchMenu = async () => {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-      const res = await apiRequest(`/access_menus/menu/${user.level_id}`, "GET");
-      const json = await res.json();
-      const transformed = transformMenuData(json.responseData.items);
-      setMenuGroups(transformed);
-    };
-    fetchMenu();
     fetchNotifCount();
 
     const interval = setInterval(() => {
       fetchNotifCount();
-    }, 10000); // every 10s
+    }, 10000); // setiap 10 detik
 
     return () => clearInterval(interval);
-  }, [notifCount]);
+  }, []);
+
+  // Update menu groups dengan notification count
+  const displayMenuGroups = updateMenuWithNotifications(menuGroups);
+
+  if (menuLoading) {
+    return (
+      <aside className="absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden border-r border-stroke bg-white dark:border-stroke-dark dark:bg-gray-dark lg:static lg:translate-x-0">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </aside>
+    );
+  }
+
+  if (menuError) {
+    return (
+      <aside className="absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden border-r border-stroke bg-white dark:border-stroke-dark dark:bg-gray-dark lg:static lg:translate-x-0">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-red-500 text-sm text-center px-4">
+            Error loading menu: {menuError}
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <ClickOutside onClick={() => setSidebarOpen(false)}>
@@ -149,7 +129,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               priority
               className="dark:hidden"
               style={{ width: "auto", height: "auto" }}
-              // style={{ width: "174px", height: "30px" }}
             />
             <Image
               width={176}
@@ -184,7 +163,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
         <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
           <nav className="mt-1 px-4 lg:px-6">
-            {menuGroups.map((group, groupIndex) => (
+            {displayMenuGroups.map((group, groupIndex) => (
               <div key={groupIndex}>
                 <h3 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
                   {group.name}

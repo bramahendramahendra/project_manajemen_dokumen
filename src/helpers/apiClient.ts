@@ -12,6 +12,26 @@ const processFailedRequests = (success: boolean) => {
   failedRequests = [];
 };
 
+// Fungsi helper untuk membersihkan menu data dari localStorage
+const clearMenuData = () => {
+  try {
+    const user = JSON.parse(Cookies.get("user") || "{}");
+    if (user.level_id) {
+      localStorage.removeItem(`menu_${user.level_id}`);
+    }
+    
+    // Bersihkan semua menu data yang mungkin tersimpan
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('menu_')) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    console.error("Error clearing menu data:", error);
+  }
+};
+
 /**
  * Helper function untuk request API dengan token
  * @param endpoint URL endpoint yang dituju
@@ -70,6 +90,7 @@ export const apiRequest = async (
             isRefreshing = false;
             Cookies.remove("user");
             localStorage.removeItem('lastLoginTime');
+            clearMenuData(); // Bersihkan menu data
             window.location.href = "/login";
             throw new Error("Session expired, please log in again.");
           }
@@ -77,6 +98,7 @@ export const apiRequest = async (
           isRefreshing = false;
           Cookies.remove("user");
           localStorage.removeItem('lastLoginTime');
+          clearMenuData(); // Bersihkan menu data
           window.location.href = "/login";
           throw error;
         }
@@ -100,7 +122,6 @@ export const apiRequest = async (
     throw error;
   }
 };
-
 
 /**
  * Helper function khusus untuk download file
@@ -150,6 +171,7 @@ export const downloadFileRequest = async (
             isRefreshing = false;
             Cookies.remove("user");
             localStorage.removeItem('lastLoginTime');
+            clearMenuData(); // Bersihkan menu data
             window.location.href = "/login";
             throw new Error("Session expired, please log in again.");
           }
@@ -157,6 +179,7 @@ export const downloadFileRequest = async (
           isRefreshing = false;
           Cookies.remove("user");
           localStorage.removeItem('lastLoginTime');
+          clearMenuData(); // Bersihkan menu data
           window.location.href = "/login";
           throw error;
         }
@@ -180,7 +203,6 @@ export const downloadFileRequest = async (
     throw error;
   }
 };
-
 
 /**
  * Helper function untuk request API dengan token
@@ -225,14 +247,22 @@ export const logoutRequest = async (endpoint: string) => {
       method: "POST",
       credentials: "include",
     });
+    
     if (response.ok) {
       Cookies.remove("user", { path: "/" }); // Hapus token dari cookies
       localStorage.removeItem('lastLoginTime');
+      localStorage.removeItem('selectedMenu'); // Hapus selected menu
+      clearMenuData(); // Bersihkan menu data
     }
 
     return response;
   } catch (error) {
     console.error("LOGOUT request error:", error);
+    // Tetap bersihkan data lokal meskipun request gagal
+    Cookies.remove("user", { path: "/" });
+    localStorage.removeItem('lastLoginTime');
+    localStorage.removeItem('selectedMenu');
+    clearMenuData();
     throw error;
   }
 };

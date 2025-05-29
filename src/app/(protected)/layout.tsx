@@ -1,4 +1,3 @@
-// src/app/(protected)/layout.tsx
 "use client";
 
 import { useEffect } from 'react';
@@ -6,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import TokenRefresher from '@/components/common/TokenRefresher';
 import Cookies from 'js-cookie';
 import { initNotificationManager } from "@/utils/notificationManager";
-import { ToastProvider } from "@/components/Toast";
+// import { ToastProvider } from "@/components/Toast";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-
+import { MenuProvider } from "@/contexts/MenuContext";
 
 export default function ProtectedLayout({
   children,
@@ -30,7 +29,7 @@ export default function ProtectedLayout({
   }, []);
 
   return (
-    <>
+    <MenuProvider>
       {/* <ToastProvider> */}
       {/* TokenRefresher untuk auto refresh token */}
       <TokenRefresher />
@@ -41,6 +40,6 @@ export default function ProtectedLayout({
       </DefaultLayout>
       
       {/* </ToastProvider> */}
-    </>
+    </MenuProvider>
   );
 }
