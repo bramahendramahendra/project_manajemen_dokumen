@@ -1,8 +1,10 @@
+// src/app/(protected)/layout.tsx
 "use client";
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import TokenRefresher from '@/components/common/TokenRefresher';
+import RouteGuard from '@/components/common/RouteGuard';
 import Cookies from 'js-cookie';
 import { initNotificationManager } from "@/utils/notificationManager";
 // import { ToastProvider } from "@/components/Toast";
@@ -15,6 +17,15 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+
+  // List halaman yang tidak perlu route protection (public dalam protected area)
+  const publicProtectedPages = [
+    '/dashboard', 
+    '/unauthorized',
+    '/profile', // jika ada halaman profile
+    // tambahkan halaman lain yang bisa diakses semua role
+  ];
 
   // Periksa apakah user sudah login
   useEffect(() => {
@@ -28,15 +39,26 @@ export default function ProtectedLayout({
     initNotificationManager();
   }, []);
 
+  // Cek apakah halaman current termasuk public page
+  const isPublicPage = publicProtectedPages.includes(pathname);
+
   return (
     <MenuProvider>
       {/* <ToastProvider> */}
       {/* TokenRefresher untuk auto refresh token */}
       <TokenRefresher />
       
-      {/* Render children (konten halaman) */}
+      {/* Render children dengan atau tanpa RouteGuard */}
       <DefaultLayout>
-        {children}
+        {isPublicPage ? (
+          // Halaman public tidak perlu route guard
+          children
+        ) : (
+          // Halaman yang memerlukan akses khusus menggunakan route guard
+          <RouteGuard>
+            {children}
+          </RouteGuard>
+        )}
       </DefaultLayout>
       
       {/* </ToastProvider> */}
