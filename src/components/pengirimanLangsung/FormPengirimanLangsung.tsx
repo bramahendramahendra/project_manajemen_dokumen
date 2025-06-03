@@ -97,9 +97,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
 const FormPengirimanLangsung = () => {
   const [searchTerm, setSearchTerm] = useState<string>(""); // Untuk pencarian
   const [showAll, setShowAll] = useState<boolean>(false); // Untuk mengatur apakah semua data ditampilkan
-  // const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]); // Dokumen yang dipilih
   const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]); // Dokumen yang dipilih
-  // const [namaDinas, setNamaDinas] = useState<string>(""); // Nama dinas
   const [judul, setJudul] = useState<string>(""); // Judul
   const [lampiran, setLampiran] = useState<string>(""); // Lampiran
   const [loading, setLoading] = useState<boolean>(false); // State loading
@@ -109,7 +107,6 @@ const FormPengirimanLangsung = () => {
   const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isUploadComplete, setIsUploadComplete] = useState<boolean>(false);
-  // const [error, setError] = useState<string>("");
   const [error, setError] = useState<string | null>(null); // Error state
   const [success, setSuccess] = useState<boolean>(false);
 
@@ -132,6 +129,61 @@ const FormPengirimanLangsung = () => {
 
   // Ref untuk dropdown
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Fungsi untuk mendapatkan icon berdasarkan tipe file
+  const getFileIcon = (file: File) => {
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type;
+
+    if (fileType.startsWith('image/')) {
+      return '🖼️';
+    } else if (fileName.endsWith('.zip')) {
+      return '📦';
+    } else if (fileName.endsWith('.rar')) {
+      return '🗜️';
+    } else if (fileName.endsWith('.pdf')) {
+      return '📄';
+    } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+      return '📝';
+    } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+      return '📊';
+    } else {
+      return '📎';
+    }
+  };
+
+  // Fungsi untuk memvalidasi tipe file
+  const isValidFileType = (file: File) => {
+    const allowedTypes = [
+      'image/png',
+      'image/jpg', 
+      'image/jpeg',
+      'image/gif',
+      'image/svg+xml',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
+      'application/vnd.rar',
+      'application/octet-stream' // Untuk RAR di beberapa browser
+    ];
+    
+    const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.pdf', '.doc', '.docx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
+  };
+
+  // Fungsi untuk format ukuran file
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
 
   // Effect untuk menangani klik diluar dropdown untuk menutupnya
   useEffect(() => {
@@ -218,19 +270,9 @@ const FormPengirimanLangsung = () => {
   };
 
   // Filter dokumen berdasarkan pencarian
-  // const filteredPeople = people.filter((person) =>
-  //   person.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  // );
-
-  // Filter dokumen berdasarkan pencarian
   const filteredDocuments = documents.filter((doc) =>
     getDocumentDisplayName(doc).toLowerCase().includes(searchTerm.toLowerCase()),
   );
-
-  // Tentukan jumlah data yang ditampilkan
-  // const displayedPeople = showAll
-  //   ? filteredPeople
-  //   : filteredPeople.slice(0, 10);
 
   // Tentukan jumlah data yang ditampilkan
   const displayedDocuments = showAll
@@ -255,15 +297,6 @@ const FormPengirimanLangsung = () => {
   };
 
   // Handle perubahan checkbox
-  // const handleCheckboxChange = (personName: string, isChecked: boolean) => {
-  //   if (isChecked) {
-  //     setSelectedDocuments((prev) => [...prev, personName]);
-  //   } else {
-  //     setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
-  //   }
-  // };
-
-  // Handle perubahan checkbox
   const handleCheckboxChange = (document: Document, isChecked: boolean) => {
     if (isChecked) {
       setSelectedDocuments((prev) => [...prev, document]);
@@ -279,7 +312,6 @@ const FormPengirimanLangsung = () => {
     setSelectedDocuments((prev) => prev.filter((doc) => doc.id !== docId));
   };
   
-  
   // Fungsi untuk menampilkan error modal
   const showErrorModal = (title: string, message: string) => {
     setErrorTitle(title);
@@ -291,6 +323,26 @@ const FormPengirimanLangsung = () => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const fileList = Array.from(e.target.files);
+      
+      // Validasi tipe file
+      const invalidFiles = fileList.filter(file => !isValidFileType(file));
+      if (invalidFiles.length > 0) {
+        showErrorModal("File Tidak Didukung", `File tidak didukung: ${invalidFiles.map(f => f.name).join(', ')}. Hanya mendukung PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, dan RAR.`);
+        return;
+      }
+
+      // Validasi ukuran file (maksimal 100MB untuk ZIP/RAR, 10MB untuk file lainnya)
+      const oversizedFiles = fileList.filter(file => {
+        const maxSize = file.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB untuk ZIP/RAR, 10MB untuk file lainnya
+        return file.size > maxSize;
+      });
+      
+      if (oversizedFiles.length > 0) {
+        const oversizedFileInfo = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
+        showErrorModal("File Terlalu Besar", `File terlalu besar: ${oversizedFileInfo}. Maksimal 100MB untuk ZIP/RAR dan 10MB untuk file lainnya.`);
+        return;
+      }
+
       setFiles(fileList);
       
       // Inisialisasi progress untuk setiap file
@@ -363,12 +415,12 @@ const FormPengirimanLangsung = () => {
 
     // Validasi form
     if (!selectedOfficial) {
-      alert("Nama Dinas harus diisi");
+      showErrorModal("Validasi Gagal", "Nama Dinas harus dipilih");
       return;
     }
     
     if (!judul) {
-      setError("Judul harus diisi");
+      showErrorModal("Validasi Gagal", "Judul harus diisi");
       return;
     }
     
@@ -388,22 +440,6 @@ const FormPengirimanLangsung = () => {
     setLoading(true);
     
     try {
-      // Simulasi API call (ganti dengan API call sebenarnya)
-      // await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Di sini Anda bisa melakukan API call untuk mengirim data
-      // const response = await apiRequest("/send-documents", "POST", {
-      //   kepada: namaDinas,
-      //   judul: judul,
-      //   dokumen: selectedDocuments,
-      //   lampiran: lampiran,
-      //   files: tempFilePaths // Path file yang sudah diupload
-      // });
-      
-      // if (!response.ok) {
-      //   throw new Error("Gagal mengirim dokumen");
-      // }
-
       const documentIds = selectedDocuments.map(doc => doc.id);
       const user = JSON.parse(Cookies.get("user") || "{}");
       if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
@@ -440,7 +476,7 @@ const FormPengirimanLangsung = () => {
     } catch (error) {
       // Handle error
       console.error("Error sending documents:", error);
-      setError("Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi.");
+      showErrorModal("Pengiriman Gagal", "Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi.");
       setSuccess(false);
     } finally {
       setLoading(false);
@@ -462,7 +498,6 @@ const FormPengirimanLangsung = () => {
     setIsSuccessModalOpen(false);
     
     // Reset form setelah berhasil
-    // setNamaDinas("");
     setSelectedOfficial(null);
     setJudul("");
     setLampiran("");
@@ -496,14 +531,6 @@ const FormPengirimanLangsung = () => {
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                       Kepada Dinas
                     </label>
-                    {/* <input
-                      type="text"
-                      value={namaDinas}
-                      onChange={(e) => setNamaDinas(e.target.value)}
-                      placeholder="Masukkan Nama Dinas..."
-                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                      required
-                    /> */}
                     <div className="relative" ref={dropdownRef}>
                       <div 
                         className="flex items-center w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition cursor-pointer"
@@ -612,7 +639,6 @@ const FormPengirimanLangsung = () => {
                           className="flex items-center space-x-2 rounded-md bg-gray-100 px-3 py-2 shadow-sm dark:bg-gray-700"
                         >
                           <span className="text-sm text-gray-700 dark:text-white">
-                            {/* {doc} */}
                             {getDocumentDisplayName(doc)}
                           </span>
                           <button
@@ -674,7 +700,7 @@ const FormPengirimanLangsung = () => {
                         multiple
                         name="profilePhoto"
                         id="profilePhoto"
-                        accept="image/png, image/jpg, image/jpeg"
+                        accept="image/png, image/jpg, image/jpeg, image/gif, image/svg+xml, .pdf, .doc, .docx, .zip, .rar, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
                         className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
                         onChange={handleFileChange}
                       />
@@ -698,11 +724,11 @@ const FormPengirimanLangsung = () => {
                           </svg>
                         </span>
                         <p className="mt-2.5 text-body-sm font-medium">
-                          <span className="text-[#1D92F9]">Click to upload</span> or
+                          <span className="text-[#1D92F9]">Click to upload</span> atau
                           drag and drop
                         </p>
                         <p className="mt-1 text-body-xs">
-                          SVG, PNG, JPG or GIF (max, 800 X 800px)
+                          PNG, JPG, GIF, SVG, PDF, DOC, DOCX, ZIP, RAR (maksimal 100MB untuk arsip, 10MB untuk file lainnya)
                         </p>
                       </div>
                     </div>
@@ -715,13 +741,14 @@ const FormPengirimanLangsung = () => {
                         {files.map((file, index) => {
                           const isImage = file.type.startsWith("image/");
                           const percent = uploadProgress[index];
+                          const fileIcon = getFileIcon(file);
 
                           return (
                             <div
                               key={index}
-                              className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2"
+                              className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2 mb-2"
                             >
-                              {isImage && (
+                              {isImage ? (
                                 <Image
                                   src={URL.createObjectURL(file)}
                                   alt="preview"
@@ -729,16 +756,23 @@ const FormPengirimanLangsung = () => {
                                   height={48}
                                   className="rounded-md border object-cover"
                                 />
+                              ) : (
+                                <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
+                                  {fileIcon}
+                                </div>
                               )}
 
                               <div className="flex-1 overflow-hidden">
                                 <div className="mb-1 flex items-center justify-between">
-                                  <span className="max-w-[80%] truncate text-sm font-medium">
-                                    📄 {file.name}
+                                  <span className="max-w-[70%] truncate text-sm font-medium">
+                                    {file.name}
                                   </span>
                                   <span className="text-xs text-gray-500">
                                     {percent}%
                                   </span>
+                                </div>
+                                <div className="mb-1 text-xs text-gray-400">
+                                  {formatFileSize(file.size)}
                                 </div>
                                 <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                                   <div
@@ -786,9 +820,11 @@ const FormPengirimanLangsung = () => {
                     )}
                     
                     {/* Pesan Error/Success */}
-                    {error && <p className="mt-2 text-red-500">{error}</p>}
+                    {error && !isErrorModalOpen && (
+                      <p className="mt-2 text-red-500 text-sm">{error}</p>
+                    )}
                     {success && (
-                      <p className="mt-2 text-green-500">
+                      <p className="mt-2 text-green-500 text-sm">
                         Upload Dokumen berhasil ditambahkan!
                       </p>
                     )}
@@ -839,7 +875,6 @@ const FormPengirimanLangsung = () => {
                           ))
                         ) : (
                           // Tampilkan data dokumen
-                          // displayedPeople.map((person) => (
                           displayedDocuments.length > 0 ? (
                             displayedDocuments.map((doc) => (
                               <div
@@ -851,7 +886,6 @@ const FormPengirimanLangsung = () => {
                                     htmlFor={`person-${doc.id}`}
                                     className="select-none font-medium text-gray-500"
                                   >
-                                    {/* {person.name} */}
                                     {getDocumentDisplayName(doc)}
                                   </label>
                                 </div>
@@ -860,9 +894,6 @@ const FormPengirimanLangsung = () => {
                                     id={`person-${doc.id}`}
                                     name={`person-${doc.id}`}
                                     type="checkbox"
-                                    // checked={selectedDocuments.includes(
-                                    //   person.name,
-                                    // )}
                                     checked={selectedDocuments.some(
                                       (selectedDoc) => selectedDoc.id === doc.id
                                     )}
@@ -872,12 +903,6 @@ const FormPengirimanLangsung = () => {
                                         e.target.checked,
                                       )
                                     }
-                                    // onChange={(e) =>
-                                    //   handleCheckboxChange(
-                                    //     person.name,
-                                    //     e.target.checked,
-                                    //   )
-                                    // }
                                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                                   />
                                 </div>
@@ -891,17 +916,6 @@ const FormPengirimanLangsung = () => {
                             </div>
                           )
                         )}
-                        {/* {filteredPeople.length > 10 && !showAll && (
-                          <div className="py-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => setShowAll(true)}
-                              className="text-[#0C479F] hover:underline"
-                            >
-                              Lihat Semua Dokumen
-                            </button>
-                          </div>
-                        )} */}
 
                         {filteredDocuments.length > 10 && !showAll && (
                           <div className="py-4 text-center">

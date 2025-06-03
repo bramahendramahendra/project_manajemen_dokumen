@@ -133,6 +133,60 @@ const FormPengirimanLangsungAdmin = () => {
   // State untuk reset form
   const [resetKey, setResetKey] = useState(0);
 
+  // Fungsi untuk mendapatkan icon berdasarkan tipe file
+  const getFileIcon = (file: File) => {
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type;
+
+    if (fileType.startsWith('image/')) {
+      return '🖼️';
+    } else if (fileName.endsWith('.zip')) {
+      return '📦';
+    } else if (fileName.endsWith('.rar')) {
+      return '🗜️';
+    } else if (fileName.endsWith('.pdf')) {
+      return '📄';
+    } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+      return '📝';
+    } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+      return '📊';
+    } else {
+      return '📎';
+    }
+  };
+
+  // Fungsi untuk memvalidasi tipe file
+  const isValidFileType = (file: File) => {
+    const allowedTypes = [
+      'image/png',
+      'image/jpg', 
+      'image/jpeg',
+      'image/gif',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
+      'application/vnd.rar',
+      'application/octet-stream' // Untuk RAR di beberapa browser
+    ];
+    
+    const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.pdf', '.doc', '.docx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
+  };
+
+  // Fungsi untuk format ukuran file
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   // Mengambil data dokumen dari API saat komponen dimuat
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -228,6 +282,22 @@ const FormPengirimanLangsungAdmin = () => {
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const selectedFile = e.target.files[0]; // Ambil file pertama saja
+      
+      // Validasi tipe file
+      if (!isValidFileType(selectedFile)) {
+        showErrorModal("File Tidak Didukung", `File "${selectedFile.name}" tidak didukung. Hanya mendukung PNG, JPG, JPEG, GIF, PDF, DOC, DOCX, ZIP, dan RAR.`);
+        return;
+      }
+
+      // Validasi ukuran file (maksimal 100MB untuk ZIP/RAR, 10MB untuk file lainnya)
+      const maxSize = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB untuk ZIP/RAR, 10MB untuk file lainnya
+      
+      if (selectedFile.size > maxSize) {
+        const maxSizeText = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? "100MB" : "10MB";
+        showErrorModal("File Terlalu Besar", `File "${selectedFile.name}" (${formatFileSize(selectedFile.size)}) melebihi batas maksimal ${maxSizeText}.`);
+        return;
+      }
+
       setFile(selectedFile);
       setUploadProgress(0);
       setIsUploading(true);
@@ -252,7 +322,7 @@ const FormPengirimanLangsungAdmin = () => {
         }
       } catch (error: any) {
         setError(error.message);
-        showErrorModal("Upload Gagal", "Terjadi kesalahan saat mengupload file. Silakan coba lagi.");
+        showErrorModal("Upload Gagal", `Terjadi kesalahan saat mengupload file "${selectedFile.name}". Silakan coba lagi.`);
         setUploadProgress(0);
         setIsUploading(false);
         return;
@@ -512,7 +582,7 @@ const FormPengirimanLangsungAdmin = () => {
                         type="file"
                         name="uploadFile"
                         id="uploadFile"
-                        accept="image/png, image/jpg, image/jpeg, .pdf, .doc, .docx"
+                        accept="image/png, image/jpg, image/jpeg, image/gif, .pdf, .doc, .docx, .zip, .rar, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
                         className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
                         onChange={handleFileChange}
                         disabled={isUploading}
@@ -537,11 +607,11 @@ const FormPengirimanLangsungAdmin = () => {
                           </svg>
                         </span>
                         <p className="mt-2.5 text-body-sm font-medium">
-                          <span className="text-[#1D92F9]">Click to upload</span> or
+                          <span className="text-[#1D92F9]">Click to upload</span> atau
                           drag and drop
                         </p>
                         <p className="mt-1 text-body-xs">
-                          PNG, JPG, PDF, DOC, DOCX (max 10MB per file)
+                          PNG, JPG, GIF, PDF, DOC, DOCX, ZIP, RAR (maksimal 100MB untuk arsip, 10MB untuk file lainnya)
                         </p>
                       </div>
                     </div>
@@ -552,7 +622,7 @@ const FormPengirimanLangsungAdmin = () => {
                           File Terpilih
                         </h5>
                         <div className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2">
-                          {file.type.startsWith("image/") && (
+                          {file.type.startsWith("image/") ? (
                             <Image
                               src={URL.createObjectURL(file)}
                               alt="preview"
@@ -560,16 +630,23 @@ const FormPengirimanLangsungAdmin = () => {
                               height={48}
                               className="rounded-md border object-cover"
                             />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
+                              {getFileIcon(file)}
+                            </div>
                           )}
 
                           <div className="flex-1 overflow-hidden">
                             <div className="mb-1 flex items-center justify-between">
-                              <span className="max-w-[80%] truncate text-sm font-medium">
-                                📄 {file.name}
+                              <span className="max-w-[70%] truncate text-sm font-medium">
+                                {file.name}
                               </span>
                               <span className="text-xs text-gray-500">
                                 {uploadProgress}%
                               </span>
+                            </div>
+                            <div className="mb-1 text-xs text-gray-400">
+                              {formatFileSize(file.size)}
                             </div>
                             <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                               <div
