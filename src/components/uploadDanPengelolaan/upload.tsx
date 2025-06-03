@@ -41,6 +41,61 @@ const UploadDokumen = () => {
   // State untuk SuccessModal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
+  // Fungsi untuk mendapatkan icon berdasarkan tipe file
+  const getFileIcon = (file: File) => {
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type;
+
+    if (fileType.startsWith('image/')) {
+      return '🖼️';
+    } else if (fileName.endsWith('.zip')) {
+      return '📦';
+    } else if (fileName.endsWith('.rar')) {
+      return '🗜️';
+    } else if (fileName.endsWith('.pdf')) {
+      return '📄';
+    } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+      return '📝';
+    } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
+      return '📊';
+    } else {
+      return '📎';
+    }
+  };
+
+  // Fungsi untuk memvalidasi tipe file
+  const isValidFileType = (file: File) => {
+    const allowedTypes = [
+      'image/png',
+      'image/jpg', 
+      'image/jpeg',
+      'image/gif',
+      'image/svg+xml',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/zip',
+      'application/x-zip-compressed',
+      'application/x-rar-compressed',
+      'application/vnd.rar',
+      'application/octet-stream' // Untuk RAR di beberapa browser
+    ];
+    
+    const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.pdf', '.doc', '.docx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
+  };
+
+  // Fungsi untuk format ukuran file
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
   // Tambahkan useEffect untuk debugging js-cookie
   useEffect(() => {
     // Log semua cookies
@@ -193,10 +248,53 @@ const UploadDokumen = () => {
   ) => {
     if (event.target.files && event.target.files.length > 0) {
       const selectedFiles = Array.from(event.target.files);
+      
+      // Validasi tipe file
+      const invalidFiles = selectedFiles.filter(file => !isValidFileType(file));
+      if (invalidFiles.length > 0) {
+        setError(`File tidak didukung: ${invalidFiles.map(f => f.name).join(', ')}. Hanya mendukung PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, dan RAR.`);
+        return;
+      }
+
+      // Validasi ukuran file dengan kategori yang lebih spesifik
+      const oversizedFiles = selectedFiles.filter(file => {
+        const fileName = file.name.toLowerCase();
+        let maxSize;
+        
+        if (fileName.match(/\.(zip|rar)$/)) {
+          maxSize = 100 * 1024 * 1024; // 100MB untuk ZIP/RAR
+        } else if (fileName.match(/\.(pdf|doc|docx)$/)) {
+          maxSize = 25 * 1024 * 1024; // 25MB untuk dokumen
+        } else {
+          maxSize = 10 * 1024 * 1024; // 10MB untuk gambar dan file lainnya
+        }
+        
+        return file.size > maxSize;
+      });
+      
+      if (oversizedFiles.length > 0) {
+        const oversizedFileInfo = oversizedFiles.map(f => {
+          const fileName = f.name.toLowerCase();
+          let maxSizeText;
+          if (fileName.match(/\.(zip|rar)$/)) {
+            maxSizeText = "100MB";
+          } else if (fileName.match(/\.(pdf|doc|docx)$/)) {
+            maxSizeText = "25MB";
+          } else {
+            maxSizeText = "10MB";
+          }
+          return `${f.name} (${formatFileSize(f.size)}, maks: ${maxSizeText})`;
+        }).join(', ');
+        
+        setError(`File terlalu besar: ${oversizedFileInfo}.`);
+        return;
+      }
+
       setFiles(selectedFiles);
       setUploadProgress(new Array(selectedFiles.length).fill(0));
       setIsUploading(true);
       setIsUploadComplete(false);
+      setError(null);
 
       const uploadedPaths: string[] = [];
       const progresses: number[] = [];
@@ -219,7 +317,7 @@ const UploadDokumen = () => {
             throw new Error(response.responseDesc || "Upload gagal.");
           }
         } catch (error: any) {
-          setError(error.message);
+          setError(`Gagal upload ${file.name}: ${error.message}`);
           setUploadProgress([]);
           setIsUploading(false);
           return;
@@ -443,7 +541,7 @@ const UploadDokumen = () => {
                   multiple
                   name="profilePhoto"
                   id="profilePhoto"
-                  accept="image/png, image/jpg, image/jpeg"
+                  accept="image/png, image/jpg, image/jpeg, image/gif, image/svg+xml, .pdf, .doc, .docx, .zip, .rar, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
                   className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
                   onChange={handleFileChange}
                 />
@@ -467,11 +565,14 @@ const UploadDokumen = () => {
                     </svg>
                   </span>
                   <p className="mt-2.5 text-body-sm font-medium">
-                    <span className="text-[#1D92F9]">Click to upload</span> or
+                    <span className="text-[#1D92F9]">Click to upload</span> atau
                     drag and drop
                   </p>
                   <p className="mt-1 text-body-xs">
-                    SVG, PNG, JPG or GIF (max, 800 X 800px)
+                    PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, RAR<br/>
+                  </p>
+                  <p className="mt-1 text-body-xs text-gray-500">
+                    (Maksimal 100MB untuk arsip, 25MB untuk dokumen, 10MB untuk gambar)
                   </p>
                 </div>
               </div>
@@ -484,13 +585,14 @@ const UploadDokumen = () => {
                   {files.map((file, index) => {
                     const isImage = file.type.startsWith("image/");
                     const percent = uploadProgress[index];
+                    const fileIcon = getFileIcon(file);
 
                     return (
                       <div
                         key={index}
-                        className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2"
+                        className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2 mb-2"
                       >
-                        {isImage && (
+                        {isImage ? (
                           <Image
                             src={URL.createObjectURL(file)}
                             alt="preview"
@@ -498,16 +600,23 @@ const UploadDokumen = () => {
                             height={48}
                             className="rounded-md border object-cover"
                           />
+                        ) : (
+                          <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 text-2xl dark:bg-gray-700">
+                            {fileIcon}
+                          </div>
                         )}
 
                         <div className="flex-1 overflow-hidden">
                           <div className="mb-1 flex items-center justify-between">
-                            <span className="max-w-[80%] truncate text-sm font-medium">
-                              📄 {file.name}
+                            <span className="max-w-[70%] truncate text-sm font-medium">
+                              {file.name}
                             </span>
                             <span className="text-xs text-gray-500">
                               {percent}%
                             </span>
+                          </div>
+                          <div className="mb-1 text-xs text-gray-400">
+                            {formatFileSize(file.size)}
                           </div>
                           <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                             <div

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Pagination from "@/components/pagination/Pagination";
-import { HiOutlineDocumentDownload, HiOutlineSearch } from "react-icons/hi";
+import { HiOutlineDocumentDownload, HiOutlineSearch, HiOutlineTrash } from "react-icons/hi";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { decryptObject } from "@/utils/crypto";
@@ -121,6 +121,42 @@ const MainPage = () => {
     // Logika download sebenarnya bisa ditambahkan di sini
     console.log(`Mendownload dokumen dengan ID: ${id}`);
   };
+
+  // Function untuk handle delete
+  const handleDeleteClick = (id: number, deskripsi: string) => {
+    // Konfirmasi sebelum menghapus
+    const isConfirmed = window.confirm(
+      `Apakah Anda yakin ingin menghapus dokumen "${truncateText(deskripsi, 5)}"?`
+    );
+    
+    if (isConfirmed) {
+      // Simulasi animasi loading tombol delete
+      const buttonElement = document.getElementById(`delete-btn-${id}`);
+      if (buttonElement) {
+        buttonElement.classList.add("animate-pulse");
+        
+        setTimeout(() => {
+          buttonElement.classList.remove("animate-pulse");
+          
+          // Hapus item dari dataList
+          setDataList(prevData => prevData.filter(item => item.id !== id));
+          
+          // Tampilkan notifikasi sukses
+          alert(`Dokumen "${truncateText(deskripsi, 3)}" berhasil dihapus`);
+          
+          // Reset ke halaman 1 jika halaman saat ini kosong setelah delete
+          const newFilteredData = dataList.filter(item => item.id !== id);
+          const newTotalPages = Math.ceil(newFilteredData.length / itemsPerPage);
+          if (currentPage > newTotalPages && newTotalPages > 0) {
+            setCurrentPage(1);
+          }
+        }, 1000);
+      }
+      
+      // Logika delete ke API bisa ditambahkan di sini
+      console.log(`Menghapus dokumen dengan ID: ${id}`);
+    }
+  };
   
   return (
     <div className="col-span-12 xl:col-span-12">
@@ -131,11 +167,9 @@ const MainPage = () => {
               Laporan Pergeseran Anggaran
             </h3>
             {dinasName && (
-              // <div className=" bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
-                <h4 className="text-[18px] font-medium text-blue-800 dark:text-blue-300">
-                  {dinasName}
-                </h4>
-              // </div>
+              <h4 className="text-[18px] font-medium text-blue-800 dark:text-blue-300">
+                {dinasName}
+              </h4>
             )}
             <div className="flex items-center justify-between mt-2">
               <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -155,16 +189,16 @@ const MainPage = () => {
           </div>
         </div>
         <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
-          <table className="w-full min-w-max table-auto">
+          <table className="w-full table-auto" style={{ minWidth: '800px' }}>
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
-                <th className="px-5 py-4 text-left font-medium text-dark dark:text-gray-200 w-[45%]">
+                <th className="px-5 py-4 text-left font-medium text-dark dark:text-gray-200" style={{ width: '40%' }}>
                   Deskripsi
                 </th>
-                <th className="px-5 py-4 text-center font-medium text-dark dark:text-gray-200 w-[25%]">
+                <th className="px-5 py-4 text-center font-medium text-dark dark:text-gray-200" style={{ width: '20%' }}>
                   Tanggal
                 </th>
-                <th className="px-5 py-4 text-right font-medium text-dark dark:text-gray-200 w-[30%]">
+                <th className="px-5 py-4 text-right font-medium text-dark dark:text-gray-200" style={{ width: '40%', minWidth: '300px' }}>
                   Actions
                 </th>
               </tr>
@@ -188,21 +222,34 @@ const MainPage = () => {
                       {item.tanggal}
                     </span>
                   </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center justify-end">
+                  <td className="px-5 py-4" style={{ minWidth: '280px' }}>
+                    <div className="flex items-center justify-end gap-3 flex-nowrap">
+                      {/* Tombol Download */}
                       <button
                         id={`download-btn-${item.id}`}
-                        className="group flex items-center gap-2 rounded-lg  px-4 py-2 text-white  focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98] transition-all duration-200 dark:bg-blue-700 dark:hover:bg-blue-600"
+                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6 focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98]"
                         onClick={() => handleDownloadClick(item.id, item.deskripsi)}
                       >
-                        <div className="flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6">
-                          <span className="text-[20px]">
-                            <HiOutlineDocumentDownload />
-                          </span>
-                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                            Download
-                          </span>
-                        </div>
+                        <span className="text-[20px]">
+                          <HiOutlineDocumentDownload />
+                        </span>
+                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                          Download
+                        </span>
+                      </button>
+
+                      {/* Tombol Delete */}
+                      <button
+                        id={`delete-btn-${item.id}`}
+                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
+                        onClick={() => handleDeleteClick(item.id, item.deskripsi)}
+                      >
+                        <span className="text-[20px]">
+                          <HiOutlineTrash />
+                        </span>
+                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                          Delete
+                        </span>
                       </button>
                     </div>
                   </td>
