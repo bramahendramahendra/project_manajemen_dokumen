@@ -7,24 +7,6 @@ import { encryptObject } from "@/utils/crypto";
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
 import { DokumenTerupload } from "@/types/dokumenTerupload";
 
-// const dokumenTeruploadData: DokumenTerupload[] = [
-//   {
-//     uraian: "DPA",
-//     tanggal: new Date("2022-08-21T10:00:00Z"),
-//     jumlahDocument: 6,
-//   },
-//   {
-//     uraian: "RKA",
-//     tanggal: new Date("2024-08-21T10:00:00Z"),
-//     jumlahDocument: 3,
-//   },
-//   {
-//     uraian: "Anggaran Kas",
-//     tanggal: new Date("2023-08-21T10:00:00Z"),
-//     jumlahDocument: 2,
-//   },
-// ];
-
 const PengelolaanDokumen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -65,7 +47,7 @@ const PengelolaanDokumen = () => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
     if (!user) return alert("Token tidak ditemukan!");
-     const encrypted = encryptObject({ typeID, uraian }, user);
+    const encrypted = encryptObject({ typeID, uraian }, user);
 
     // Ganti spasi dengan tanda hubung untuk URL-friendly
     const formattedUraian = uraian.replace(/\s+/g, "-").toLowerCase();

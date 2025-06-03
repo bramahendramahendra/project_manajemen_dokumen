@@ -44,7 +44,19 @@ export const useRouteProtection = (): RouteProtectionResult => {
 
     // Cek apakah current path ada di salah satu menu yang user miliki
     const hasAccessToRoute = allMenuItems.some((menuItem: any) => {
-      return menuItem.route === currentPath;
+      // Exact match untuk route
+      if (menuItem.route === currentPath) {
+        return true;
+      }
+      
+      // Check untuk sub-routes (dynamic routes)
+      // Contoh: jika menu route adalah "/upload_dan_pengelolaan" 
+      // maka "/upload_dan_pengelolaan/detail-uraian" juga diizinkan
+      if (menuItem.route !== '#' && currentPath.startsWith(menuItem.route + '/')) {
+        return true;
+      }
+      
+      return false;
     });
 
     return hasAccessToRoute;
@@ -75,7 +87,18 @@ export const useRouteProtection = (): RouteProtectionResult => {
           
           // Jika tidak punya akses, redirect ke unauthorized page
           if (!access) {
+            console.log('❌ Access denied for path:', pathname);
+            console.log('Available menu routes:', 
+              menuGroups.flatMap(group => 
+                group.menuItems.flatMap((item: any) => [
+                  item.route,
+                  ...(item.children?.map((child: any) => child.route) || [])
+                ])
+              )
+            );
             router.push('/unauthorized');
+          } else {
+            console.log('✅ Access granted for path:', pathname);
           }
         } else {
           // Jika menu groups kosong, mungkin ada error atau user tidak punya akses apapun
@@ -125,7 +148,17 @@ export const useCheckRouteAccess = (targetRoute: string): boolean => {
 
       // Cek apakah target route ada di menu user
       const access = allMenuItems.some((menuItem: any) => {
-        return menuItem.route === targetRoute;
+        // Exact match
+        if (menuItem.route === targetRoute) {
+          return true;
+        }
+        
+        // Sub-route match
+        if (menuItem.route !== '#' && targetRoute.startsWith(menuItem.route + '/')) {
+          return true;
+        }
+        
+        return false;
       });
 
       setHasAccess(access);

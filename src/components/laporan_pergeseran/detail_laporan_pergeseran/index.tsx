@@ -1,77 +1,64 @@
 "use client";
 import { useState, useEffect } from "react";
 import Pagination from "@/components/pagination/Pagination";
-import { HiOutlineDocumentDownload, HiOutlineSearch } from "react-icons/hi";
+import { HiOutlineDocumentDownload, HiOutlineSearch, HiOutlineTrash } from "react-icons/hi";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
 import { decryptObject } from "@/utils/crypto";
-import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
 
 type LaporanPergeseran = {
-  // id: number;
+  id: number;
   deskripsi: string;
-  tanggal: Date;
-  file_unduh: string;
+  tanggal: string;
 };
 
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
+// Data hardcode untuk pengujian
+const hardcodedData: LaporanPergeseran[] = [
+  { 
+    id: 1, 
+    deskripsi: "pergeseran anggaran atas uraian dari sub rincian obyek belanja", 
+    tanggal: "20 Mei 2025" 
+  },
+  { 
+    id: 2, 
+    deskripsi: "pergeseran anggaran antar rincian obyek belanja dalam obyek belanja yang sama dan/atau pergeseran anggaran antar sub rincian obyek belanja dalam obyek belanja yang sama", 
+    tanggal: "21 Mei 2025" 
+  },
+  { 
+    id: 3, 
+    deskripsi: "usulan pergeseran anggaran antar obyek belanja dalam jenis belanja yang sama", 
+    tanggal: "22 Mei 2025" 
+  }
+];
 
 const MainPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(true);
-
-  const [dataList, setDataList] = useState<LaporanPergeseran[]>([]);
-  const [dinas, setDinas] = useState<number | null>(null);
+  const [dataList, setDataList] = useState<LaporanPergeseran[]>(hardcodedData);
   const [dinasName, setDinasName] = useState<string>("");
   
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
 
-  const filteredDokumen = dataList.filter((item) =>
-    item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const totalPages = Math.ceil(filteredDokumen.length / itemsPerPage);
-  const currentItems = filteredDokumen.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
   // Mendapatkan informasi dinas dari URL parameters
   useEffect(() => {
     try {
       const key = process.env.NEXT_PUBLIC_APP_KEY || "defaultKey";
-      const user = Cookies.get("user");
+      const token = Cookies.get("token");
       const encryptedParam = searchParams.get(key);
       const idParam = searchParams.get("id");
       const namaParam = searchParams.get("nama");
       
-      if (encryptedParam && user) {
+      if (encryptedParam && token) {
         // Mode enkripsi
-        const decrypted = decryptObject(encryptedParam, user);
-        console.log(decrypted);
-        if (!decrypted) {
-          setError("Gagal dekripsi atau data rusak.");
-          return;
+        const decrypted = decryptObject(encryptedParam, token);
+        if (decrypted && decrypted.nama) {
+          setDinasName(decrypted.nama);
         }
-        
-        const { id, nama } = decrypted;
-        setDinas(id);
-        setDinasName(nama);
-        // if (decrypted && decrypted.nama) {
-        //   setDinasName(decrypted.nama);
-        // }
       } else if (idParam && namaParam) {
         // Mode parameter langsung
         setDinasName(decodeURIComponent(namaParam));
@@ -93,40 +80,15 @@ const MainPage = () => {
     }
   }, [searchParams]);
 
-    // console.log(dinas);
+  const filteredDokumen = dataList.filter((item) =>
+    item.deskripsi.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-
-   useEffect(() => {
-    const fetchData = async () => {
-      try {
-      // console.log(dinas);
-
-        const response = await apiRequest(`/reports/pergeseran-detail/${dinas}`, "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Pergeseran data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        // setDataList(result.responseData);
-        const formattedData: LaporanPergeseran[] = result.responseData.items.map((item: any) => ({
-          deskripsi: item.deskripsi,
-          tanggal: new Date(item.tanggal),
-          file_unduh: item.file_unduh,
-        }));
-        console.log(formattedData);
-        
-        setDataList(formattedData);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (dinas) fetchData();
-  }, [dinas]);
+  const totalPages = Math.ceil(filteredDokumen.length / itemsPerPage);
+  const currentItems = filteredDokumen.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   useEffect(() => {
     setCurrentPage(1);
@@ -140,103 +102,59 @@ const MainPage = () => {
   };
 
   // ketika tombol download ini di tekan harusnya ke download EXCEL yang di simpan oleh usernya dan lampiran pembuatan dianya
-  const handleDownloadClick = async (file_unduh: string, documentName: string) => {
-    try {
-      // console.log('Downloading file from path:', file_unduh);
+  const handleDownloadClick = (id: number, deskripsi: string) => {
+    const key = process.env.NEXT_PUBLIC_APP_KEY || "defaultKey";
+    const token = Cookies.get("token");
+    
+    // Simulasi animasi loading tombol download
+    const buttonElement = document.getElementById(`download-btn-${id}`);
+    if (buttonElement) {
+      buttonElement.classList.add("animate-pulse");
       
-      // Pastikan filePath tidak kosong
-      if (!file_unduh || file_unduh.trim() === '') {
-        throw new Error('Path file tidak valid');
-      }
+      setTimeout(() => {
+        buttonElement.classList.remove("animate-pulse");
+        // Tampilkan notifikasi sukses
+        alert(`Dokumen "${truncateText(deskripsi, 3)}" berhasil diunduh`);
+      }, 1000);
+    }
+    
+    // Logika download sebenarnya bisa ditambahkan di sini
+    console.log(`Mendownload dokumen dengan ID: ${id}`);
+  };
 
-      // Hapus leading slash jika ada dan encode path
-      const cleanFilePath = file_unduh.startsWith('/') ? file_unduh.substring(1) : file_unduh;
-      const encodedFilePath = encodeURIComponent(cleanFilePath);
-      
-      // console.log('Clean file path:', cleanFilePath);
-      // console.log('Encoded file path:', encodedFilePath);
-      
-      // Menggunakan downloadFileRequest helper untuk download dengan path yang sudah di-encode
-      const response = await downloadFileRequest(`/kotak_masuk/download/${encodedFilePath}`);
-      
-      console.log('Download response status:', response.status);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Coba ambil detail error dari response
-          try {
-            const errorData = await response.json();
-            console.error('File not found details:', errorData);
-            throw new Error(`File tidak ditemukan: ${cleanFilePath}`);
-          } catch (parseError) {
-            console.error('Error parsing error response:', parseError);
-            throw new Error(`File tidak ditemukan di server: ${cleanFilePath}`);
+  // Function untuk handle delete
+  const handleDeleteClick = (id: number, deskripsi: string) => {
+    // Konfirmasi sebelum menghapus
+    const isConfirmed = window.confirm(
+      `Apakah Anda yakin ingin menghapus dokumen "${truncateText(deskripsi, 5)}"?`
+    );
+    
+    if (isConfirmed) {
+      // Simulasi animasi loading tombol delete
+      const buttonElement = document.getElementById(`delete-btn-${id}`);
+      if (buttonElement) {
+        buttonElement.classList.add("animate-pulse");
+        
+        setTimeout(() => {
+          buttonElement.classList.remove("animate-pulse");
+          
+          // Hapus item dari dataList
+          setDataList(prevData => prevData.filter(item => item.id !== id));
+          
+          // Tampilkan notifikasi sukses
+          alert(`Dokumen "${truncateText(deskripsi, 3)}" berhasil dihapus`);
+          
+          // Reset ke halaman 1 jika halaman saat ini kosong setelah delete
+          const newFilteredData = dataList.filter(item => item.id !== id);
+          const newTotalPages = Math.ceil(newFilteredData.length / itemsPerPage);
+          if (currentPage > newTotalPages && newTotalPages > 0) {
+            setCurrentPage(1);
           }
-        } else if (response.status === 400) {
-          try {
-            const errorData = await response.json();
-            console.error('Bad request details:', errorData);
-            throw new Error(errorData.ResponseDesc || 'Format file tidak valid');
-          } catch (parseError) {
-            throw new Error('Format file tidak valid');
-          }
-        } else {
-          throw new Error(`Error ${response.status}: Gagal mengunduh file`);
-        }
-      }
-
-      // Membuat blob dari response
-      const blob = await response.blob();
-      
-      if (blob.size === 0) {
-        throw new Error('File kosong atau tidak dapat dibaca');
+        }, 1000);
       }
       
-      console.log('Blob size:', blob.size, 'bytes');
-      
-      // Membuat URL object untuk blob
-      const blobUrl = window.URL.createObjectURL(blob);
-      
-      // Tentukan nama file untuk download
-      let downloadFileName = documentName || 'download';
-      
-      // Jika documentName tidak ada ekstensi, ambil dari filePath
-      if (documentName && !documentName.includes('.')) {
-        const fileExtension = cleanFilePath.split('.').pop();
-        if (fileExtension) {
-          downloadFileName = `${documentName}.${fileExtension}`;
-        }
-      } else if (!documentName) {
-        // Jika tidak ada documentName, gunakan nama file dari path
-        downloadFileName = cleanFilePath.split('/').pop() || 'download';
-      }
-      
-      console.log('Download filename:', downloadFileName);
-      
-      // Membuat link download
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = downloadFileName;
-      link.style.display = 'none'; // Sembunyikan link
-      
-      // Tambahkan ke DOM, klik, lalu hapus
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-      
-      console.log('Download completed successfully');
-      
-      // Tampilkan notifikasi sukses (opsional)
-      // alert(`File "${downloadFileName}" berhasil diunduh!`);
-      
-    } catch (error) {
-      console.error('Error downloading file:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengunduh file';
-      alert(`Gagal mengunduh file: ${errorMessage}`);
+      // Logika delete ke API bisa ditambahkan di sini
+      console.log(`Menghapus dokumen dengan ID: ${id}`);
     }
   };
   
@@ -249,11 +167,9 @@ const MainPage = () => {
               Laporan Pergeseran Anggaran
             </h3>
             {dinasName && (
-              // <div className=" bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg border border-blue-100 dark:border-blue-800">
-                <h4 className="text-[18px] font-medium text-blue-800 dark:text-blue-300">
-                  {dinasName}
-                </h4>
-              // </div>
+              <h4 className="text-[18px] font-medium text-blue-800 dark:text-blue-300">
+                {dinasName}
+              </h4>
             )}
             <div className="flex items-center justify-between mt-2">
               <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -273,26 +189,26 @@ const MainPage = () => {
           </div>
         </div>
         <div className="overflow-x-auto rounded-lg border border-gray-100 dark:border-gray-700">
-          <table className="w-full min-w-max table-auto">
+          <table className="w-full table-auto" style={{ minWidth: '800px' }}>
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600">
-                <th className="px-5 py-4 text-left font-medium text-dark dark:text-gray-200 w-[45%]">
+                <th className="px-5 py-4 text-left font-medium text-dark dark:text-gray-200" style={{ width: '40%' }}>
                   Deskripsi
                 </th>
-                <th className="px-5 py-4 text-center font-medium text-dark dark:text-gray-200 w-[25%]">
+                <th className="px-5 py-4 text-center font-medium text-dark dark:text-gray-200" style={{ width: '20%' }}>
                   Tanggal
                 </th>
-                <th className="px-5 py-4 text-right font-medium text-dark dark:text-gray-200 w-[30%]">
+                <th className="px-5 py-4 text-right font-medium text-dark dark:text-gray-200" style={{ width: '40%', minWidth: '300px' }}>
                   Actions
                 </th>
               </tr>
             </thead>
 
             <tbody>
-              {currentItems.map((item, index) => (
+              {currentItems.map((item) => (
                 <tr
                   className="hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 transition-colors duration-150"
-                  key={index}
+                  key={item.id}
                 >
                   <td className="px-5 py-4">
                     <div className="flex items-center">
@@ -303,25 +219,37 @@ const MainPage = () => {
                   </td>
                   <td className="px-5 py-4 text-center">
                     <span className="text-dark dark:text-white">
-                      {/* {item.tanggal}/ */}
-                      {formatDate(new Date(item.tanggal))}
+                      {item.tanggal}
                     </span>
                   </td>
-                  <td className="px-5 py-4">
-                    <div className="flex items-center justify-end">
+                  <td className="px-5 py-4" style={{ minWidth: '280px' }}>
+                    <div className="flex items-center justify-end gap-3 flex-nowrap">
+                      {/* Tombol Download */}
                       <button
-                        id={`download-btn-${index}`}
-                        className="group flex items-center gap-2 rounded-lg  px-4 py-2 text-white  focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98] transition-all duration-200 dark:bg-blue-700 dark:hover:bg-blue-600"
-                        onClick={() => handleDownloadClick(item.file_unduh, item.deskripsi)}
+                        id={`download-btn-${item.id}`}
+                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6 focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98]"
+                        onClick={() => handleDownloadClick(item.id, item.deskripsi)}
                       >
-                        <div className="flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6">
-                          <span className="text-[20px]">
-                            <HiOutlineDocumentDownload />
-                          </span>
-                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                            Download
-                          </span>
-                        </div>
+                        <span className="text-[20px]">
+                          <HiOutlineDocumentDownload />
+                        </span>
+                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                          Download
+                        </span>
+                      </button>
+
+                      {/* Tombol Delete */}
+                      <button
+                        id={`delete-btn-${item.id}`}
+                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
+                        onClick={() => handleDeleteClick(item.id, item.deskripsi)}
+                      >
+                        <span className="text-[20px]">
+                          <HiOutlineTrash />
+                        </span>
+                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                          Delete
+                        </span>
                       </button>
                     </div>
                   </td>

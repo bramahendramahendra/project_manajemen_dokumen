@@ -22,6 +22,7 @@ interface FormattedKirimanDokumen {
   sender: string;
   senderDinas: string;
   date: string;
+  dateObject: Date; // Tambahan untuk perhitungan countdown
   lampiran: string;
   messageTitle: string;
   messageContent: string;
@@ -65,6 +66,25 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
     currentPage * itemsPerPage
   );
 
+  // Fungsi untuk menghitung sisa hari sebelum terhapus otomatis
+  const calculateDaysRemaining = (dateObject: Date): number => {
+    const now = new Date();
+    const deleteDate = new Date(dateObject);
+    deleteDate.setDate(deleteDate.getDate() + 30); // Tambah 30 hari
+    
+    const timeDiff = deleteDate.getTime() - now.getTime();
+    const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
+    
+    return Math.max(0, daysDiff); // Jangan biarkan negatif
+  };
+
+  // Fungsi untuk mendapatkan warna badge berdasarkan sisa hari
+  const getBadgeColor = (daysRemaining: number): string => {
+    if (daysRemaining <= 5) return "bg-red-100 text-red-700 border-red-200";
+    if (daysRemaining <= 10) return "bg-yellow-100 text-yellow-700 border-yellow-200";
+    return "bg-green-100 text-green-700 border-green-200";
+  };
+
   // Dekripsi parameter URL
   useEffect(() => {
     if (!encrypted || !user) {
@@ -102,16 +122,20 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         const result = await response.json();
         
         // Format data sesuai dengan interface
-        const formattedData: FormattedKirimanDokumen[] = result.responseData.items.map((item: KirimanDokumen, index: number) => ({
-          id: `${dinas}_${index}`, // Membuat ID unik dari dinas dan index
-          sender: item.pengirim_nama,
-          senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
-          date: new Date(item.pengirim_date).toLocaleDateString('id-ID'), // Format tanggal Indonesia
-          lampiran: item.dokumen,
-          messageTitle: item.judul,
-          messageContent: item.lampiran,
-          fileName: item.file_name,
-        }));
+        const formattedData: FormattedKirimanDokumen[] = result.responseData.items.map((item: KirimanDokumen, index: number) => {
+          const dateObject = new Date(item.pengirim_date);
+          return {
+            id: `${dinas}_${index}`, // Membuat ID unik dari dinas dan index
+            sender: item.pengirim_nama,
+            senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
+            date: dateObject.toLocaleDateString('id-ID'), // Format tanggal Indonesia
+            dateObject: dateObject, // Simpan object Date untuk perhitungan
+            lampiran: item.dokumen,
+            messageTitle: item.judul,
+            messageContent: item.lampiran,
+            fileName: item.file_name,
+          };
+        });
 
         setDataKiriman(formattedData);
         
@@ -137,7 +161,8 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
     setIsModalOpen(false);
     setSelectedMessage(null);
   };
-// Fungsi untuk download file - VERSI YANG DIPERBAIKI
+
+  // Fungsi untuk download file - VERSI YANG DIPERBAIKI
   const handleDownload = async (filePath: string, documentName: string) => {
     try {
       // console.log('Downloading file from path:', filePath);
@@ -296,61 +321,99 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         ) : (
           <div className="divide-y divide-gray-100">
             {currentData.length > 0 ? (
-              currentData.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between py-5 hover:bg-gray-50 transition rounded-lg px-4"
-                >
-                  {/* Informasi Utama */}
-                  <div>
-                    <p className="text-xl font-medium text-blue-600">{item.lampiran}</p>
-                    <div className="flex items-center mt-1">
-                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                        </svg>
+              currentData.map((item) => {
+                const daysRemaining = calculateDaysRemaining(item.dateObject);
+                const badgeColor = getBadgeColor(daysRemaining);
+                
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between py-5 hover:bg-gray-50 transition rounded-lg px-4"
+                  >
+                    {/* Informasi Utama */}
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <p className="text-xl font-medium text-blue-600">{item.lampiran}</p>
+                        
+                        {/* Badge Countdown dengan Tooltip */}
+                        <div className="relative group">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColor} cursor-help`}>
+                            <svg 
+                              className="w-3 h-3 mr-1" 
+                              fill="none" 
+                              stroke="currentColor" 
+                              viewBox="0 0 24 24" 
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                              />
+                            </svg>
+                            {daysRemaining === 0 ? 'Hari ini' : `${daysRemaining} hari`}
+                          </span>
+                          
+                          {/* Tooltip */}
+                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                            <div className="text-center">
+                              Pesan ini akan terhapus otomatis dalam {daysRemaining === 0 ? 'hari ini' : `${daysRemaining} hari lagi`}
+                            </div>
+                            {/* Arrow tooltip */}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-sm text-gray-600 mr-3">{item.sender}</span>
                       
-                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                        </svg>
+                      <div className="flex items-center mt-1">
+                        <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-600 mr-3">{item.sender}</span>
+                        
+                        <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <span className="text-sm text-gray-600">{item.date}</span>
                       </div>
-                      <span className="text-sm text-gray-600">{item.date}</span>
+                    </div>
+                  
+                    {/* Tombol Aksi */}
+                    <div className="flex space-x-3">
+                      {/* Tombol Isi Pesan */}
+                      <button
+                        onClick={() => openMessageModal(item.messageTitle, item.messageContent)}
+                        className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors"
+                      >
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
+                          </svg>
+                          Isi Pesan
+                        </div>
+                      </button>
+                      
+                      {/* Tombol Download */}
+                      <button
+                        onClick={() => handleDownload(item.fileName, item.lampiran)}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
+                      >
+                        <div className="flex items-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          Download
+                        </div>
+                      </button>
                     </div>
                   </div>
-                
-                  {/* Tombol Aksi */}
-                  <div className="flex space-x-3">
-                    {/* Tombol Isi Pesan */}
-                    <button
-                      onClick={() => openMessageModal(item.messageTitle, item.messageContent)}
-                      className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors"
-                    >
-                      <div className="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                        </svg>
-                        Isi Pesan
-                      </div>
-                    </button>
-                    
-                    {/* Tombol Download */}
-                    <button
-                      onClick={() => handleDownload(item.fileName, item.lampiran)}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
-                    >
-                      <div className="flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                        </svg>
-                        Download
-                      </div>
-                    </button>
-                  </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="flex flex-col items-center justify-center py-10">
                 <div className="h-16 w-16 text-gray-300 mb-4">

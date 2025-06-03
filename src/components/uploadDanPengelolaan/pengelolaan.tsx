@@ -7,24 +7,6 @@ import { encryptObject } from "@/utils/crypto";
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
 import { DokumenTerupload } from "@/types/dokumenTerupload";
 
-// const dokumenTeruploadData: DokumenTerupload[] = [
-//   {
-//     uraian: "DPA",
-//     tanggal: new Date("2022-08-21T10:00:00Z"),
-//     jumlahDocument: 6,
-//   },
-//   {
-//     uraian: "RKA",
-//     tanggal: new Date("2024-08-21T10:00:00Z"),
-//     jumlahDocument: 3,
-//   },
-//   {
-//     uraian: "Anggaran Kas",
-//     tanggal: new Date("2023-08-21T10:00:00Z"),
-//     jumlahDocument: 2,
-//   },
-// ];
-
 const PengelolaanDokumen = () => {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -35,7 +17,10 @@ const PengelolaanDokumen = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await apiRequest("/document_managements/all-data/verif-done/type", "GET");
+        const user = JSON.parse(Cookies.get("user") || "{}");
+        console.log(user);
+        
+        const response = await apiRequest(`/document_managements/all-data/verif-done/type/${user.department_id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Document management data not found");
