@@ -3,21 +3,64 @@ import { useState, ChangeEvent } from "react";
 import * as XLSX from "xlsx";
 
 const MainPage = () => {
-  const [prihal, setPrihal] = useState<string>("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  // State untuk dropdown bertingkat
+  const [kategoriUtama, setKategoriUtama] = useState<string>("");
+  const [subKategori, setSubKategori] = useState<string>("");
+  
+  // State untuk dropdown controls
+  const [isKategoriOpen, setIsKategoriOpen] = useState<boolean>(false);
+  const [isSubKategoriOpen, setIsSubKategoriOpen] = useState<boolean>(false);
+  
+  // State lainnya tetap sama
   const [deskripsi, setDeskripsi] = useState<string>("");
   const [tableData, setTableData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
+  const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
 
-  const prihalOptions = [
-    "Pergeseran anggaran atas uraian dari sub rincian obyek belanja",
-    "Pergeseran anggaran antar rincian obyek belanja dalam obyek belanja yang sama dan/atau pergeseran anggaran antar sub rincian obyek belanja dalam obyek belanja yang sama",
-    "Usulan pergeseran anggaran antar obyek belanja dalam jenis belanja yang sama",
-  ];
+  // Data untuk dropdown bertingkat
+  const kategoriUtamaOptions = ["Pendapatan", "Belanja", "Pembiayaan"];
+  
+  const subKategoriOptions: Record<string, string[]> = {
+    "Pendapatan": ["Pergeseran Pendapatan"],
+    "Belanja": ["Pergeseran Belanja", "Perubahan Belanja"],
+    "Pembiayaan": ["Pergeseran Pembiayaan"]
+  };
+  
+  const detailSpesifikOptions: Record<string, string[]> = {
+    "Pergeseran Pendapatan": [
+      "Pergeseran Pendapatan Antar jenis pendapatan"
+    ],
+    "Pergeseran Belanja": [
+      "Pasal 6 ayat 2 & 3 Lokasi, keluaran, sasaran",
+      "Pasal 6 huruf b Antar rincian objek",
+      "Pasal 6 huruf c Antar sub rincian objek",
+      "Pasal 7 Hibah/Bansos (ubah atau tidak substansi)",
+      "Perubahan Keterangan Uraian belanja",
+      "Perubahan Sumber Dana Sumber dana"
+    ],
+    "Perubahan Belanja": [
+      "Pasal 4 Ayat 2 Antar organisasi/unit organisasi",
+      "Pasal 4 Ayat 3 Antar sub kegiatan",
+      "Pasal 4 Ayat 4 Antar jenis belanja",
+      "Pasal 4 Ayat 5 Antar program atau kegiatan",
+      "Pasal 4 Ayat 6 Antar uraian dalam sub rincian objek",
+      "Pasal 4f Antar kelompok belanja"
+    ],
+    "Pergeseran Pembiayaan": [
+      "Pergeseran Pembiayaan Antar jenis pembiayaan"
+    ]
+  };
 
-  const handlePrihalSelect = (option: string) => {
-    setPrihal(option);
-    setIsDropdownOpen(false);
+  // Handler functions untuk dropdown bertingkat
+  const handleKategoriSelect = (option: string) => {
+    setKategoriUtama(option);
+    setSubKategori(""); // Reset sub kategori
+    setIsKategoriOpen(false);
+  };
+
+  const handleSubKategoriSelect = (option: string) => {
+    setSubKategori(option);
+    setIsSubKategoriOpen(false);
   };
 
   const handleDeskripsiChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -28,31 +71,58 @@ const MainPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Mulai loading
+    setIsLoadingFile(true);
+    setTableData([]);
+    setHeaders([]);
+
     const reader = new FileReader();
     reader.onload = (evt) => {
-      const bstr = evt.target?.result;
-      const wb = XLSX.read(bstr, { type: "binary" });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-      if (data.length > 0) {
-        const headers = data[0] as string[];
-        setHeaders(headers);
-        const rows = data.slice(1);
-        setTableData(rows);
+        // Simulasi delay untuk efek loading yang lebih terlihat (opsional)
+        setTimeout(() => {
+          if (data.length > 0) {
+            const headers = data[0] as string[];
+            setHeaders(headers);
+            const rows = data.slice(1);
+            setTableData(rows);
+          }
+          setIsLoadingFile(false);
+        }, 800); // Delay 800ms untuk demonstrasi loading
+      } catch (error) {
+        console.error("Error reading file:", error);
+        setIsLoadingFile(false);
+        alert("Terjadi kesalahan saat membaca file. Pastikan file adalah format Excel yang valid.");
       }
     };
+
+    reader.onerror = () => {
+      setIsLoadingFile(false);
+      alert("Terjadi kesalahan saat membaca file.");
+    };
+
     reader.readAsBinaryString(file);
   };
 
   const handleSimpan = () => {
     // Implementasi penyimpanan data
-    console.log("Data disimpan:", { prihal, deskripsi, tableData });
+    const perihalLengkap = subKategori ? `${kategoriUtama} - ${subKategori}` : kategoriUtama;
+    console.log("Data disimpan:", { 
+      kategoriUtama, 
+      subKategori, 
+      perihalLengkap,
+      deskripsi, 
+      tableData 
+    });
     alert("Data berhasil disimpan!");
   };
 
-  // Modifikasi pada fungsi handleCetak()
   const handleCetak = () => {
     // Membuat tabel HTML dari data
     let tableHTML = "";
@@ -78,6 +148,9 @@ const MainPage = () => {
       });
       tableHTML += "</tbody></table>";
     }
+
+    // Perihal lengkap untuk cetak
+    const perihalLengkap = subKategori || "........";
 
     // Membuat seluruh dokumen HTML
     const printContent = `
@@ -164,7 +237,6 @@ const MainPage = () => {
                     @page {
                         size: A4 portrait;
                         margin: 10mm;
-                        /* Mengubah warna header dan footer menjadi putih */
                         color: #ffffff;
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
@@ -172,7 +244,6 @@ const MainPage = () => {
                     @page landscape {
                         size: A4 landscape;
                         margin: 10mm;
-                        /* Mengubah warna header dan footer menjadi putih */
                         color: #ffffff;
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
@@ -180,12 +251,10 @@ const MainPage = () => {
                     .attachment-page {
                         page: landscape;
                     }
-                    /* Menambahkan script untuk menyembunyikan URL */
                     html {
                         -webkit-print-color-adjust: exact;
                         print-color-adjust: exact;
                     }
-                    /* Membuat semua teks di header dan footer cetak menjadi putih */
                     @top-center, @top-right, @top-left,
                     @bottom-center, @bottom-right, @bottom-left {
                         color: #ffffff !important;
@@ -206,7 +275,7 @@ const MainPage = () => {
                     <div class="letter-left">
                         <div>Nomor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ........</div>
                         <div>Lampiran : ........</div>
-                        <div>Perihal&nbsp;&nbsp;&nbsp;&nbsp;: ........</div>
+                        <div>Perihal&nbsp;&nbsp;&nbsp;&nbsp;: ${perihalLengkap}</div>
                         
                     </div>
                     <div class="letter-right">
@@ -258,17 +327,14 @@ const MainPage = () => {
         </html>
     `;
 
-    // <li>${prihal || '........'}</li>
-
     // Membuka jendela baru untuk cetak
     const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(printContent);
       printWindow.document.close();
 
-      // Menunggu konten dimuat sebelum menjalankan print
       printWindow.onload = function () {
-        // Cetak otomatis (opsional - uncomment jika ingin langsung cetak)
+        // Cetak otomatis (opsional)
         // printWindow.print();
       };
     } else {
@@ -287,16 +353,20 @@ const MainPage = () => {
 
         <div className="px-7.5 pb-7.5">
           <div className="flex flex-col space-y-4">
-            {/* Dropdown untuk Prihal */}
+            
+            {/* Dropdown Level 1 - Kategori Utama */}
             <div className="relative">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
+                Perihal Utama
+              </label>
               <div
                 className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                onClick={() => setIsKategoriOpen(!isKategoriOpen)}
               >
                 <span
-                  className={`truncate ${prihal ? "text-gray-900" : "text-gray-400"}`}
+                  className={`truncate ${kategoriUtama ? "text-gray-900" : "text-gray-400"}`}
                 >
-                  {prihal || "Perihal"}
+                  {kategoriUtama || "Pilih Perihal"}
                 </span>
                 <svg
                   className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
@@ -311,14 +381,13 @@ const MainPage = () => {
                 </svg>
               </div>
 
-              {/* Dropdown Options */}
-              {isDropdownOpen && (
+              {isKategoriOpen && (
                 <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                  {prihalOptions.map((option, index) => (
+                  {kategoriUtamaOptions.map((option, index) => (
                     <div
                       key={index}
                       className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
-                      onClick={() => handlePrihalSelect(option)}
+                      onClick={() => handleKategoriSelect(option)}
                     >
                       {option}
                     </div>
@@ -327,51 +396,143 @@ const MainPage = () => {
               )}
             </div>
 
+            {/* Dropdown Level 2 - Sub Kategori */}
+            {kategoriUtama && (
+              <div className="relative">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Sub Perihal
+                </label>
+                <div
+                  className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
+                  onClick={() => setIsSubKategoriOpen(!isSubKategoriOpen)}
+                >
+                  <span
+                    className={`truncate ${subKategori ? "text-gray-900" : "text-gray-400"}`}
+                  >
+                    {subKategori || "Pilih Sub Perihal"}
+                  </span>
+                  <svg
+                    className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+
+                {isSubKategoriOpen && (
+                  <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                    {subKategoriOptions[kategoriUtama]?.map((option, index) => (
+                      <div
+                        key={index}
+                        className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
+                        onClick={() => handleSubKategoriSelect(option)}
+                      >
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Dropdown Level 3 - Detail Spesifik */}
+            {subKategori && detailSpesifikOptions[subKategori] && (
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                <label className="mb-3 block text-sm font-medium text-gray-700">
+                  Detail Spesifik - {subKategori}
+                </label>
+                <div className="space-y-2">
+                  {detailSpesifikOptions[subKategori].map((detail, index) => (
+                    <div key={index} className="flex items-start">
+                      <span className="mr-2 mt-1 h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+                      <span className="text-sm text-gray-700 leading-relaxed">
+                        {detail}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Textarea untuk Deskripsi */}
             <textarea
               value={deskripsi}
               onChange={handleDeskripsiChange}
-              placeholder="deskripsi alasan pergeseran"
+              placeholder="Deskripsi alasan pergeseran"
               className="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             {/* Tombol untuk Upload dan Simpan */}
             <div className="flex space-x-4">
-              <label className="flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-6 py-2 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="mr-2 h-5 w-5 text-blue-500"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                  />
-                </svg>
-                upload excel
+              <label className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-6 py-2 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                {isLoadingFile ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mr-2 h-5 w-5 text-blue-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    Upload Excel
+                  </>
+                )}
                 <input
                   type="file"
                   accept=".xlsx, .xls"
                   onChange={handleFileUpload}
                   className="hidden"
+                  disabled={isLoadingFile}
                 />
               </label>
               <button
                 onClick={handleSimpan}
-                className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
+                disabled={isLoadingFile}
+                className={`rounded-md bg-blue-600 px-6 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 ${isLoadingFile ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                simpan
+                Simpan
               </button>
             </div>
 
-            {/* Tabel Kosong dengan Pesan */}
+            {/* Tabel Data */}
             <div className="mt-6 overflow-hidden rounded-lg border shadow-sm">
               <div className="overflow-x-auto">
-                {tableData.length > 0 ? (
+                {isLoadingFile ? (
+                  // Loading State
+                  <div className="flex flex-col items-center justify-center bg-white px-6 py-16">
+                    <div className="mb-4">
+                      {/* Spinner Loading */}
+                      <div className="relative">
+                        <div className="h-12 w-12 rounded-full border-4 border-gray-200"></div>
+                        <div className="absolute top-0 h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                      </div>
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Memproses File Excel...
+                    </h3>
+                    <p className="text-sm text-gray-500 text-center max-w-sm">
+                      Sedang membaca dan memvalidasi data dari file yang Anda upload. Mohon tunggu sebentar.
+                    </p>
+                  </div>
+                ) : tableData.length > 0 ? (
+                  // Data Table
                   <table className="min-w-full table-fixed divide-y divide-gray-200">
                     <thead className="bg-blue-600">
                       <tr>
@@ -414,6 +575,7 @@ const MainPage = () => {
                     </tbody>
                   </table>
                 ) : (
+                  // Empty State
                   <div className="flex items-center justify-center bg-gray-50 px-6 py-16">
                     <div className="text-center">
                       <svg
@@ -443,7 +605,7 @@ const MainPage = () => {
             </div>
 
             {/* Tombol Cetak */}
-            {tableData.length > 0 && (
+            {tableData.length > 0 && subKategori && !isLoadingFile && (
               <div className="mt-4 flex justify-end">
                 <button
                   onClick={handleCetak}
@@ -463,7 +625,7 @@ const MainPage = () => {
                       d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
                     />
                   </svg>
-                  cetak
+                  Cetak
                 </button>
               </div>
             )}

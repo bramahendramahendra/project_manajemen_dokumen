@@ -7,14 +7,20 @@ import { apiRequestUpload } from "@/helpers/uploadClient";
 import ElementCombobox from "../elements/ElementCombobox";
 import SuccessModal from "../modals/successModal";
 
-const dataTahun = [
-  { name: 2020 },
-  { name: 2021 },
-  { name: 2022 },
-  { name: 2023 },
-  { name: 2024 },
-  { name: 2025 },
-];
+// Fungsi untuk generate tahun dinamis (tahun sekarang mundur 16 tahun)
+const generateYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  
+  // Generate dari tahun sekarang mundur 16 tahun (total 17 tahun termasuk tahun sekarang)
+  for (let i = 0; i < 17; i++) {
+    years.push({ name: currentYear - i });
+  }
+  
+  return years;
+};
+
+const dataTahun = generateYearOptions();
 
 const UploadDokumen = () => {
   const [loading, setLoading] = useState(false);

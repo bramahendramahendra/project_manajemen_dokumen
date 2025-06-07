@@ -370,6 +370,7 @@ const FormPengirimanLangsungAdmin = () => {
     console.log("Lampiran:", lampiran);
     console.log("Temp file paths:", tempFilePath);
 
+    // ✅ VALIDASI MINIMAL - HANYA DINAS DAN JUDUL YANG WAJIB
     if (!dinas) {
       showErrorModal("Validasi Gagal", "Dinas tujuan harus dipilih");
       return;
@@ -380,12 +381,8 @@ const FormPengirimanLangsungAdmin = () => {
       return;
     }
     
-    // Peringatan jika tidak ada dokumen atau file yang dipilih
-    if (selectedDocuments.length === 0 && !tempFilePath) {
-      if (!confirm("Anda belum memilih dokumen atau mengupload file. Tetap lanjutkan?")) {
-        return;
-      }
-    }
+    // ✅ HAPUS VALIDASI/PERINGATAN UNTUK DOKUMEN DAN FILE
+    // Sekarang bisa kirim tanpa dokumen dan tanpa file
     
     // Set loading
     setLoading(true);
@@ -405,14 +402,14 @@ const FormPengirimanLangsungAdmin = () => {
 
       const foundNamaDinas = optionOfficials.find((item) => item.id === dinas);
       
-      // Siapkan payload untuk API
+      // ✅ Siapkan payload untuk API - BISA KOSONG UNTUK DOKUMEN DAN FILE
       const payload = {
         kepada_id: dinas,
         kepada_dinas: foundNamaDinas?.dinas || "",
         judul: judul,
-        dokumen_ids: documentIds,
-        lampiran: lampiran,
-        file_path: tempFilePath, // Kirim single file path
+        dokumen_ids: documentIds, // Bisa array kosong []
+        lampiran: lampiran, // Bisa string kosong ""
+        file_path: tempFilePath, // Bisa string kosong ""
         pengirim_userid: user.userid,
         pengirim_name: user.name,
         pengirim_department_id: user.department_id,
@@ -706,10 +703,10 @@ const FormPengirimanLangsungAdmin = () => {
                   <div className="mt-6">
                     <button
                       type="submit"
-                      disabled={loading || isUploading}
+                      disabled={loading}
                       className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-70"
                     >
-                      {loading ? "Mengirim..." : isUploading ? "Menunggu Upload..." : "Kirim"}
+                      {loading ? "Mengirim..." : "Kirim"}
                     </button>
                   </div>
                 </div>
