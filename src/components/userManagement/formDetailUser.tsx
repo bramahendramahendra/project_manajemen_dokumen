@@ -30,6 +30,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
   const [profileAkses, setProfileAkses] = useState<ProfileAkses[]>([]);
   const [summaryActivity, setSummaryActivity] = useState<SummaryActivity | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
+  const [errorActivity, setErrorActivity] = useState<string | null>(null);
 
   // const [optionOfficials, setOptionOfficials] = useState<any[]>([]);
   // const [optionRoles, setOptionRoles] = useState<any[]>([]);
@@ -152,7 +153,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
       setSummaryActivity(activity);
       
     } catch (err: any) {
-      setError(err.message === "Failed to fetch" ? "Data aktivitas tidak ditemukan" : err.message);
+      setErrorActivity(err.message === "Failed to fetch" ? "Data aktivitas tidak ditemukan" : err.message);
     } finally {
       setLoadingActivity(false);
     }
@@ -319,7 +320,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0C479F]"></div>
             <span className="ml-2 text-gray-500">Memuat data aktivitas...</span>
           </div>
-        ) : error ? (
+        ) : errorActivity ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
             <p className="text-red-600">{error}</p>
           </div>
