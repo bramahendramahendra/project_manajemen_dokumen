@@ -69,7 +69,7 @@ const MainPage = () => {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
-      console.log(result.responseData);
+      // console.log(result.responseData);
      
       setUserid(result.responseData.userid);
       setFullname(result.responseData.fullname);

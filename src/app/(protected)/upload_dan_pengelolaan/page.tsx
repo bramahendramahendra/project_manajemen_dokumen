@@ -1,4 +1,4 @@
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import MainPage from "@/components/uploadDanPengelolaan";
 

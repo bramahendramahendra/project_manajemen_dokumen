@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import ValidationUploadTable from "@/components/validationUpload/validationUploadTable";
 
@@ -38,10 +38,12 @@ const ValidationUploadDetail = ({ params }: Props) => {
 
   if (!foundSkpd) {
     return (
-      <DefaultLayout>
+      // <DefaultLayout>
+      <>
         <h1>Error 404: SKPD &quot;{skpd}&quot; Data tidak ditemukan</h1>
         <p>Data ini tidak ada</p>
-      </DefaultLayout>
+      </>
+      // </DefaultLayout>
     );
   }
 
