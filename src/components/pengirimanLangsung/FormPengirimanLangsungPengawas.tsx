@@ -292,7 +292,7 @@ const FormPengirimanLangsung = () => {
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validasi form dengan modal error
+    // ✅ VALIDASI MINIMAL - HANYA NAMA PENGAWAS DAN JUDUL YANG WAJIB
     if (!namaPengawas) {
       showErrorModal("Validasi Gagal", "Nama Pengawas harus diisi");
       return;
@@ -303,14 +303,8 @@ const FormPengirimanLangsung = () => {
       return;
     }
     
-    // Hapus validasi dokumen wajib - dibuat opsional
-    // Tetapi berikan peringatan jika tidak ada dokumen atau file yang dipilih
-    if (selectedDocuments.length === 0 && files.length === 0) {
-      // Tampilkan konfirmasi alih-alih error modal
-      if (!confirm("Anda belum memilih dokumen atau mengupload file. Tetap lanjutkan?")) {
-        return;
-      }
-    }
+    // ✅ HAPUS VALIDASI/PERINGATAN UNTUK DOKUMEN DAN FILE
+    // Sekarang bisa kirim tanpa dokumen dan tanpa file
     
     // Set loading
     setLoading(true);
@@ -319,13 +313,13 @@ const FormPengirimanLangsung = () => {
       // Simulasi API call (ganti dengan API call sebenarnya)
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Di sini Anda bisa melakukan API call untuk mengirim data
+      // ✅ Di sini Anda bisa melakukan API call untuk mengirim data - PAYLOAD BISA KOSONG
       // const response = await apiRequest("/send-documents", "POST", {
       //   kepada: namaPengawas,
       //   judul: judul,
-      //   dokumen: selectedDocuments,
-      //   lampiran: lampiran,
-      //   files: tempFilePaths // Path file yang sudah diupload
+      //   dokumen: selectedDocuments, // Bisa array kosong []
+      //   lampiran: lampiran, // Bisa string kosong ""
+      //   files: tempFilePaths // Bisa array kosong []
       // });
       
       // if (!response.ok) {
@@ -629,10 +623,10 @@ const FormPengirimanLangsung = () => {
                   <div className="mt-6">
                     <button
                       type="submit"
-                      disabled={loading || isUploading}
+                      disabled={loading}
                       className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-70"
                     >
-                      {loading ? "Mengirim..." : isUploading ? "Menunggu Upload..." : "Kirim"}
+                      {loading ? "Mengirim..." : "Kirim"}
                     </button>
                   </div>
                 </div>

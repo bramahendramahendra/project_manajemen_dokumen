@@ -413,7 +413,7 @@ const FormPengirimanLangsung = () => {
     console.log("Selected documents:", selectedDocuments);
     console.log("Lampiran:", lampiran);
 
-    // Validasi form
+    // ✅ VALIDASI MINIMAL - HANYA DINAS DAN JUDUL YANG WAJIB
     if (!selectedOfficial) {
       showErrorModal("Validasi Gagal", "Nama Dinas harus dipilih");
       return;
@@ -424,14 +424,8 @@ const FormPengirimanLangsung = () => {
       return;
     }
     
-    // Hapus validasi dokumen yang wajib dipilih, sekarang opsional
-    // Tetapi berikan peringatan jika tidak ada dokumen atau file yang dipilih
-    if (selectedDocuments.length === 0 && files.length === 0) {
-      // Masih diizinkan untuk submit, tapi ada peringatan
-      if (!confirm("Anda belum memilih dokumen atau mengupload file. Tetap lanjutkan?")) {
-        return;
-      }
-    }
+    // ✅ HAPUS VALIDASI/PERINGATAN UNTUK DOKUMEN DAN FILE
+    // Sekarang bisa kirim tanpa dokumen dan tanpa file
     
     // Reset error
     setError("");
@@ -440,6 +434,7 @@ const FormPengirimanLangsung = () => {
     setLoading(true);
     
     try {
+      // ✅ Menyiapkan data dokumen yang dipilih - BISA KOSONG
       const documentIds = selectedDocuments.map(doc => doc.id);
       const user = JSON.parse(Cookies.get("user") || "{}");
       if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
@@ -447,13 +442,14 @@ const FormPengirimanLangsung = () => {
         return;
       }
 
-      // Siapkan payload untuk API
+      // ✅ Siapkan payload untuk API - BISA KOSONG UNTUK DOKUMEN DAN FILE
       const payload = {
         kepada_id: selectedOfficial.id,
         kepada_dinas: selectedOfficial.dinas,
         judul: judul,
-        dokumen_ids: documentIds,
-        lampiran: lampiran,
+        dokumen_ids: documentIds, // Bisa array kosong []
+        lampiran: lampiran, // Bisa string kosong ""
+        file_paths: tempFilePaths, // Bisa array kosong []
         pengirim_userid: user.userid,
         pengirim_name: user.name,
         pengirim_department_id: user.department_id,
@@ -834,10 +830,10 @@ const FormPengirimanLangsung = () => {
                   <div className="mt-6">
                     <button
                       type="submit"
-                      disabled={loading || isUploading}
+                      disabled={loading}
                       className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 disabled:opacity-70"
                     >
-                      {loading ? "Mengirim..." : isUploading ? "Menunggu Upload..." : "Kirim"}
+                      {loading ? "Mengirim..." : "Kirim"}
                     </button>
                   </div>
                 </div>
