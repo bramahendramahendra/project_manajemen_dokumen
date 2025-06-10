@@ -210,11 +210,11 @@ const MainPage = () => {
 
   return (
     <div className="p-6 bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-md">
-      <div className="flex justify-between items-center mb-8">
+      {/* <div className="flex justify-between items-center mb-8">
         <div className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-1 rounded-full">
           <span className="text-white text-sm font-medium">{role}</span>
         </div>
-      </div>
+      </div> */}
 
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
         {/* User Profile Header */}

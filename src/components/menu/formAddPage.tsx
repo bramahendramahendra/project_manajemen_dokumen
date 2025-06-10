@@ -83,7 +83,8 @@ const FormAddPage = () => {
       url: url,
       description: description,
       urutan: urutan,
-      type: type,
+      pro: type,
+      notif: "0",
       status: status,
     };
 

@@ -16,8 +16,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [urutan, setUrutan] = useState('');
-  const [type, setType] = useState('');
-  const [status, setStatus] = useState('');
+  const [type, setType] = useState('0');
+  const [status, setStatus] = useState('1');
 
   const [inputIcon, setInputIcon] = useState(false);
   
@@ -51,8 +51,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       setUrl(dataEdit.url || '');
       setDescription(dataEdit.description || '');
       setUrutan(dataEdit.urutan || '');
-      setType(dataEdit.type || '');
-      setStatus(dataEdit.status || '');
+      setType(dataEdit.type || '0');
+      setStatus(dataEdit.status || '0');
       setInputIcon(!dataEdit.icon);
     }
   }, [dataEdit]);
@@ -85,7 +85,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       url,
       description,
       urutan,
-      type,
+      pro:type,
+      notif: "0",
       status
     };
 

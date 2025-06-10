@@ -6,7 +6,7 @@ import { encryptObject } from "@/utils/crypto";
 import {
   HiOutlineLockClosed,
   HiOutlineLockOpen,
-  // HiOutlinePencilSquare,
+  HiOutlinePencilSquare,
   // HiOutlineTrash,
   HiOutlineArrowTopRightOnSquare
 } from "react-icons/hi2";
@@ -178,15 +178,15 @@ const MainPage = () => {
     }
   };
 
-  // const handleEdit = (userid: string) => {
-  //   const key = process.env.NEXT_PUBLIC_APP_KEY;
-  //   const user = Cookies.get("user");
+  const handleEdit = (userid: string) => {
+    const key = process.env.NEXT_PUBLIC_APP_KEY;
+    const user = Cookies.get("user");
     
-  //   if (!user) return alert("Token tidak ditemukan!");
-  //   const encrypted = encryptObject({ userid }, user);
+    if (!user) return alert("Token tidak ditemukan!");
+    const encrypted = encryptObject({ userid }, user);
 
-  //   router.push(`/user_management/edit_user/mz?${key}=${encrypted}`);
-  // };
+    router.push(`/user_management/edit_user/mz?${key}=${encrypted}`);
+  };
 
   // Handler untuk detail user
   const handleDetailsClick = (userid: string) => {
@@ -370,9 +370,9 @@ const MainPage = () => {
                               Detail
                             </span>
                           </button>
-                          {/* <button
+                          <button
                             onClick={() => handleEdit(item.userid)}
-                            className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
+                            className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#f59e0b] to-[#d97706] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#d97706] hover:to-[#b45309] hover:pr-6"
                           >
                             <span className="text-[20px]">
                               <HiOutlinePencilSquare />
@@ -381,6 +381,8 @@ const MainPage = () => {
                               Edit
                             </span>
                           </button>
+
+                          {/*
                           <button
                             onClick={() => handleDeleteClick(item.userid)}
                             className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"

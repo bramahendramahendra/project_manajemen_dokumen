@@ -21,37 +21,53 @@ const FormAddUser = () => {
   const [isDefaultPassword, setIsDefaultPassword] = useState(false);
   const [optionOfficials, setOptionOfficials] = useState<any[]>([]);
   const [optionRoles, setOptionRoles] = useState<any[]>([]);
- 
+  const [loadingDinas, setLoadingDinas] = useState(false);
+
+  // Fetch dinas hanya ketika accessUser === 'DNS'
   useEffect(() => {
-    const fetchOfficials = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await apiRequest("/master_dinas/opt-dinas", "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Officials data not found");
+    if (accessUser === 'DNS' && optionOfficials.length === 0) {
+      const fetchOfficials = async () => {
+        setLoadingDinas(true);
+        setError(null);
+        try {
+          const response = await apiRequest("/master_dinas/opt-dinas", "GET");
+          if (!response.ok) {
+            throw new Error("Data dinas tidak tersedia");
           }
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const result = await response.json();
+
+          // Validasi struktur response
+          if (!result || !result.responseData || !result.responseData.items || !Array.isArray(result.responseData.items)) {
+            throw new Error("Data dinas tidak tersedia");
+          }
+
+          const fetchedOfficials = result.responseData.items.map((item: any) => ({
+            id: item.dinas,
+            dinas: item.nama_dinas,
+          }));
+
+          setOptionOfficials(fetchedOfficials);
+
+          // Cek jika data dinas kosong setelah fetch
+          if (fetchedOfficials.length === 0) {
+            setError("Data dinas tidak tersedia. Silakan pilih access user yang lain.");
+            setAccessUser(''); // Reset access user ke kosong
+            setDepartment(0); // Reset department
+          }
+        } catch (err: any) {
+          setError("Data dinas tidak tersedia. Silakan pilih access user yang lain.");
+          setAccessUser(''); // Reset access user ke kosong jika terjadi error
+          setDepartment(0); // Reset department
+        } finally {
+          setLoadingDinas(false);
         }
-        const result = await response.json();
+      };
 
-        const fetchedOfficials = result.responseData.items.map((item: any) => ({
-          id: item.dinas,
-          dinas: item.nama_dinas,
-        }));
+      fetchOfficials();
+    }
+  }, [accessUser, optionOfficials.length]);
 
-        setOptionOfficials(fetchedOfficials);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchOfficials();
-  }, []);
-
+  // Fetch roles saat komponen mount
   useEffect(() => {
     const fetchRoles = async () => {
       setLoading(true);
@@ -59,12 +75,14 @@ const FormAddUser = () => {
       try {
         const response = await apiRequest("/user_roles/", "GET");
         if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Roles data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error("Gagal memuat data roles");
         }
         const result = await response.json();
+
+        // Validasi struktur response
+        if (!result || !result.responseData || !result.responseData.items || !Array.isArray(result.responseData.items)) {
+          throw new Error("Data roles tidak tersedia");
+        }
 
         const fetchedRoles = result.responseData.items.map((item: any) => ({
           level_id: item.level_id,
@@ -73,7 +91,7 @@ const FormAddUser = () => {
 
         setOptionRoles(fetchedRoles);
       } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Roles data not found" : err.message);
+        setError("Gagal memuat data roles. Silakan refresh halaman.");
       } finally {
         setLoading(false);
       }
@@ -97,11 +115,29 @@ const FormAddUser = () => {
     // router.push('/users');
   };
 
+  // Handle perubahan access user
+  const handleAccessUserChange = (value: string) => {
+    setError(null); // Clear error saat user mengubah access user
+    setAccessUser(value);
+    // Reset department ketika access user berubah
+    if (value !== 'DNS') {
+      setDepartment(0);
+      setOptionOfficials([]); // Clear data dinas jika bukan DNS
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     setSuccess(false);
+
+    // Validasi tambahan untuk DNS
+    if (accessUser === 'DNS' && (!department || department === 0)) {
+      setError('Silakan pilih nama dinas terlebih dahulu');
+      setLoading(false);
+      return;
+    }
 
     const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
     const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
@@ -115,8 +151,6 @@ const FormAddUser = () => {
       phone_number: phoneNumber,
       dinas: accessUser === 'DNS' ? department : 0,
       nama_dinas: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
-      // department_id: department,
-      // department_name: selectedDepartment?.dinas || "",
       responsible_person: responsiblePerson,
       level_id: accessUser,
     };
@@ -140,12 +174,17 @@ const FormAddUser = () => {
         setAccessUser('');
         setPassword('');
         setIsDefaultPassword(false);
+        setOptionOfficials([]); // Clear data dinas
       } else {
         const result = await response.json();
-        setError(result.message || 'Terjadi kesalahan saat menambahkan user');
+        const errorMessage = result.message || result.responseDesc || 'Terjadi kesalahan saat menambahkan user';
+        setError(errorMessage);
       }
     } catch (error: any) {
-      setError(error.message || 'Terjadi kesalahan saat mengirim data');
+      const errorMessage = error.message === "Failed to fetch" 
+        ? "Gagal terhubung ke server. Silakan coba lagi." 
+        : 'Terjadi kesalahan saat mengirim data';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -169,8 +208,8 @@ const FormAddUser = () => {
                   type="text"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Enter your first name"
-                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                  placeholder="Masukkan nama depan"
+                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 />
               </div>
               {/* Nama Belakang */}
@@ -182,8 +221,8 @@ const FormAddUser = () => {
                   type="text"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Enter your last name"
-                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                  placeholder="Masukkan nama belakang"
+                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 />
               </div>
             </div>
@@ -196,8 +235,8 @@ const FormAddUser = () => {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your Username"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                placeholder="Masukkan username"
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               />
             </div>
@@ -210,8 +249,8 @@ const FormAddUser = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email address"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                placeholder="Masukkan alamat email"
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               />
             </div>
@@ -242,8 +281,8 @@ const FormAddUser = () => {
               </label>
               <select
                 value={accessUser}
-                onChange={(e) => setAccessUser(e.target.value)}
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                onChange={(e) => handleAccessUserChange(e.target.value)}
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               >
                 <option value="" disabled>Pilih Access User</option> 
@@ -258,7 +297,7 @@ const FormAddUser = () => {
                 )}
               </select>
             </div>
-            {/* Nama Dinas */}
+            {/* Nama Dinas - Hanya tampil ketika accessUser === 'DNS' */}
             {accessUser === 'DNS' && (
               <div className="mb-4.5">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
@@ -267,18 +306,20 @@ const FormAddUser = () => {
                 <select
                   value={department}
                   onChange={(e) => setDepartment(Number(e.target.value))}
-                  className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                  className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                   required
                 >
                   <option value={0} disabled>Pilih Dinas</option> 
-                  {optionOfficials.length > 0 ? (
+                  {loadingDinas ? (
+                    <option value="" disabled>Memuat data dinas...</option>
+                  ) : optionOfficials.length > 0 ? (
                     optionOfficials.map((option, index) => (
                       <option key={index} value={option.id}>
                         {option.dinas}
                       </option>
                     ))
                   ) : (
-                    <option value="all" disabled>Loading dinas...</option>
+                    <option value="" disabled>Data dinas kosong</option>
                   )}
                 </select>
               </div>
@@ -292,8 +333,8 @@ const FormAddUser = () => {
                 type="text"
                 value={responsiblePerson}
                 onChange={(e) => setResponsiblePerson(e.target.value)}
-                placeholder="Enter your penanggung jawab"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                placeholder="Masukkan nama penanggung jawab"
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
               />
             </div>
             {/* Password */}
@@ -303,7 +344,7 @@ const FormAddUser = () => {
               </label>
               <input
                 type="text"
-                placeholder="Enter your password"
+                placeholder="Masukkan password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
@@ -331,7 +372,6 @@ const FormAddUser = () => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Tambah User Baru */}
               {loading ? 'Menambahkan...' : 'Tambah User Baru'}
             </button>
 

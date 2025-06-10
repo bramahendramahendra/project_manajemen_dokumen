@@ -21,15 +21,15 @@ const EditPage = () => {
 
   const key = process.env.NEXT_PUBLIC_APP_KEY;
   const encrypted = searchParams.get(`${key}`);
-  const token = Cookies.get("token");
+  const user = Cookies.get("user");
 
   useEffect(() => {
-    if (!encrypted || !token) {
+    if (!encrypted || !user) {
       setError("Token atau data tidak tersedia.");
       return;
     }
 
-    const result = decryptObject(encrypted, token);
+    const result = decryptObject(encrypted, user);
     
     if (!result) {
       setError("Gagal dekripsi atau data rusak.");
@@ -40,7 +40,7 @@ const EditPage = () => {
 
     setCode(decryptedCode);
     setMenu(decryptedMenu);
-  }, [encrypted, token]);
+  }, [encrypted, user]);
 
 
   useEffect(() => {
