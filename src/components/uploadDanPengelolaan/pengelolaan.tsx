@@ -97,8 +97,8 @@ const PengelolaanDokumen = () => {
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={3} className="text-center text-red-500 font-semibold py-6">
-                    {error}
+                  <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                    Data belum tersedia
                   </td>
                 </tr>
               ) : dataList.length === 0 ? (

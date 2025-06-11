@@ -4,7 +4,7 @@ import { useSearchParams  } from "next/navigation";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { decryptObject } from "@/utils/crypto";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import { Menu } from "@/types/menu";
 import FormEditPage from "@/components/menu/formEditPage";

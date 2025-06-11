@@ -1,4 +1,4 @@
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import HeaderPage from "@/components/menu/headerPage";
 import MainPage from "@/components/menu";

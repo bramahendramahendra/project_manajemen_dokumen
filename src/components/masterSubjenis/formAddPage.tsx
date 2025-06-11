@@ -29,8 +29,8 @@ const FormAddPage = () => {
         const result = await response.json();
 
         const fetchOptionSettingTypes = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          jenis: item.jenis,
+          id: item.jenis,
+          jenis: item.nama_jenis,
         }));
 
         setOptionTypes(fetchOptionSettingTypes);

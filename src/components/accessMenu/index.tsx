@@ -51,12 +51,12 @@ const MainPage = () => {
 
   const handleEdit = (levelId: string, codeMenu: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
+    const user = Cookies.get("user");
 
-    const encrypted = encryptObject({ levelId, codeMenu }, token);
+    if (!user) return alert("Token tidak ditemukan!");
+    const encrypted = encryptObject({ levelId, codeMenu }, user);
     
-    router.push(`/menu/edit_access_menu/mz?${key}=${encrypted}`);
+    router.push(`/access_menu/edit_access_menu/mz?${key}=${encrypted}`);
   };
 
   // Handler untuk membuka modal konfirmasi hapus
@@ -68,14 +68,17 @@ const MainPage = () => {
   // Handler untuk konfirmasi hapus
   const handleConfirmDelete = async () => {
     if (itemToDelete) {
+      setLoading(true);
+      setError(null);
+
       try {
-        // Logika untuk menghapus item
-        // const response = await apiRequest(`/access_menus/${itemToDelete.codeMenu}`, "DELETE");
-        // if (response.ok) {
-        //   // Filter item yang dihapus dari state
-        //   setMenuData(prevItems => prevItems.filter(item => item.codeMenu !== itemToDelete.codeMenu));
-        // }
-        
+        const response = await apiRequest(`/access_menus/${itemToDelete.levelId}/${itemToDelete.codeMenu}`, "DELETE");
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.responseDesc || 'Gagal menghapus data');
+        }
+       
         // Untuk sementara hanya simulasi penghapusan dari state lokal
         setDataList(prevItems => prevItems.filter(item => 
           !(item.codeMenu === itemToDelete.codeMenu && item.levelId === itemToDelete.levelId)
@@ -84,6 +87,7 @@ const MainPage = () => {
         // Tutup modal setelah selesai
         setShowDeleteModal(false);
         setItemToDelete(null);
+        setLoading(false);
       } catch (error) {
         console.error("Error deleting item:", error);
       }

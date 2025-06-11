@@ -84,6 +84,7 @@ const MainPage = () => {
     setError(null);
     setSuccess(false);
 
+
     try {
       const response = await apiRequest(`/menus/${itemDelete}`, 'DELETE');
       const result = await response.json();
@@ -92,7 +93,14 @@ const MainPage = () => {
         throw new Error(result.responseDesc || 'Gagal menghapus data');
       }
 
+      setDataList(prevItems => prevItems.filter(item => 
+        !(item.code === itemDelete)
+      ));
+
       setSuccess(true);
+      setShowDeleteModal(false);
+      setItemDelete(null);
+
       // Bisa tambahkan aksi tambahan seperti refresh data atau notifikasi
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat menghapus data');

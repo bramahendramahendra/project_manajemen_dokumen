@@ -62,8 +62,8 @@ const MainPage = () => {
       const result: JenisResponse = await response.json();
       
       const res: Jenis[] = result.responseData.items.map((item: any) => ({
-        id: item.jenis,
-        jenis: item.nama_jenis,
+        jenis: item.jenis,
+        nama_jenis: item.nama_jenis,
         roles: (item.roles || []).map((role: any) => ({
           levelId: role.level_id,
           role: role.role
@@ -111,7 +111,7 @@ const MainPage = () => {
 
     const encrypted = encryptObject({ id }, user);
     
-    router.push(`/setting_jenis/detail_setting_jenis/mz?${key}=${encrypted}`);
+    router.push(`/master_jenis/detail_setting_jenis/mz?${key}=${encrypted}`);
 
 
     // router.push(`/user_management/detail/${userid}`);
@@ -124,7 +124,7 @@ const MainPage = () => {
 
     const encrypted = encryptObject({ id, jenis }, user);
     
-    router.push(`/setting_jenis/edit/mz?${key}=${encrypted}`);
+    router.push(`/master_jenis/edit/mz?${key}=${encrypted}`);
   };
 
   const handleDeleteClick = (id: number) => {
@@ -147,6 +147,11 @@ const MainPage = () => {
         throw new Error(result.responseDesc || 'Gagal menghapus data');
       }
 
+      setDataList(prevItems => prevItems.filter(item => 
+        !(item.jenis === itemDelete)
+      ));
+
+      setShowDeleteModal(false);
       setSuccess(true);
       // Bisa tambahkan aksi tambahan seperti refresh data atau notifikasi
     } catch (error: any) {
@@ -267,7 +272,7 @@ const MainPage = () => {
                     <td className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}>
                       <div className="flex items-center justify-end space-x-3.5">
                         <button
-                          onClick={() => handleDetailsClick(item.id)}
+                          onClick={() => handleDetailsClick(item.jenis)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
                         >
                           <span className="text-[20px]">
@@ -278,7 +283,7 @@ const MainPage = () => {
                           </span>
                         </button>
                         <button
-                          onClick={() => handleEdit(item.id, item.jenis)}
+                          onClick={() => handleEdit(item.jenis, item.nama_jenis)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-yellow-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-yellow-600 hover:pr-6"
                         >
                           <span className="text-[20px]">
@@ -289,7 +294,7 @@ const MainPage = () => {
                           </span>
                         </button>
                         <button 
-                          onClick={() => handleDeleteClick(item.id)}
+                          onClick={() => handleDeleteClick(item.jenis)}
                           className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
                         >
                           <span className="text-[20px]">

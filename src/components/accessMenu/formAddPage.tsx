@@ -52,6 +52,7 @@ const FormAddPage = () => {
     const payload = {
       code_menu: codeMenu,
       level_id: accessUser,
+      status: "1",
     };
 
     try {
