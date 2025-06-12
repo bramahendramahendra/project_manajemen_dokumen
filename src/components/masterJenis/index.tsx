@@ -239,7 +239,7 @@ const MainPage = () => {
                   <tr key={index}>
                     <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
                       <p className="text-dark dark:text-white">
-                        {item.jenis}
+                        {item.nama_jenis}
                       </p>
                     </td>
                     <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
