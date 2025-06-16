@@ -56,6 +56,7 @@ const ValidationUploadDetail = () => {
           id: item.id,
           uraian: item.subjenis,
           tanggal: new Date(item.maker_date),
+          file: item.file_name,
         }));
     
         setDataDetail(formattedData);

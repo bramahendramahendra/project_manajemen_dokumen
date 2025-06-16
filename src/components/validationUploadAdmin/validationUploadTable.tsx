@@ -173,19 +173,57 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   };
 
   // Fungsi untuk konfirmasi hapus
-  const handleConfirmDelete = () => {
-    if (itemToDelete !== null) {
-      
-      // Update data dengan menghapus item
-      const updatedData = dataDetail.filter((_, idx) => idx !== itemToDelete);
-      onDataUpdate(updatedData);
-      
-      // Reset checkbox states setelah update data
-      setCheckedItems(new Array(updatedData.length).fill(false));
-      setIsAllChecked(false);
-      
-      console.log(`Item dengan index ${itemToDelete} telah dihapus`);
-      // Reset state
+  const handleConfirmDelete = async () => {
+    if (itemToDelete === null) return;
+
+    const user = JSON.parse(Cookies.get("user") || "{}");
+    if (!user.userid || !user.role) {
+      console.error("User tidak ditemukan di cookie.");
+      return;
+    }
+
+    // Dapatkan ID item yang akan di-reject
+    const itemId = dataDetail[itemToDelete]?.id;
+    if (!itemId) {
+      console.error("ID item tidak ditemukan.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    const payload = {
+      id: itemId,
+      checker: user.userid,
+      checker_role: user.level_id,
+    };
+
+    console.log("Reject payload:", payload);
+
+    try {
+      const response = await apiRequest('/validation/document/reject', 'POST', payload);
+      if (response.ok) {
+        setSuccess(true);
+        
+        // Update data dengan menghapus item yang di-reject
+        const updatedData = dataDetail.filter((_, idx) => idx !== itemToDelete);
+        onDataUpdate(updatedData);
+        
+        // Reset checkbox states setelah update data
+        setCheckedItems(new Array(updatedData.length).fill(false));
+        setIsAllChecked(false);
+        
+        console.log(`Item dengan index ${itemToDelete} telah di-reject`);
+      } else {
+        const result = await response.json();
+        setError(result.message || "Terjadi kesalahan saat menolak dokumen");
+      }
+    } catch (error) {
+      setError("Terjadi kesalahan saat mengirim data penolakan");
+    } finally {
+      setLoading(false);
+      // Reset modal state
       setShowDeleteModal(false);
       setItemToDelete(null);
     }
@@ -449,24 +487,26 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
           <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
             <div className="mb-4 text-center">
               <h3 className="text-lg font-medium text-gray-900">
-                Konfirmasi Hapus
+                Konfirmasi Tolak Dokumen
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Apakah anda yakin ingin menghapus?
+                Apakah anda yakin ingin menolak dokumen ini?
               </p>
             </div>
             <div className="mt-6 flex justify-center space-x-4">
               <button
                 onClick={handleCancelDelete}
                 className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300"
+                disabled={loading}
               >
-                Tidak
+                Batal
               </button>
               <button
                 onClick={handleConfirmDelete}
                 className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                disabled={loading}
               >
-                Iya
+                {loading ? "Menolak..." : "Ya, Tolak"}
               </button>
             </div>
           </div>
