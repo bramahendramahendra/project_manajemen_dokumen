@@ -11,6 +11,7 @@ import Pagination from "@/components/pagination/Pagination";
 
 interface Props {
   dataDetail: ValidationUploadUraianAdmin[];
+  onDataUpdate: (updatedData: ValidationUploadUraianAdmin[]) => void; // Tambahkan callback prop
 }
 
 const formatDate = (date: Date): string => {
@@ -21,7 +22,7 @@ const formatDate = (date: Date): string => {
   });
 };
 
-const ValidationUploadTable = ({ dataDetail }: Props) => {
+const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
@@ -50,16 +51,6 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
     setIsAllChecked(allCheckedInPage);
   }, [currentPage, checkedItems, currentItems, itemsPerPage]);
 
-
-  // useEffect(() => {
-  //   const allCheckedInPage = currentItems.every(
-  //     (_, index) =>
-  //       checkedItems[(currentPage - 1) * itemsPerPage + index] === true,
-  //   );
-  //   setIsAllChecked(allCheckedInPage);
-  // }, [currentPage, checkedItems, currentItems, itemsPerPage]);
-
-
   // Fungsi untuk memilih semua item
   const handleSelectAll = () => {
     const newChecked = checkedItems.map((_, idx) =>
@@ -69,7 +60,6 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
     setCheckedItems(newChecked);
     setIsAllChecked(!isAllChecked);
   };
-
 
   // Fungsi untuk memilih item individual
   const handleItemCheck = (index: number) => {
@@ -84,12 +74,6 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  // Fungsi untuk validasi semua
-  // const handleValidateAll = () => {
-  //   console.log("Validasi semua item berhasil!");
-  //   setIsModalOpen(false);
-  // };
-
   const handleValidateItem = async (id: number) => {
     const user = JSON.parse(Cookies.get("user") || "{}");
     if (!user.userid || !user.role) {
@@ -98,7 +82,6 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
     }
 
     console.log(user);
-
 
     setLoading(true);
     setError(null);
@@ -112,11 +95,19 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
 
     console.log(payload);
     
-
     try {
       const response = await apiRequest('/validation/document', 'POST', payload);
       if (response.ok) {
         setSuccess(true);
+        
+        // Update data dengan menghapus item yang sudah divalidasi
+        const updatedData = dataDetail.filter(item => item.id !== id);
+        onDataUpdate(updatedData);
+        
+        // Reset checkbox states setelah update data
+        setCheckedItems(new Array(updatedData.length).fill(false));
+        setIsAllChecked(false);
+        
       } else {
         const result = await response.json();
         setError(result.message || "Terjadi kesalahan saat validasi data");
@@ -148,11 +139,20 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
 
     console.log(payload);
 
-
     try {
       const response = await apiRequest('/validation/documents', 'POST', { items: payload });
       if (response.ok) {
         setSuccess(true);
+        
+        // Update data dengan menghapus semua item yang sudah divalidasi
+        const selectedIds = selectedItems.map(item => item.id);
+        const updatedData = dataDetail.filter(item => !selectedIds.includes(item.id));
+        onDataUpdate(updatedData);
+        
+        // Reset checkbox states setelah update data
+        setCheckedItems(new Array(updatedData.length).fill(false));
+        setIsAllChecked(false);
+        
       } else {
         const result = await response.json();
         setError(result.message || "Terjadi kesalahan saat validasi semua data");
@@ -175,6 +175,15 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
   // Fungsi untuk konfirmasi hapus
   const handleConfirmDelete = () => {
     if (itemToDelete !== null) {
+      
+      // Update data dengan menghapus item
+      const updatedData = dataDetail.filter((_, idx) => idx !== itemToDelete);
+      onDataUpdate(updatedData);
+      
+      // Reset checkbox states setelah update data
+      setCheckedItems(new Array(updatedData.length).fill(false));
+      setIsAllChecked(false);
+      
       console.log(`Item dengan index ${itemToDelete} telah dihapus`);
       // Reset state
       setShowDeleteModal(false);
@@ -188,20 +197,16 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
     setItemToDelete(null);
   };
 
-
-
   return (
     <div>
       {/* Tombol Validasi Semua */}
-      {/* {isAllChecked && ( */}
-      {isAnyChecked  && (
+      {isAnyChecked && dataDetail.length > 0 && (
         <div className="mt-4 flex justify-end">
           <button
             className="rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-2 text-white hover:from-[#0C479F] hover:to-[#0C479F]"
             onClick={handleOpenModal}
             disabled={loading}
           >
-            {/* {isAllChecked ? "Validasi Semua" : "Batal Validasi Semua"} */}
             {loading ? "Memvalidasi..." : "Validasi Semua"}
           </button>
         </div>
@@ -235,95 +240,102 @@ const ValidationUploadTable = ({ dataDetail }: Props) => {
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((item, index) => (
-                <tr key={index}>
-                  <td
-                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={
-                        checkedItems[
-                          (currentPage - 1) * itemsPerPage + index
-                        ] || false
-                      }
-                      onChange={() => handleItemCheck(index)}
-                    />
-                  </td>
-                  <td
-                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                  >
-                    <p className="text-dark dark:text-white">{item.id}{item.uraian}</p>
-                  </td>
-                  <td
-                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                  >
-                    <p className="text-dark dark:text-white">
-                      {formatDate(new Date(item.tanggal))}
-                    </p>
-                  </td>
-                  <td
-                    className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                  >
-                    <div className="flex items-center justify-end">
-                      <div className="pl-1 capitalize text-dark dark:text-white">
-                        <button 
-                          onClick={() => handleValidateItem(item.id)}
-                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
-                        >
-                          <span className="text-[20px]">
-                            <HiOutlineClipboardDocumentCheck />
-                          </span>
-                          {/* Teks Validasi yang muncul saat hover */}
-                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                            Validasi
-                          </span>
-                        </button>
-                      </div>
-
-                      <div className="pl-4 capitalize text-dark dark:text-white">
-                        <button 
-                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
-                          onClick={() => handleDeleteClick(index)}
-                        >
-                          <span className="text-[20px]">
-                            <HiOutlineTrash />
-                          </span>
-                          {/* Teks Hapus yang muncul saat hover */}
-                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                            Hapus
-                          </span>
-                        </button>
-                      </div>
-
-                      {/* Link Review Document */}
-                      <div className="pl-4 capitalize text-dark dark:text-white">
-                        <a
-                          href={`/review-document/${item.id}`} // URL berdasarkan data yang dipilih
-                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] border border-black px-4 py-[10px] text-[16px] text-dark transition-all duration-300 ease-in-out hover:pr-6"
-                        >
-                          <span className="text-[20px]">
-                            <HiOutlineDocumentMagnifyingGlass />
-                          </span>
-                          {/* Teks Review yang muncul saat hover */}
-                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                            Review
-                          </span>
-                        </a>
-                      </div>
-                    </div>
+              {dataDetail.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                    Data belum tersedia
                   </td>
                 </tr>
-              ))}
+              ) : (
+                currentItems.map((item, index) => (
+                  <tr key={index}>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          checkedItems[
+                            (currentPage - 1) * itemsPerPage + index
+                          ] || false
+                        }
+                        onChange={() => handleItemCheck(index)}
+                      />
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
+                    >
+                      <p className="text-dark dark:text-white">{item.id}{item.uraian}</p>
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
+                    >
+                      <p className="text-dark dark:text-white">
+                        {formatDate(new Date(item.tanggal))}
+                      </p>
+                    </td>
+                    <td
+                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
+                    >
+                      <div className="flex items-center justify-end">
+                        <div className="pl-1 capitalize text-dark dark:text-white">
+                          <button 
+                            onClick={() => handleValidateItem(item.id)}
+                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
+                          >
+                            <span className="text-[20px]">
+                              <HiOutlineClipboardDocumentCheck />
+                            </span>
+                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                              Validasi
+                            </span>
+                          </button>
+                        </div>
+
+                        <div className="pl-4 capitalize text-dark dark:text-white">
+                          <button 
+                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
+                            onClick={() => handleDeleteClick(index)}
+                          >
+                            <span className="text-[20px]">
+                              <HiOutlineTrash />
+                            </span>
+                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                              Hapus
+                            </span>
+                          </button>
+                        </div>
+
+                        {/* Link Review Document */}
+                        <div className="pl-4 capitalize text-dark dark:text-white">
+                          <a
+                            href={`/review-document/${item.id}`}
+                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] border border-black px-4 py-[10px] text-[16px] text-dark transition-all duration-300 ease-in-out hover:pr-6"
+                          >
+                            <span className="text-[20px]">
+                              <HiOutlineDocumentMagnifyingGlass />
+                            </span>
+                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                              Review
+                            </span>
+                          </a>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-          />
+          {dataDetail.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={setItemsPerPage}
+            />
+          )}
         </div>
       </div>
 

@@ -69,6 +69,13 @@ const ValidationUploadDetail = () => {
     if (id) fetchData();
   }, [id]);
 
+  // Handler untuk update data setelah validasi
+  const handleDataUpdate = (updatedData: ValidationUploadUraianAdmin[]) => {
+    setDataDetail(updatedData);
+    // Update totalPending juga jika diperlukan
+    setTotalPending(updatedData.length);
+  };
+
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
     { name: "Validation Upload", href: "/validation_upload_admin" },
@@ -88,7 +95,10 @@ const ValidationUploadDetail = () => {
         <>
           <h1>Detail Page for {skpd}</h1>
           <p>Belum di validasi: {totalPending}</p>
-          <ValidationUploadTable dataDetail={dataDetail} />
+          <ValidationUploadTable 
+            dataDetail={dataDetail} 
+            onDataUpdate={handleDataUpdate} 
+          />
         </>
       ) : (
         <div className="text-left text-red-500">
