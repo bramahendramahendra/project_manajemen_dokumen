@@ -2,6 +2,18 @@ import Cookies from "js-cookie";
 // import { useRouter } from "next/navigation";
 import { refreshAccessToken } from "./tokenService";
 
+// Import notification client untuk koordinasi SSE
+let notificationClient: any = null;
+
+// Dynamic import untuk menghindari circular dependency
+const getNotificationClient = async () => {
+  if (!notificationClient) {
+    const module = await import('./notificationClient');
+    notificationClient = module.default;
+  }
+  return notificationClient;
+};
+
 // Variabel untuk mencegah multiple refresh token secara bersamaan
 let isRefreshing = false;
 let failedRequests: Function[] = [];
@@ -72,6 +84,7 @@ export const apiRequest = async (
         isRefreshing = true;
         
         try {
+          console.log('Token expired, attempting refresh...');
           const refreshResponse = await refreshAccessToken();
           
           if (refreshResponse.ok) {
@@ -79,6 +92,15 @@ export const apiRequest = async (
             
             // Update waktu login terakhir
             localStorage.setItem('lastLoginTime', Date.now().toString());
+            
+            // Notify SSE client untuk reconnect dengan token baru
+            try {
+              const notifClient = await getNotificationClient();
+              console.log('Notifying SSE client to reconnect after token refresh...');
+              notifClient.reconnect();
+            } catch (sseError) {
+              console.error('Error notifying SSE client:', sseError);
+            }
             
             // Retry semua request yang gagal
             processFailedRequests(true);
@@ -88,18 +110,14 @@ export const apiRequest = async (
           } else {
             // Jika refresh gagal, redirect ke login
             isRefreshing = false;
-            Cookies.remove("user");
-            localStorage.removeItem('lastLoginTime');
-            clearMenuData(); // Bersihkan menu data
-            window.location.href = "/login";
+            console.log('Token refresh failed, redirecting to login...');
+            await handleLogout();
             throw new Error("Session expired, please log in again.");
           }
         } catch (error) {
           isRefreshing = false;
-          Cookies.remove("user");
-          localStorage.removeItem('lastLoginTime');
-          clearMenuData(); // Bersihkan menu data
-          window.location.href = "/login";
+          console.error('Error during token refresh:', error);
+          await handleLogout();
           throw error;
         }
       } else {
@@ -121,6 +139,25 @@ export const apiRequest = async (
     console.error("API request error:", error);
     throw error;
   }
+};
+
+// Helper function untuk handle logout
+const handleLogout = async () => {
+  try {
+    // Close SSE connection
+    const notifClient = await getNotificationClient();
+    notifClient.close();
+  } catch (error) {
+    console.error('Error closing SSE connection:', error);
+  }
+
+  // Clear data
+  Cookies.remove("user");
+  localStorage.removeItem('lastLoginTime');
+  clearMenuData();
+  
+  // Redirect
+  window.location.href = "/login";
 };
 
 /**
@@ -161,6 +198,14 @@ export const downloadFileRequest = async (
             // Update waktu login terakhir
             localStorage.setItem('lastLoginTime', Date.now().toString());
             
+            // Notify SSE client untuk reconnect
+            try {
+              const notifClient = await getNotificationClient();
+              notifClient.reconnect();
+            } catch (sseError) {
+              console.error('Error notifying SSE client during download:', sseError);
+            }
+            
             // Retry semua request yang gagal
             processFailedRequests(true);
             
@@ -169,18 +214,12 @@ export const downloadFileRequest = async (
           } else {
             // Jika refresh gagal, redirect ke login
             isRefreshing = false;
-            Cookies.remove("user");
-            localStorage.removeItem('lastLoginTime');
-            clearMenuData(); // Bersihkan menu data
-            window.location.href = "/login";
+            await handleLogout();
             throw new Error("Session expired, please log in again.");
           }
         } catch (error) {
           isRefreshing = false;
-          Cookies.remove("user");
-          localStorage.removeItem('lastLoginTime');
-          clearMenuData(); // Bersihkan menu data
-          window.location.href = "/login";
+          await handleLogout();
           throw error;
         }
       } else {
@@ -227,6 +266,17 @@ export const loginRequest = async (endpoint: string, method: string = "POST", bo
       // Jika login berhasil, simpan waktu login untuk refresh token
       if (response.ok) {
         localStorage.setItem('lastLoginTime', Date.now().toString());
+        
+        // Initialize SSE connection setelah login berhasil
+        try {
+          const notifClient = await getNotificationClient();
+          // Tunggu sebentar sebelum mulai SSE
+          setTimeout(() => {
+            notifClient.connect();
+          }, 1000);
+        } catch (sseError) {
+          console.error('Error starting SSE after login:', sseError);
+        }
       }
   
       return response;
@@ -242,7 +292,14 @@ export const loginRequest = async (endpoint: string, method: string = "POST", bo
  */
 export const logoutRequest = async (endpoint: string) => {
   try {
-    // const response = await apiRequest(endpoint, "POST");
+    // Close SSE connection before logout
+    try {
+      const notifClient = await getNotificationClient();
+      notifClient.close();
+    } catch (sseError) {
+      console.error('Error closing SSE during logout:', sseError);
+    }
+
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
       method: "POST",
       credentials: "include",
@@ -263,6 +320,15 @@ export const logoutRequest = async (endpoint: string) => {
     localStorage.removeItem('lastLoginTime');
     localStorage.removeItem('selectedMenu');
     clearMenuData();
+    
+    // Close SSE connection
+    try {
+      const notifClient = await getNotificationClient();
+      notifClient.close();
+    } catch (sseError) {
+      console.error('Error closing SSE during logout cleanup:', sseError);
+    }
+    
     throw error;
   }
 };
