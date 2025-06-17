@@ -409,7 +409,7 @@ const UploadDokumen = () => {
 
     try {
       const response = await apiRequest(
-        "/document_managements/",
+        "/document_managements/v2",
         "POST",
         payload,
       );

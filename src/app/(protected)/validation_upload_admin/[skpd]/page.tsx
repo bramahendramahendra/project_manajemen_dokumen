@@ -43,7 +43,7 @@ const ValidationUploadDetail = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await apiRequest(`/document_managements/all-data/verif-pending/subtype/${id}`, "GET");
+        const response = await apiRequest(`/document_managements/v2/all-data/verif-pending/subtype/${id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Jenis data not found");
@@ -51,12 +51,14 @@ const ValidationUploadDetail = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        // setDataDetail(result.responseData);
+        
+        // Update mapping data untuk menyesuaikan struktur response baru
         const formattedData: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({
           id: item.id,
           uraian: item.subjenis,
           tanggal: new Date(item.maker_date),
-          file: item.file_name,
+          total_files: item.total_files || 0,
+          files: item.files || []
         }));
     
         setDataDetail(formattedData);
