@@ -8,7 +8,7 @@ import { useSearchParams } from "next/navigation";
 
 // Interface untuk data API response
 interface KirimanDokumen {
-  dokumen: string;
+  // dokumen: string;
   pengirim_nama: string;
   pengirim_date: string;
   judul: string;
@@ -110,7 +110,9 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
       
       try {
         setLoading(true);
-        const response = await apiRequest(`/kotak_masuk/all-dinas/${dinas}`, "GET");
+        const user = JSON.parse(Cookies.get("user") || "{}");
+
+        const response = await apiRequest(`/kotak_masuk/all/detail/${user.department_id}/${dinas}`, "GET");
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -130,7 +132,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
             senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
             date: dateObject.toLocaleDateString('id-ID'), // Format tanggal Indonesia
             dateObject: dateObject, // Simpan object Date untuk perhitungan
-            lampiran: item.dokumen,
+            lampiran: item.judul,
             messageTitle: item.judul,
             messageContent: item.lampiran,
             fileName: item.file_name,

@@ -46,14 +46,14 @@ const ValidationUploadDetail = () => {
         const response = await apiRequest(`/document_managements/v2/all-data/verif-pending/subtype/${id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Jenis data not found");
+            throw new Error("Document data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
         
         // Update mapping data untuk menyesuaikan struktur response baru
-        const formattedData: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({
+        const res: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({
           id: item.id,
           uraian: item.subjenis,
           tanggal: new Date(item.maker_date),
@@ -61,7 +61,7 @@ const ValidationUploadDetail = () => {
           files: item.files || []
         }));
     
-        setDataDetail(formattedData);
+        setDataDetail(res);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
       } finally {

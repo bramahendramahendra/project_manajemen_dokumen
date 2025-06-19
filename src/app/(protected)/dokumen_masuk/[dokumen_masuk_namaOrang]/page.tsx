@@ -2,7 +2,7 @@
 
 import Breadcrumb from "@/components/breadcrumbs";
 import DokumenMasukDetailDokumen from "@/components/dokumen_masuk/dokumen_masuk_detail";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Cookies from "js-cookie";
 import { decryptObject } from "@/utils/crypto";
 import { useSearchParams  } from "next/navigation";
