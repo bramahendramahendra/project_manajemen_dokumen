@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import { FaUser, FaEnvelope, FaBuilding, FaUserTie, FaShieldAlt, FaCheck } from 'react-icons/fa';
 
@@ -36,13 +36,13 @@ const FormDetailUser = ({ user }: { user?: any }) => {
   // const [optionRoles, setOptionRoles] = useState<any[]>([]);
 
   // Fungsi untuk menghitung hari terakhir login
-  const calculateDaysFromLastLogin = (lastLoginDate: string): number => {
+  const calculateDaysFromLastLogin = useCallback((lastLoginDate: string): number => {
     const lastLogin = new Date(lastLoginDate);
     const today = new Date();
     const timeDiff = today.getTime() - lastLogin.getTime();
     const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
     return daysDiff;
-  };
+  }, []);
 
   // useEffect(() => {
   //   const fetchDinas = async () => {
@@ -104,7 +104,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
     fetchRoles();
   }, []);
 
-  const fetchAksesData = async (level: string) => {
+  const fetchAksesData = useCallback(async (level: string) => {
     try {
       const response = await apiRequest(`/profile/akses/${level}`, "GET");
       if (!response.ok) {
@@ -124,9 +124,9 @@ const FormDetailUser = ({ user }: { user?: any }) => {
     } catch (err: any) {
       setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
     }
-  };
+  }, []);
 
-  const fetchActivityData = async (userid: string) => {
+  const fetchActivityData = useCallback(async (userid: string) => {
     setLoadingActivity(true);
     try {
       const response = await apiRequest(`/users/summary-activity/${userid}`, "GET");
@@ -157,7 +157,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
     } finally {
       setLoadingActivity(false);
     }
-  };
+  }, [calculateDaysFromLastLogin]);
 
   useEffect(() => {
     if (user) {
@@ -178,13 +178,13 @@ const FormDetailUser = ({ user }: { user?: any }) => {
         fetchActivityData(user.userid);
       }
     }
-  }, [user]);
+  }, [user, fetchAksesData, fetchActivityData]);
 
   // Mendapatkan nama role dari level_id
-  const getRoleName = (levelId: string) => {
+  const getRoleName = useCallback((levelId: string) => {
     const role = roles.find(r => r.level_id === levelId);
     return role ? role.role : 'Unknown Role';
-  };
+  }, [roles]);
 
   return (
     <div className="p-6 bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-md">
@@ -322,7 +322,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
           </div>
         ) : errorActivity ? (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-            <p className="text-red-600">{error}</p>
+            <p className="text-red-600">{errorActivity}</p>
           </div>
         ) : summaryActivity ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

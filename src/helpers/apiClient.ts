@@ -8,8 +8,8 @@ let notificationClient: any = null;
 // Dynamic import untuk menghindari circular dependency
 const getNotificationClient = async () => {
   if (!notificationClient) {
-    const module = await import('./notificationClient');
-    notificationClient = module.default;
+    const notificationModule = await import('./notificationClient');
+    notificationClient = notificationModule.default;
   }
   return notificationClient;
 };

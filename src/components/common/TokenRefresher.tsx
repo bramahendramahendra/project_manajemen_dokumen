@@ -7,8 +7,8 @@ import { tokenConfig } from '@/utils/config';
 // Dynamic import untuk notificationClient untuk menghindari circular dependency
 const getNotificationClient = async () => {
   try {
-    const module = await import('@/helpers/notificationClient');
-    return module.default;
+    const notificationModule = await import('@/helpers/notificationClient');
+    return notificationModule.default;
   } catch (error) {
     console.error('Error importing notification client:', error);
     return null;

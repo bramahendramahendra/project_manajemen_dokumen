@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import { 
   FaUser, 
@@ -48,13 +48,34 @@ const MainPage = () => {
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  useEffect(() => {
-    // fetchRoles();
-    fetchUserData();
-    // if(level) fetchAksesData(level);
+  const fetchAksesData = useCallback(async (level : string) => {
+    // Simulasi data pengguna untuk demo
+    // Dalam implementasi sebenarnya, Anda akan mengambil data dari API
+    try {
+      const response = await apiRequest(`/profile/akses/${level}`, "GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Jenis data not found");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      // console.log(result);
+
+       const documents: ProfileAkses[] = result.responseData.items.map((item: any) => ({
+          menu: item.menu,
+        }));
+
+        setProfileAkses(documents);
+     
+    } catch (err: any) {
+      setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     // Simulasi data pengguna untuk demo
     // Dalam implementasi sebenarnya, Anda akan mengambil data dari API
     try {
@@ -92,34 +113,13 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchAksesData]);
 
-  const fetchAksesData = async (level : string) => {
-    // Simulasi data pengguna untuk demo
-    // Dalam implementasi sebenarnya, Anda akan mengambil data dari API
-    try {
-      const response = await apiRequest(`/profile/akses/${level}`, "GET");
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Jenis data not found");
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const result = await response.json();
-      // console.log(result);
-
-       const documents: ProfileAkses[] = result.responseData.items.map((item: any) => ({
-          menu: item.menu,
-        }));
-
-        setProfileAkses(documents);
-     
-    } catch (err: any) {
-      setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    // fetchRoles();
+    fetchUserData();
+    // if(level) fetchAksesData(level);
+  }, [fetchUserData]);
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);

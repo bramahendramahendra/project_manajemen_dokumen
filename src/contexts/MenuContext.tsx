@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '@/helpers/apiClient';
 import Cookies from 'js-cookie';
 
@@ -40,7 +40,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const transformMenuData = (items: any[]) => {
+  const transformMenuData = useCallback((items: any[]) => {
     const lookup: Record<string, any> = {};
     items.forEach((item) => {
       lookup[item.code_menu] = {
@@ -92,9 +92,9 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return menuGroups;
-  };
+  }, []);
 
-  const fetchMenuData = async () => {
+  const fetchMenuData = useCallback(async () => {
     setLoading(true);
     setError(null);
     
@@ -133,9 +133,9 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  };
+  }, [transformMenuData]);
 
-  const clearMenuData = () => {
+  const clearMenuData = useCallback(() => {
     setMenuGroups([]);
     setError(null);
     
@@ -144,7 +144,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user.level_id) {
       localStorage.removeItem(`menu_${user.level_id}`);
     }
-  };
+  }, []);
 
   // Load menu data saat provider pertama kali dimount
   useEffect(() => {
@@ -152,7 +152,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       fetchMenuData();
     }
-  }, []);
+  }, [fetchMenuData]);
 
   const value: MenuContextType = {
     menuGroups,
