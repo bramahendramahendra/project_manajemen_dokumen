@@ -4,7 +4,7 @@ import { useSearchParams  } from "next/navigation";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { decryptObject } from "@/utils/crypto";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import ValidationUploadTable from "@/components/validationUploadAdmin/validationUploadTable";
 import { ValidationUploadUraianAdmin } from "@/types/validationUploadUraian";
@@ -43,22 +43,25 @@ const ValidationUploadDetail = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await apiRequest(`/document_managements/all-data/verif-pending/subtype/${id}`, "GET");
+        const response = await apiRequest(`/document_managements/v2/all-data/verif-pending/subtype/${id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Jenis data not found");
+            throw new Error("Document data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        setDataDetail(result.responseData);
-        const formattedData: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({
+        
+        // Update mapping data untuk menyesuaikan struktur response baru
+        const res: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({
           id: item.id,
           uraian: item.subjenis,
           tanggal: new Date(item.maker_date),
+          total_files: item.total_files || 0,
+          files: item.files || []
         }));
     
-        setDataDetail(formattedData);
+        setDataDetail(res);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
       } finally {
@@ -69,6 +72,13 @@ const ValidationUploadDetail = () => {
     if (id) fetchData();
   }, [id]);
 
+  // Handler untuk update data setelah validasi
+  const handleDataUpdate = (updatedData: ValidationUploadUraianAdmin[]) => {
+    setDataDetail(updatedData);
+    // Update totalPending juga jika diperlukan
+    setTotalPending(updatedData.length);
+  };
+
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
     { name: "Validation Upload", href: "/validation_upload_admin" },
@@ -76,7 +86,8 @@ const ValidationUploadDetail = () => {
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
 
       {loading ? (
@@ -87,14 +98,18 @@ const ValidationUploadDetail = () => {
         <>
           <h1>Detail Page for {skpd}</h1>
           <p>Belum di validasi: {totalPending}</p>
-          <ValidationUploadTable dataDetail={dataDetail} />
+          <ValidationUploadTable 
+            dataDetail={dataDetail} 
+            onDataUpdate={handleDataUpdate} 
+          />
         </>
       ) : (
         <div className="text-left text-red-500">
           Data untuk menu dengan skpd <strong>{skpd}</strong> tidak ada.
         </div>
       )}
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

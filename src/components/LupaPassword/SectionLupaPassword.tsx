@@ -4,16 +4,44 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { lupaPassRequest } from "@/helpers/apiClient";
 
 const SectionLupaPassword = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
+
   const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
+  // const [password, setPassword] = useState<string>("");
   const router = useRouter();
 
-  const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log({ username, password });
-    router.push("/dashboard");
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      const response = await lupaPassRequest(`/auths/lupa-pass/${username}`, 'PUT');
+
+      if (response.ok) {
+        setSuccess(true);
+
+        setUsername('');
+      } else {
+        const result = await response.json();
+        setError(result.message || 'Terjadi kesalahan saat menambahkan user');
+      }
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat mengirim data');
+    } finally {
+      setLoading(false);
+    }
+
+    // router.push("/login");
+
+    // console.log({ username, password });
   };
 
   return (
@@ -42,8 +70,12 @@ const SectionLupaPassword = () => {
                 type="submit"
                 className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px]"
               >
-                Lapor Admin
+                {loading ? 'Melaporkan...' : 'Lapor Admin'}
               </button>
+
+              {/* Error and Success Messages */}
+              {error && <p className="text-red-500 mt-2">{error}</p>}
+              {success && <p className="text-green-500 mt-2">Berhasil melaporkan ke Admin!</p>}  
             </form>
           </section>
         </div>

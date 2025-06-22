@@ -1,3 +1,4 @@
+"use client";
 import { ValidationUploadUraian } from "@/types/validationUploadUraian";
 import { useEffect, useState } from "react";
 import {

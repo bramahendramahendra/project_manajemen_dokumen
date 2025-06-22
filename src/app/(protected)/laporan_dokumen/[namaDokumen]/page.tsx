@@ -26,10 +26,12 @@ const LaporanDokumenInstansi = ({ params }: { params: { namaDokumen: string } })
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <LaporanDokumenInstansiIndex />
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

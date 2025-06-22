@@ -20,12 +20,14 @@ const DropdownNotification = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<string>('disconnected');
 
   // Initial fetch untuk notifikasi
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
+        setError(null);
         const response = await apiRequest("/notifications/header", "GET");
         if (!response.ok) {
           if (response.status === 404) {
@@ -46,6 +48,7 @@ const DropdownNotification = () => {
         setNotifying(notif.length > 0); // Set notifying berdasarkan keberadaan notifikasi
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+        console.error("Error fetching initial notifications:", err);
       } finally {
         setLoading(false);
       }
@@ -57,17 +60,45 @@ const DropdownNotification = () => {
   // Efek untuk mengelola koneksi SSE
   useEffect(() => {
     // Subscribe ke event header untuk mendapatkan notifikasi secara real-time
-    const unsubscribe = notificationClient.subscribe('header', (data: any) => {
-      if (data && Array.isArray(data.items)) {
-        const notif: NotificationItem[] = data.items.map((item: any) => ({
-          url: item.url,
-          image: item.image,
-          title: item.title,
-          subTitle: item.subtitle,
-        }));
-        
-        setNotifications(notif);
-        setNotifying(notif.length > 0); // Update status notifying
+    const unsubscribeHeader = notificationClient.subscribe('header', (data: any) => {
+      try {
+        if (data && Array.isArray(data.items)) {
+          const notif: NotificationItem[] = data.items.map((item: any) => ({
+            url: item.url,
+            image: item.image,
+            title: item.title,
+            subTitle: item.subtitle,
+          }));
+          
+          setNotifications(notif);
+          setNotifying(notif.length > 0); // Update status notifying
+          setError(null); // Clear error ketika berhasil menerima data
+        }
+      } catch (err) {
+        console.error("Error processing header notification:", err);
+      }
+    });
+
+    // Subscribe ke event error
+    const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
+      console.error('SSE Error in notification dropdown:', error);
+      setError('Koneksi notifikasi bermasalah');
+    });
+
+    // Subscribe ke event connection untuk status
+    const unsubscribeConnection = notificationClient.subscribe('connection', (data: any) => {
+      setConnectionStatus(data.status);
+      
+      if (data.status === 'connected') {
+        setError(null);
+      } else if (data.status === 'disconnected') {
+        setError('Koneksi notifikasi terputus');
+      } else if (data.status === 'reconnecting') {
+        setError(`Menyambung kembali... (${data.attempt || 0})`);
+      } else if (data.status === 'authentication_failed') {
+        setError('Sesi berakhir, silakan login ulang');
+      } else if (data.status === 'failed') {
+        setError('Gagal terhubung ke server notifikasi');
       }
     });
 
@@ -76,9 +107,45 @@ const DropdownNotification = () => {
 
     // Cleanup: unsubscribe ketika komponen unmount
     return () => {
-      unsubscribe();
+      unsubscribeHeader();
+      unsubscribeError();
+      unsubscribeConnection();
     };
   }, []);
+
+  // Function untuk handle manual refresh
+  const handleRefreshNotifications = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await apiRequest("/notifications/header", "GET");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+      
+      const notif: NotificationItem[] = result.responseData.items.map((item: any) => ({
+        url: item.url,
+        image: item.image,
+        title: item.title,
+        subTitle: item.subtitle,
+      }));
+
+      setNotifications(notif);
+      setNotifying(notif.length > 0);
+      
+      // Juga reconnect SSE jika bermasalah
+      if (connectionStatus !== 'connected') {
+        notificationClient.reconnect();
+      }
+    } catch (err: any) {
+      setError(err.message);
+      console.error("Error refreshing notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative hidden sm:block">
@@ -115,73 +182,117 @@ const DropdownNotification = () => {
             >
               <span className="absolute -z-1 inline-flex h-full w-full animate-ping rounded-full bg-red-light opacity-75"></span>
             </span>
+            
+            {/* Connection status indicator */}
+            <span
+              className={`absolute -bottom-0.5 -right-0.5 z-1 h-2 w-2 rounded-full border border-gray-2 dark:border-dark-3 ${
+                connectionStatus === 'connected' ? 'bg-green-500' : 
+                connectionStatus === 'reconnecting' ? 'bg-yellow-500' : 'bg-red-500'
+              }`}
+            ></span>
           </span>
         </Link>
 
         {dropdownOpen && (
-  <div
-    className={`absolute -right-27 mt-7.5 flex max-h-[550px] w-75 flex-col rounded-xl border-[0.5px] border-stroke bg-white px-5.5 pb-5.5 pt-5 shadow-default dark:border-dark-3 dark:bg-gray-dark sm:right-0 sm:w-[364px]`}
-  >
-    <div className="mb-5 flex items-center justify-between">
-      <h5 className="text-lg font-medium text-dark dark:text-white">
-        Notifications
-      </h5>
-      <span className="rounded-md bg-primary px-2 py-0.5 text-body-xs font-medium text-white">
-        {notifications.length} new
-      </span>
-    </div>
-
-    <ul className={`${showAll ? 'scrollbar-visible h-96' : 'no-scrollbar h-auto'} mb-5 flex flex-col gap-1 overflow-y-auto`}>
-      {loading ? (
-        <li className="text-sm text-gray-500 px-2.5 py-2">Loading...</li>
-      ) : error ? (
-        <li className="text-sm text-red-500 px-2.5 py-2">{error}</li>
-      ) : (
-        notifications
-          .slice(0, showAll ? notifications.length : 4)
-          .map((item, index) => (
-          <li key={index}>
-            <Link
-              className="flex items-center gap-4 rounded-[10px] p-2.5 hover:bg-gray-2 dark:hover:bg-dark-3"
-              href={item.url || "#"}
-            >
-              <span className="block h-14 w-14 rounded-full">
-                <Image
-                  width={112}
-                  height={112}
-                  src={item.image}
-                  style={{
-                    width: "auto",
-                    height: "auto",
-                  }}
-                  alt="User"
-                />
-              </span>
-
-              <span className="block">
-                <span className="block font-medium text-dark dark:text-white">
-                  {item.title}
+          <div
+            className={`absolute -right-27 mt-7.5 flex max-h-[550px] w-75 flex-col rounded-xl border-[0.5px] border-stroke bg-white px-5.5 pb-5.5 pt-5 shadow-default dark:border-dark-3 dark:bg-gray-dark sm:right-0 sm:w-[364px]`}
+          >
+            <div className="mb-5 flex items-center justify-between">
+              <h5 className="text-lg font-medium text-dark dark:text-white">
+                Notifications
+              </h5>
+              <div className="flex items-center gap-2">
+                <span className="rounded-md bg-primary px-2 py-0.5 text-body-xs font-medium text-white">
+                  {notifications.length} new
                 </span>
-                <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
-                  {item.subTitle}
-                </span>
-              </span>
-            </Link>
-          </li>
-        ))
-      )}
-    </ul>
+                {/* Refresh button */}
+                <button
+                  onClick={handleRefreshNotifications}
+                  disabled={loading}
+                  className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-dark-3 transition-colors"
+                  title="Refresh notifications"
+                >
+                  <svg
+                    className={`w-4 h-4 text-gray-500 dark:text-gray-400 ${loading ? 'animate-spin' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
 
-    {!loading && !error && notifications.length > 5 && (
-      <button
-        className="flex items-center justify-center rounded-[7px] border border-primary p-2.5 font-medium text-primary hover:bg-blue-light-5 dark:border-dark-4 dark:text-dark-6 dark:hover:border-primary dark:hover:bg-blue-light-3 dark:hover:text-primary"
-        onClick={() => setShowAll(!showAll)}
-      >
-        {showAll ? "Show less" : "See all notifications"}
-      </button>
-    )}
-  </div>
-)}
+            {/* Connection status bar */}
+            {(error || connectionStatus !== 'connected') && (
+              <div className={`mb-3 p-2 rounded-md text-xs ${
+                connectionStatus === 'connected' ? 'bg-green-50 text-green-700 border border-green-200' :
+                connectionStatus === 'reconnecting' ? 'bg-yellow-50 text-yellow-700 border border-yellow-200' :
+                'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {error || `Status: ${connectionStatus}`}
+              </div>
+            )}
+
+            <ul className={`${showAll ? 'scrollbar-visible h-96' : 'no-scrollbar h-auto'} mb-5 flex flex-col gap-1 overflow-y-auto`}>
+              {loading ? (
+                <li className="text-sm text-gray-500 px-2.5 py-2">Loading...</li>
+              ) : error && notifications.length === 0 ? (
+                <li className="text-sm text-red-500 px-2.5 py-2">{error}</li>
+              ) : notifications.length === 0 ? (
+                <li className="text-sm text-gray-500 px-2.5 py-2">Tidak ada notifikasi</li>
+              ) : (
+                notifications
+                  .slice(0, showAll ? notifications.length : 4)
+                  .map((item, index) => (
+                  <li key={index}>
+                    <Link
+                      className="flex items-center gap-4 rounded-[10px] p-2.5 hover:bg-gray-2 dark:hover:bg-dark-3"
+                      href={item.url || "#"}
+                    >
+                      <span className="block h-14 w-14 rounded-full">
+                        <Image
+                          width={112}
+                          height={112}
+                          src={item.image}
+                          style={{
+                            width: "auto",
+                            height: "auto",
+                          }}
+                          alt="User"
+                        />
+                      </span>
+
+                      <span className="block">
+                        <span className="block font-medium text-dark dark:text-white">
+                          {item.title}
+                        </span>
+                        <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
+                          {item.subTitle}
+                        </span>
+                      </span>
+                    </Link>
+                  </li>
+                ))
+              )}
+            </ul>
+
+            {!loading && !error && notifications.length > 4 && (
+              <button
+                className="flex items-center justify-center rounded-[7px] border border-primary p-2.5 font-medium text-primary hover:bg-blue-light-5 dark:border-dark-4 dark:text-dark-6 dark:hover:border-primary dark:hover:bg-blue-light-3 dark:hover:text-primary"
+                onClick={() => setShowAll(!showAll)}
+              >
+                {showAll ? "Show less" : "See all notifications"}
+              </button>
+            )}
+          </div>
+        )}
       </li>
     </ClickOutside>
   );

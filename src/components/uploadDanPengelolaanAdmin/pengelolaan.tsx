@@ -7,27 +7,9 @@ import { encryptObject } from "@/utils/crypto";
 import { HiOutlineArrowTopRightOnSquare } from "react-icons/hi2";
 import { DokumenTerupload } from "@/types/dokumenTerupload";
 
-// const dokumenTeruploadData: DokumenTerupload[] = [
-//   {
-//     uraian: "DPA",
-//     tanggal: new Date("2022-08-21T10:00:00Z"),
-//     jumlahDocument: 6,
-//   },
-//   {
-//     uraian: "RKA",
-//     tanggal: new Date("2024-08-21T10:00:00Z"),
-//     jumlahDocument: 3,
-//   },
-//   {
-//     uraian: "Anggaran Kas",
-//     tanggal: new Date("2023-08-21T10:00:00Z"),
-//     jumlahDocument: 2,
-//   },
-// ];
-
 const PengelolaanDokumen = () => {
   const router = useRouter();
-   const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
   const [dataList, setDataList] = useState<DokumenTerupload[]>([]);
@@ -65,7 +47,7 @@ const PengelolaanDokumen = () => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
     if (!user) return alert("Token tidak ditemukan!");
-     const encrypted = encryptObject({ typeID, uraian }, user);
+    const encrypted = encryptObject({ typeID, uraian }, user);
 
     // Ganti spasi dengan tanda hubung untuk URL-friendly
     const formattedUraian = uraian.replace(/\s+/g, "-").toLowerCase();
@@ -112,8 +94,8 @@ const PengelolaanDokumen = () => {
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={3} className="text-center text-red-500 font-semibold py-6">
-                    {error}
+                  <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                    Data belum tersedia
                   </td>
                 </tr>
               ) : dataList.length === 0 ? (

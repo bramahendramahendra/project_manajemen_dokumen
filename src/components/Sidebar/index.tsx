@@ -5,8 +5,9 @@ import Image from "next/image";
 import SidebarItem from "@/components/Sidebar/SidebarItem";
 import ClickOutside from "@/components/ClickOutside";
 import useLocalStorage from "@/hooks/useLocalStorage";
-import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
+import { useMenu } from "@/contexts/MenuContext";
+import notificationClient from "@/helpers/notificationClient";
 import DashboardIcon from "@/components/Icons/DashboardIcon";
 import UploadIcon from "@/components/Icons/UploadIcon";
 import ValidationIcon from "@/components/Icons/ValidationIcon";
@@ -40,95 +41,119 @@ const iconMap: Record<string, JSX.Element> = {
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
-  const [menuGroups, setMenuGroups] = useState<any[]>([]);
   const [notifCount, setNotifCount] = useState<number>(0);
-  const [user, setUser] = useState<any>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Gunakan menu context
+  const { menuGroups, loading: menuLoading, error: menuError } = useMenu();
 
-  const fetchNotifCount = async () => {
-    try {
-      const res = await apiRequest(`/notifications/sidebar/1`, "GET");
-      const json = await res.json();
-      if (json.responseCode === 200) {
-        setNotifCount(json.responseData.unread_count || 0);
-      }
-    } catch (error) {
-      console.error("Failed to fetch notif count:", error);
-    }
-  };
-
-
-  const transformMenuData = (items: any[]) => {
-    const lookup: Record<string, any> = {};
-    items.forEach((item) => {
-      lookup[item.code_menu] = {
-        ...item,
-        children: [],
-      };
-    });
-
-    const roots: any[] = [];
-    items.forEach((item) => {
-      const parentCode = item.code_parent;
-      if (parentCode === "00") {
-        roots.push(lookup[item.code_menu]);
-      } else if (lookup[parentCode]) {
-        lookup[parentCode].children.push(lookup[item.code_menu]);
-      }
-    });
-
-    const menuGroups = roots.map((group) => {
-      const menuItems = group.children
-        .sort((a: any, b: any) => parseInt(a.urutan) - parseInt(b.urutan))
-        .map((item: any) => {
-          const children = item.children
-            .sort((a: any, b: any) => parseInt(a.urutan) - parseInt(b.urutan))
-            .map((child: any) => ({
-              label: child.menu,
-              pro: child.pro,
-              message: child.code_menu === "0105" ? notifCount : "",
-              route: child.url || "#",
-              icon: iconMap[child.icon] || null,
-            }));
-
-          return {
-            label: item.menu,
-            pro: item.pro,
-            message: item.code_menu === "0105" ? notifCount : "",
-            route: item.url || "#",
-            icon: iconMap[item.icon] || null,
-            ...(children.length > 0 ? { children } : {}),
-          };
-        });
-
-      return {
-        name: group.menu,
-        menuItems,
-      };
-    });
-
-    return menuGroups;
-  };
-
+  // Initial fetch untuk notification count
   useEffect(() => {
-    // const currentUser = JSON.parse(Cookies.get("user") || "{}");
-    // setUser(currentUser);
-
-    const fetchMenu = async () => {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-      const res = await apiRequest(`/access_menus/menu/${user.level_id}`, "GET");
-      const json = await res.json();
-      const transformed = transformMenuData(json.responseData.items);
-      setMenuGroups(transformed);
+    const fetchInitialNotifCount = async () => {
+      try {
+        setLoading(true);
+        const res = await apiRequest(`/notifications/sidebar/1`, "GET");
+        
+        if (!res.ok) {
+          if (res.status === 404) {
+            throw new Error("Notification data not found");
+          }
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const json = await res.json();
+        if (json.responseCode === 200) {
+          setNotifCount(json.responseData.unread_count || 0);
+        }
+      } catch (err: any) {
+        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
+        console.error("Failed to fetch initial notif count:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchMenu();
-    fetchNotifCount();
 
-    const interval = setInterval(() => {
-      fetchNotifCount();
-    }, 10000); // every 10s
+    fetchInitialNotifCount();
+  }, []);
 
-    return () => clearInterval(interval);
-  }, [notifCount]);
+  // Efek untuk mengelola koneksi SSE
+  useEffect(() => {
+    // Subscribe ke event sidebar untuk mendapatkan notification count secara real-time
+    const unsubscribe = notificationClient.subscribe('sidebar', (data: any) => {
+      if (data && typeof data.unread_count === 'number') {
+        setNotifCount(data.unread_count);
+        setError(null); // Clear error ketika berhasil menerima data
+      }
+    });
+
+    // Subscribe ke event error untuk handling error
+    const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
+      console.error('SSE Error in sidebar:', error);
+      setError('Koneksi notifikasi bermasalah');
+    });
+
+    // Subscribe ke event connection untuk status koneksi
+    const unsubscribeConnection = notificationClient.subscribe('connection', (data: any) => {
+      if (data.status === 'connected') {
+        setError(null);
+      } else if (data.status === 'disconnected') {
+        setError('Koneksi notifikasi terputus');
+      }
+    });
+
+    // Mulai koneksi SSE jika belum terhubung
+    notificationClient.connect();
+
+    // Cleanup: unsubscribe ketika komponen unmount
+    return () => {
+      unsubscribe();
+      unsubscribeError();
+      unsubscribeConnection();
+    };
+  }, []);
+
+  // Update menu groups dengan notification count
+  const updateMenuWithNotifications = (groups: any[]) => {
+    return groups.map(group => ({
+      ...group,
+      menuItems: group.menuItems.map((item: any) => ({
+        ...item,
+        message: item.code_menu === "0105" ? notifCount : "",
+        icon: iconMap[item.icon] || null,
+        children: item.children ? item.children.map((child: any) => ({
+          ...child,
+          message: child.code_menu === "0105" ? notifCount : "",
+          icon: iconMap[child.icon] || null,
+        })) : undefined,
+      }))
+    }));
+  };
+
+  // Update menu groups dengan notification count
+  const displayMenuGroups = updateMenuWithNotifications(menuGroups);
+
+  if (menuLoading || loading) {
+    return (
+      <aside className="absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden border-r border-stroke bg-white dark:border-stroke-dark dark:bg-gray-dark lg:static lg:translate-x-0">
+        <div className="flex items-center justify-center h-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </aside>
+    );
+  }
+
+  if (menuError) {
+    return (
+      <aside className="absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden border-r border-stroke bg-white dark:border-stroke-dark dark:bg-gray-dark lg:static lg:translate-x-0">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-red-500 text-sm text-center px-4">
+            Error loading menu: {menuError}
+          </div>
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <ClickOutside onClick={() => setSidebarOpen(false)}>
@@ -148,7 +173,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               alt="Logo"
               priority
               className="dark:hidden"
-              style={{ width: "174px", height: "30px" }}
+              style={{ width: "auto", height: "auto" }}
             />
             <Image
               width={176}
@@ -183,7 +208,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
         <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
           <nav className="mt-1 px-4 lg:px-6">
-            {menuGroups.map((group, groupIndex) => (
+            {displayMenuGroups.map((group, groupIndex) => (
               <div key={groupIndex}>
                 <h3 className="mb-5 text-sm font-medium text-dark-4 dark:text-dark-6">
                   {group.name}
@@ -200,6 +225,15 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 </ul>
               </div>
             ))}
+
+            {/* Tampilkan error notification jika ada */}
+            {error && (
+              <div className="mb-4 px-4">
+                <div className="rounded-md bg-red-50 border border-red-200 p-2">
+                  <p className="text-xs text-red-600">{error}</p>
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 px-4">
               <Link href="/guide_book">

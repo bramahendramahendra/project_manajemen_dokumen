@@ -80,11 +80,11 @@ const FormAddPage = () => {
 
     const payload = {
       jenis: type,
-      level_id: cleanedAccessUsers,
+      level: cleanedAccessUsers,
     };    
 
     try {
-      const response = await apiRequest('/setting_types/', 'POST', payload);
+      const response = await apiRequest('/master_jenis/', 'POST', payload);
 
       if (response.ok) {
         setSuccess(true);

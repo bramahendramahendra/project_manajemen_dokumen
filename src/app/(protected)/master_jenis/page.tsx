@@ -13,7 +13,8 @@ const SettingJenis = () => {
   ];
   
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mb-6 grid grid-cols-12">
         <button
@@ -33,7 +34,8 @@ const SettingJenis = () => {
           <MainPage />
         </div>
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

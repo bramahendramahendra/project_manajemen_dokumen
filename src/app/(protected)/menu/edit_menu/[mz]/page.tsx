@@ -4,7 +4,7 @@ import { useSearchParams  } from "next/navigation";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { decryptObject } from "@/utils/crypto";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import { Menu } from "@/types/menu";
 import FormEditPage from "@/components/menu/formEditPage";
@@ -21,15 +21,15 @@ const EditPage = () => {
 
   const key = process.env.NEXT_PUBLIC_APP_KEY;
   const encrypted = searchParams.get(`${key}`);
-  const token = Cookies.get("token");
+  const user = Cookies.get("user");
 
   useEffect(() => {
-    if (!encrypted || !token) {
+    if (!encrypted || !user) {
       setError("Token atau data tidak tersedia.");
       return;
     }
 
-    const result = decryptObject(encrypted, token);
+    const result = decryptObject(encrypted, user);
     
     if (!result) {
       setError("Gagal dekripsi atau data rusak.");
@@ -40,7 +40,7 @@ const EditPage = () => {
 
     setCode(decryptedCode);
     setMenu(decryptedMenu);
-  }, [encrypted, token]);
+  }, [encrypted, user]);
 
 
   useEffect(() => {
@@ -72,7 +72,8 @@ const EditPage = () => {
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
         <div className="col-span-12 xl:col-span-6">
@@ -89,7 +90,8 @@ const EditPage = () => {
           )}
         </div>
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

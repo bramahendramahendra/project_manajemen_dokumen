@@ -1,8 +1,10 @@
 import React, { useState,  useEffect, useRef, ChangeEvent } from "react";
 import SuccessModal from "../modals/successModal";
 import { apiRequest } from "@/helpers/apiClient";
+import { apiRequestUpload } from "@/helpers/uploadClient";
 import Cookies from "js-cookie";
 import Image from "next/image";
+import ElementComboboxAutocomplete from "../elements/ElementComboboxAutocomplate";
 
 interface Document {
   id: number;
@@ -16,11 +18,9 @@ interface Document {
 }
 
 // Tipe data untuk dinas/official
-interface Official {
+interface Dinas {
   id: number;
   dinas: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 // Modal untuk error message
@@ -95,29 +95,38 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
 };
 
 const FormPengirimanLangsung = () => {
-  const [searchTerm, setSearchTerm] = useState<string>(""); // Untuk pencarian
-  const [showAll, setShowAll] = useState<boolean>(false); // Untuk mengatur apakah semua data ditampilkan
-  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]); // Dokumen yang dipilih
-  const [judul, setJudul] = useState<string>(""); // Judul
-  const [lampiran, setLampiran] = useState<string>(""); // Lampiran
   const [loading, setLoading] = useState<boolean>(false); // State loading
-  // State untuk file upload
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<number[]>([]);
-  const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-  const [isUploadComplete, setIsUploadComplete] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null); // Error state
   const [success, setSuccess] = useState<boolean>(false);
 
+  // State untuk pencarian dan filter dokumen
+  const [searchTerm, setSearchTerm] = useState<string>(""); // Untuk pencarian
+  const [showAll, setShowAll] = useState<boolean>(false); // Untuk mengatur apakah semua data ditampilkan
+  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]); // Dokumen yang dipilih
+  
+  // state untuk option 
+  const [optionDinas, setOptionDinas] = useState<Dinas[]>([]);
+  
+  // State untuk form
+  const [judul, setJudul] = useState<string>(""); // Judul
+  const [dinas, setDinas] = useState<number>(0);
+  const [lampiran, setLampiran] = useState<string>(""); // Lampiran
+  
+  // State untuk data
   const [documents, setDocuments] = useState<Document[]>([]); // Semua dokumen
-
+  
   // State untuk dropdown officials/dinas
-  const [officials, setOfficials] = useState<Official[]>([]);
-  const [selectedOfficial, setSelectedOfficial] = useState<Official | null>(null);
+  const [selectedOfficial, setSelectedOfficial] = useState<Dinas | null>(null);
   const [isLoadingOfficials, setIsLoadingOfficials] = useState<boolean>(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const [officialSearchTerm, setOfficialSearchTerm] = useState<string>("");
+
+  // State untuk file upload
+  const [file, setFile] = useState<File | null>(null); // Hanya satu file
+  const [uploadProgress, setUploadProgress] = useState<number>(0); // Satu progress
+  const [tempFilePath, setTempFilePath] = useState<string>(""); // Satu path
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isUploadComplete, setIsUploadComplete] = useState<boolean>(false);
   
   // State untuk SuccessModal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
@@ -126,6 +135,9 @@ const FormPengirimanLangsung = () => {
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorTitle, setErrorTitle] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // State untuk reset form
+  const [resetKey, setResetKey] = useState(0);
 
   // Ref untuk dropdown
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -205,7 +217,9 @@ const FormPengirimanLangsung = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/direct-shipping/", "GET");
+        const user = JSON.parse(Cookies.get("user") || "{}");
+
+        const response = await apiRequest(`/direct-shipping/${user.department_id}`, "GET");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -230,18 +244,25 @@ const FormPengirimanLangsung = () => {
 
   // Mengambil data officials/dinas dari API
   useEffect(() => {
-    const fetchOfficials = async () => {
+    const fetchOptinDinas= async () => {
       setIsLoadingOfficials(true);
       try {
-        const response = await apiRequest("/officials/", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas", "GET");
         if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Dinas data not found");
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
         
         // Pastikan data officials ada dan memiliki format yang benar
         if (result.responseData && result.responseData.items) {
-          setOfficials(result.responseData.items);
+          const fetchedOfficials = result.responseData.items.map((item: any) => ({
+            id: item.dinas,
+            dinas: item.nama_dinas,
+          }));
+          setOptionDinas(fetchedOfficials);
         } else {
           throw new Error("Format data officials tidak sesuai");
         }
@@ -252,17 +273,8 @@ const FormPengirimanLangsung = () => {
       }
     };
 
-    fetchOfficials();
+    fetchOptinDinas();
   }, []);
-
-  // Fungsi untuk memfilter officials berdasarkan pencarian
-  const filteredOfficials = officialSearchTerm === ''
-  ? officials
-  : officials.filter((official) =>
-      official.dinas
-        .toLowerCase()
-        .includes(officialSearchTerm.toLowerCase())
-    );
   
   // Format display name untuk dokumen
   const getDocumentDisplayName = (doc: Document): string => {
@@ -279,22 +291,22 @@ const FormPengirimanLangsung = () => {
   ? filteredDocuments
   : filteredDocuments.slice(0, 10);
 
-  // Handle toggle dropdown
-  const handleToggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-  };
+  // // Handle toggle dropdown
+  // const handleToggleDropdown = () => {
+  //   setIsDropdownOpen(!isDropdownOpen);
+  // };
   
-  // Handle pilih official dari dropdown
-  const handleSelectOfficial = (official: Official) => {
-    setSelectedOfficial(official);
-    setIsDropdownOpen(false);
-    setOfficialSearchTerm("");
-  };
+  // // Handle pilih official dari dropdown
+  // const handleSelectOfficial = (official: Official) => {
+  //   setSelectedOfficial(official);
+  //   setIsDropdownOpen(false);
+  //   setOfficialSearchTerm("");
+  // };
   
-  // Handle perubahan search term untuk official
-  const handleOfficialSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setOfficialSearchTerm(e.target.value);
-  };
+  // // Handle perubahan search term untuk official
+  // const handleOfficialSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   setOfficialSearchTerm(e.target.value);
+  // };
 
   // Handle perubahan checkbox
   const handleCheckboxChange = (document: Document, isChecked: boolean) => {
@@ -320,101 +332,92 @@ const FormPengirimanLangsung = () => {
   };
   
   // Handle file change untuk upload
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const fileList = Array.from(e.target.files);
+      const selectedFile = e.target.files[0]; // Ambil file pertama saja
       
       // Validasi tipe file
-      const invalidFiles = fileList.filter(file => !isValidFileType(file));
-      if (invalidFiles.length > 0) {
-        showErrorModal("File Tidak Didukung", `File tidak didukung: ${invalidFiles.map(f => f.name).join(', ')}. Hanya mendukung PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, dan RAR.`);
+      if (!isValidFileType(selectedFile)) {
+        showErrorModal("File Tidak Didukung", `File "${selectedFile.name}" tidak didukung. Hanya mendukung PNG, JPG, JPEG, GIF, PDF, DOC, DOCX, ZIP, dan RAR.`);
         return;
       }
 
       // Validasi ukuran file (maksimal 100MB untuk ZIP/RAR, 10MB untuk file lainnya)
-      const oversizedFiles = fileList.filter(file => {
-        const maxSize = file.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB untuk ZIP/RAR, 10MB untuk file lainnya
-        return file.size > maxSize;
-      });
+       const maxSize = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB untuk ZIP/RAR, 10MB untuk file lainnya
       
-      if (oversizedFiles.length > 0) {
-        const oversizedFileInfo = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
-        showErrorModal("File Terlalu Besar", `File terlalu besar: ${oversizedFileInfo}. Maksimal 100MB untuk ZIP/RAR dan 10MB untuk file lainnya.`);
+      if (selectedFile.size > maxSize) {
+        const maxSizeText = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? "100MB" : "10MB";
+        showErrorModal("File Terlalu Besar", `File "${selectedFile.name}" (${formatFileSize(selectedFile.size)}) melebihi batas maksimal ${maxSizeText}.`);
         return;
       }
 
-      setFiles(fileList);
-      
-      // Inisialisasi progress untuk setiap file
-      setUploadProgress(fileList.map(() => 0));
-      
-      // Simulasi upload
-      simulateFileUpload(fileList);
+      setFile(selectedFile);
+      setUploadProgress(0);
+      setIsUploading(true);
+      setIsUploadComplete(false);
+      setError(null);
+
+      try {
+        const { response, status } = await apiRequestUpload(
+          "/direct-shipping/upload-file",
+          selectedFile,
+          (progress) => {
+            setUploadProgress(progress);
+          },
+        );
+
+        if (status === 200 && response.responseData?.temp_file_path) {
+          setTempFilePath(response.responseData.temp_file_path);
+          setIsUploadComplete(true);
+          setSuccess(true);
+        } else {
+          throw new Error(response.responseDesc || "Upload gagal.");
+        }
+      } catch (error: any) {
+        setError(error.message);
+        showErrorModal("Upload Gagal", `Terjadi kesalahan saat mengupload file "${selectedFile.name}". Silakan coba lagi.`);
+        setUploadProgress(0);
+        setIsUploading(false);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
+
     }
   };
   
-  // Simulasi upload file
-  const simulateFileUpload = (fileList: File[]) => {
-    setIsUploading(true);
-    setError("");
-    
-    // Simulasi progressbar untuk masing-masing file
-    fileList.forEach((_, index) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 10) + 1;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          
-          // Periksa jika semua file sudah 100%
-          setUploadProgress(prev => {
-            const newProgress = [...prev];
-            newProgress[index] = progress;
-            
-            // Jika semua sudah 100%
-            if (newProgress.every(p => p === 100)) {
-              setIsUploading(false);
-              setIsUploadComplete(true);
-              setSuccess(true);
-              
-              // Simulasi path file yang diupload
-              setTempFilePaths(fileList.map(file => `/uploads/${file.name}`));
-            }
-            
-            return newProgress;
-          });
-        } else {
-          setUploadProgress(prev => {
-            const newProgress = [...prev];
-            newProgress[index] = progress;
-            return newProgress;
-          });
-        }
-      }, 200);
-    });
-  };
-  
   // Handle remove file
-  const handleRemoveFile = () => {
-    setFiles([]);
-    setUploadProgress([]);
-    setTempFilePaths([]);
+  const handleRemoveFile = async () => {
+    if (tempFilePath) {
+      try {
+        await apiRequest("/direct-shipping/delete-file", "POST", {
+          file_path: tempFilePath,
+        });
+      } catch (error) {
+        console.warn("Gagal hapus file:", error);
+      }
+    }
+
+    setFile(null);
+    setUploadProgress(0);
+    setTempFilePath("");
+    setIsUploading(false);
     setIsUploadComplete(false);
     setSuccess(false);
   };
   
   // Handle pengiriman dokumen
-  const handleSubmit = async () => {
+  const handleSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
 
     console.log("Form submission started");
-    console.log("Selected official:", selectedOfficial);
+    console.log("Selected official:", dinas);
     console.log("Judul:", judul);
     console.log("Selected documents:", selectedDocuments);
     console.log("Lampiran:", lampiran);
 
     // ✅ VALIDASI MINIMAL - HANYA DINAS DAN JUDUL YANG WAJIB
-    if (!selectedOfficial) {
+    if (!dinas) {
       showErrorModal("Validasi Gagal", "Nama Dinas harus dipilih");
       return;
     }
@@ -423,9 +426,6 @@ const FormPengirimanLangsung = () => {
       showErrorModal("Validasi Gagal", "Judul harus diisi");
       return;
     }
-    
-    // ✅ HAPUS VALIDASI/PERINGATAN UNTUK DOKUMEN DAN FILE
-    // Sekarang bisa kirim tanpa dokumen dan tanpa file
     
     // Reset error
     setError("");
@@ -436,20 +436,26 @@ const FormPengirimanLangsung = () => {
     try {
       // ✅ Menyiapkan data dokumen yang dipilih - BISA KOSONG
       const documentIds = selectedDocuments.map(doc => doc.id);
+      console.log("Document IDs to be sent:", documentIds);
+
       const user = JSON.parse(Cookies.get("user") || "{}");
+      console.log("User cookie:", user);
+
       if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
         console.error("User tidak ditemukan di cookie.");
         return;
       }
 
+      const foundNamaDinas = optionDinas.find((item) => item.id === dinas);
+
       // ✅ Siapkan payload untuk API - BISA KOSONG UNTUK DOKUMEN DAN FILE
       const payload = {
-        kepada_id: selectedOfficial.id,
-        kepada_dinas: selectedOfficial.dinas,
+        kepada_id: dinas,
+        kepada_dinas: foundNamaDinas?.dinas || "",
         judul: judul,
         dokumen_ids: documentIds, // Bisa array kosong []
         lampiran: lampiran, // Bisa string kosong ""
-        file_paths: tempFilePaths, // Bisa array kosong []
+        file_path: tempFilePath, // Bisa array kosong []
         pengirim_userid: user.userid,
         pengirim_name: user.name,
         pengirim_department_id: user.department_id,
@@ -466,8 +472,8 @@ const FormPengirimanLangsung = () => {
       }
       
       // Jika berhasil, tampilkan modal sukses
-      setSuccess(true);
       setIsSuccessModalOpen(true);
+      setSuccess(true);
       
     } catch (error) {
       // Handle error
@@ -490,22 +496,23 @@ const FormPengirimanLangsung = () => {
   };
   
   // Fungsi untuk menangani klik pada tombol di modal
-  const handleSuccessButtonClick = () => {
+  const handleSuccessButtonClick = async () => {
     setIsSuccessModalOpen(false);
     
     // Reset form setelah berhasil
-    setSelectedOfficial(null);
+    setDinas(0);
     setJudul("");
     setLampiran("");
     setSelectedDocuments([]);
-    setFiles([]);
-    setUploadProgress([]);
-    setTempFilePaths([]);
-    setIsUploadComplete(false);
-    setSuccess(false);
     setSearchTerm("");
-    setOfficialSearchTerm("");
+    setShowAll(false);
     
+    // Reset file upload
+    if (tempFilePath) {
+      await handleRemoveFile();
+    }
+    
+    setResetKey(prev => prev + 1);
     // Opsional: redirect ke halaman lain
     // window.location.href = "/dokumen/daftar";
   };
@@ -518,95 +525,18 @@ const FormPengirimanLangsung = () => {
             Pengiriman dokumen secara langsung pada Dinas
           </h4>
           <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-            <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+            <form onSubmit={handleSubmitForm}>
               <div className="grid grid-cols-12 gap-6 p-6.5">
                 {/* Kolom Kiri */}
                 <div className="col-span-12 lg:col-span-6">
-                  {/* Kepada Dinas */}
-                  <div className="mb-4.5">
-                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Kepada Dinas
-                    </label>
-                    <div className="relative" ref={dropdownRef}>
-                      <div 
-                        className="flex items-center w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition cursor-pointer"
-                        onClick={handleToggleDropdown}
-                      >
-                        {selectedOfficial ? (
-                          <div className="flex-grow text-dark dark:text-white">
-                            {selectedOfficial.dinas}
-                          </div>
-                        ) : (
-                          <input
-                            type="text"
-                            placeholder="Pilih atau cari dinas..."
-                            value={officialSearchTerm}
-                            onChange={handleOfficialSearchChange}
-                            autoComplete="off"
-                            className="flex-grow bg-transparent focus:outline-none text-dark dark:text-white"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (!isDropdownOpen) {
-                                setIsDropdownOpen(true);
-                              }
-                            }}
-                          />
-                        )}
-                        <div className="ml-2">
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            className={`h-5 w-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            stroke="currentColor"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                      
-                      {isDropdownOpen && (
-                        <div className="absolute z-10 mt-1 w-full rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 max-h-60 overflow-auto">
-                          {selectedOfficial && (
-                            <div 
-                              className="px-4 py-2 border-b border-gray-200 cursor-pointer hover:bg-red-50 text-red-500 flex items-center"
-                              onClick={() => {
-                                setSelectedOfficial(null);
-                                setOfficialSearchTerm("");
-                                setIsDropdownOpen(false);
-                              }}
-                            >
-                              <svg 
-                                xmlns="http://www.w3.org/2000/svg" 
-                                className="h-4 w-4 mr-2"
-                                fill="none" 
-                                viewBox="0 0 24 24" 
-                                stroke="currentColor"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                              Hapus Pilihan
-                            </div>
-                          )}
-                          {isLoadingOfficials ? (
-                            <div className="text-center py-2 text-gray-500">Memuat data...</div>
-                          ) : filteredOfficials.length === 0 ? (
-                            <div className="text-center py-2 text-gray-500">Tidak ada data ditemukan</div>
-                          ) : (
-                            filteredOfficials.map((official) => (
-                              <div
-                                key={official.id}
-                                className={`px-4 py-2 cursor-pointer hover:bg-blue-100 ${selectedOfficial?.id === official.id ? 'bg-blue-50' : ''}`}
-                                onClick={() => handleSelectOfficial(official)}
-                              >
-                                {official.dinas}
-                              </div>
-                            ))
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                 {/* Kepada Dinas */}
+                  <ElementComboboxAutocomplete
+                    label="Kepada Dinas"
+                    placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
+                    options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
+                    onChange={(value) => setDinas(Number(value))}
+                    resetKey={resetKey}
+                  />
 
                   {/* Judul */}
                   <div className="mb-4.5">
@@ -729,89 +659,78 @@ const FormPengirimanLangsung = () => {
                       </div>
                     </div>
 
-                    {files.length > 0 && (
+                    {file && (
                       <div className="mt-4">
                         <h5 className="mb-3 font-semibold text-dark dark:text-white">
                           File Terpilih
                         </h5>
-                        {files.map((file, index) => {
-                          const isImage = file.type.startsWith("image/");
-                          const percent = uploadProgress[index];
-                          const fileIcon = getFileIcon(file);
-
-                          return (
-                            <div
-                              key={index}
-                              className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2 mb-2"
-                            >
-                              {isImage ? (
-                                <Image
-                                  src={URL.createObjectURL(file)}
-                                  alt="preview"
-                                  width={48}
-                                  height={48}
-                                  className="rounded-md border object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
-                                  {fileIcon}
-                                </div>
-                              )}
-
-                              <div className="flex-1 overflow-hidden">
-                                <div className="mb-1 flex items-center justify-between">
-                                  <span className="max-w-[70%] truncate text-sm font-medium">
-                                    {file.name}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {percent}%
-                                  </span>
-                                </div>
-                                <div className="mb-1 text-xs text-gray-400">
-                                  {formatFileSize(file.size)}
-                                </div>
-                                <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                                  <div
-                                    className={`h-2.5 rounded-full transition-all duration-300 ${
-                                      percent === 100 ? "bg-green-500" : "bg-blue-600"
-                                    }`}
-                                    style={{ width: `${percent}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-
-                              {/* Cancel Button */}
-                              {!isUploadComplete && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setFiles([]);
-                                    setUploadProgress([]);
-                                    setTempFilePaths([]);
-                                    setIsUploading(false);
-                                    setIsUploadComplete(false);
-                                  }}
-                                  className="ml-2 text-sm text-red-500 hover:text-red-700"
-                                  title="Batalkan Upload"
-                                >
-                                  ✖
-                                </button>
-                              )}
-
-                              {/* Tombol Hapus setelah upload selesai */}
-                              {isUploadComplete && (
-                                <button
-                                  type="button"
-                                  onClick={handleRemoveFile}
-                                  className="mt-1 flex-shrink-0 text-sm text-red-500 hover:text-red-700"
-                                  title="Hapus File"
-                                >
-                                  🗑️
-                                </button>
-                              )}
+                        <div className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2">
+                          {file.type.startsWith("image/") ? (
+                            <Image
+                              src={URL.createObjectURL(file)}
+                              alt="preview"
+                              width={48}
+                              height={48}
+                              className="rounded-md border object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
+                              {getFileIcon(file)}
                             </div>
-                          );
-                        })}
+                          )}
+
+                          <div className="flex-1 overflow-hidden">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="max-w-[70%] truncate text-sm font-medium">
+                                {file.name}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {uploadProgress}%
+                              </span>
+                            </div>
+                            <div className="mb-1 text-xs text-gray-400">
+                              {formatFileSize(file.size)}
+                            </div>
+                            <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                              <div
+                                className={`h-2.5 rounded-full transition-all duration-300 ${
+                                  uploadProgress === 100 ? "bg-green-500" : "bg-blue-600"
+                                }`}
+                                style={{ width: `${uploadProgress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Cancel Button */}
+                          {!isUploadComplete && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFile(null);
+                                setUploadProgress(0);
+                                setTempFilePath("");
+                                setIsUploading(false);
+                                setIsUploadComplete(false);
+                              }}
+                              className="ml-2 text-sm text-red-500 hover:text-red-700"
+                              title="Batalkan Upload"
+                            >
+                              ✖
+                            </button>
+                          )}
+
+                          {/* Tombol Hapus setelah upload selesai */}
+                          {isUploadComplete && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveFile}
+                              className="mt-1 flex-shrink-0 text-sm text-red-500 hover:text-red-700"
+                              title="Hapus File"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                     

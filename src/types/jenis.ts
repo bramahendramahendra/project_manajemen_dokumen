@@ -1,6 +1,7 @@
 export type Jenis = {
-  id: number;
-  jenis: string;
+  // id: number;
+  jenis: number;
+  nama_jenis: string;
   roles: {
     levelId: string;
     role: string;

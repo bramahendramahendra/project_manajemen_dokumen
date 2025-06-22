@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from "react";
+import React, { useState, useEffect, useRef, ChangeEvent } from "react";
 import { apiRequest } from "@/helpers/apiClient";
 import { apiRequestUpload } from "@/helpers/uploadClient";
 import Image from "next/image";
@@ -19,11 +19,9 @@ interface Document {
 }
 
 // Tipe data untuk dinas/official
-interface Official {
+interface Dinas {
   id: number;
   dinas: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 // Modal untuk error message
@@ -98,40 +96,53 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
 };
 
 const FormPengirimanLangsungAdmin = () => {
+  // State untuk loading dan error
+  const [loading, setLoading] = useState<boolean>(false); // State loading
+  const [error, setError] = useState<string | null>(null); // Error state
+  const [success, setSuccess] = useState<boolean>(false);
+
   // State untuk pencarian dan filter dokumen
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [showAll, setShowAll] = useState<boolean>(false); 
   const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]); 
 
-   // State untuk form
+  // state untuk option 
+  const [optionDinas, setOptionDinas] = useState<Dinas[]>([]);
+
+  // State untuk form
   const [judul, setJudul] = useState<string>(""); // Judul
   const [dinas, setDinas] = useState<number>(0);
   const [lampiran, setLampiran] = useState<string>(""); // Lampiran
 
   // State untuk data
   const [documents, setDocuments] = useState<Document[]>([]); // Semua dokumen
-  const [optionOfficials, setOptionOfficials] = useState<any[]>([]);
 
-  // State untuk loading dan error
-  const [loading, setLoading] = useState<boolean>(false); // State loading
-  const [error, setError] = useState<string | null>(null); // Error state
-  const [success, setSuccess] = useState<boolean>(false);
-  
+  // State untuk dropdown officials/dinas
+  const [selectedOfficial, setSelectedOfficial] = useState<Dinas | null>(null);
+  const [isLoadingOfficials, setIsLoadingOfficials] = useState<boolean>(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const [officialSearchTerm, setOfficialSearchTerm] = useState<string>("");
+
   // State untuk file upload
   const [file, setFile] = useState<File | null>(null); // Hanya satu file
-   const [uploadProgress, setUploadProgress] = useState<number>(0); // Satu progress
+  const [uploadProgress, setUploadProgress] = useState<number>(0); // Satu progress
   const [tempFilePath, setTempFilePath] = useState<string>(""); // Satu path
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isUploadComplete, setIsUploadComplete] = useState<boolean>(false);
   
-   // State untuk modal
+  // State untuk SuccessModal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
+
+  // State untuk menampilkan ErrorModal
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorTitle, setErrorTitle] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
   // State untuk reset form
   const [resetKey, setResetKey] = useState(0);
+
+  // Ref untuk dropdown
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fungsi untuk mendapatkan icon berdasarkan tipe file
   const getFileIcon = (file: File) => {
@@ -187,6 +198,20 @@ const FormPengirimanLangsungAdmin = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Effect untuk menangani klik diluar dropdown untuk menutupnya
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
   // Mengambil data dokumen dari API saat komponen dimuat
   useEffect(() => {
     const fetchDocuments = async () => {
@@ -218,14 +243,13 @@ const FormPengirimanLangsungAdmin = () => {
 
   // Mengambil data officials/dinas dari API
   useEffect(() => {
-    const fetchOfficials = async () => {
-      setLoading(true);
-      setError(null);
+    const fetchOptinDinas = async () => {
+      setIsLoadingOfficials(true);
       try {
         const response = await apiRequest("/master_dinas/opt-dinas", "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Officials data not found");
+            throw new Error("Dinas data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -235,16 +259,16 @@ const FormPengirimanLangsungAdmin = () => {
           id: item.dinas,
           dinas: item.nama_dinas,
         }));
-        setOptionOfficials(fetchedOfficials);
+        setOptionDinas(fetchedOfficials);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Dinas data not found" : err.message);
       } finally {
-        setLoading(false);
+        setIsLoadingOfficials(false);
 
       }
     };
 
-    fetchOfficials();
+    fetchOptinDinas();
   }, []);
   
   // Format display name untuk dokumen
@@ -276,6 +300,13 @@ const FormPengirimanLangsungAdmin = () => {
 
   const handleRemoveDocument = (docId: number) => {
     setSelectedDocuments((prev) => prev.filter((doc) => doc.id !== docId));
+  };
+
+  // Fungsi untuk menampilkan error modal
+  const showErrorModal = (title: string, message: string) => {
+    setErrorTitle(title);
+    setErrorMessage(message);
+    setIsErrorModalOpen(true);
   };
   
   // Handle file change untuk upload - DIUBAH UNTUK SINGLE FILE
@@ -352,12 +383,7 @@ const FormPengirimanLangsungAdmin = () => {
     setSuccess(false);
   };
   
-  // Fungsi untuk menampilkan error modal
-  const showErrorModal = (title: string, message: string) => {
-    setErrorTitle(title);
-    setErrorMessage(message);
-    setIsErrorModalOpen(true);
-  };
+ 
   
   // Handle pengiriman form
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -371,8 +397,8 @@ const FormPengirimanLangsungAdmin = () => {
     console.log("Temp file paths:", tempFilePath);
 
     // ✅ VALIDASI MINIMAL - HANYA DINAS DAN JUDUL YANG WAJIB
-    if (!dinas) {
-      showErrorModal("Validasi Gagal", "Dinas tujuan harus dipilih");
+     if (!dinas) {
+      showErrorModal("Validasi Gagal", "Nama Dinas harus dipilih");
       return;
     }
     
@@ -381,9 +407,9 @@ const FormPengirimanLangsungAdmin = () => {
       return;
     }
     
-    // ✅ HAPUS VALIDASI/PERINGATAN UNTUK DOKUMEN DAN FILE
-    // Sekarang bisa kirim tanpa dokumen dan tanpa file
-    
+    // Reset error
+    setError("");
+
     // Set loading
     setLoading(true);
     
@@ -400,12 +426,14 @@ const FormPengirimanLangsungAdmin = () => {
         return;
       }
 
-      const foundNamaDinas = optionOfficials.find((item) => item.id === dinas);
+      const foundNamaDinas = optionDinas.find((item) => item.id === dinas);
       
       // ✅ Siapkan payload untuk API - BISA KOSONG UNTUK DOKUMEN DAN FILE
       const payload = {
         kepada_id: dinas,
         kepada_dinas: foundNamaDinas?.dinas || "",
+        // kepada_id: selectedOfficial.id,
+        // kepada_dinas: selectedOfficial.dinas,
         judul: judul,
         dokumen_ids: documentIds, // Bisa array kosong []
         lampiran: lampiran, // Bisa string kosong ""
@@ -486,7 +514,7 @@ const FormPengirimanLangsungAdmin = () => {
                   <ElementComboboxAutocomplete
                     label="Kepada Dinas"
                     placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
-                    options={optionOfficials.map((t) => ({ name: t.dinas, id: t.id }))}
+                    options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
                     onChange={(value) => setDinas(Number(value))}
                     resetKey={resetKey}
                   />

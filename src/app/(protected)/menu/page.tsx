@@ -1,4 +1,4 @@
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import HeaderPage from "@/components/menu/headerPage";
 import MainPage from "@/components/menu";
@@ -10,7 +10,8 @@ const Menu = () => {
   ];
   
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <HeaderPage />
       <div className="grid grid-cols-12 gap-4  md:gap-6 2xl:gap-7.5">
@@ -18,7 +19,8 @@ const Menu = () => {
           <MainPage />
         </div>
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

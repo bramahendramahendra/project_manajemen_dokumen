@@ -64,10 +64,10 @@ const MainPage = () => {
 
   const handleEdit = (code: string, menu: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const token = Cookies.get("token");
-    if (!token) return alert("Token tidak ditemukan!");
+    const user = Cookies.get("user");
+    if (!user) return alert("Token tidak ditemukan!");
 
-    const encrypted = encryptObject({ code, menu }, token);
+    const encrypted = encryptObject({ code, menu }, user);
     
     router.push(`/menu/edit_menu/mz?${key}=${encrypted}`);
   };
@@ -84,6 +84,7 @@ const MainPage = () => {
     setError(null);
     setSuccess(false);
 
+
     try {
       const response = await apiRequest(`/menus/${itemDelete}`, 'DELETE');
       const result = await response.json();
@@ -92,7 +93,14 @@ const MainPage = () => {
         throw new Error(result.responseDesc || 'Gagal menghapus data');
       }
 
+      setDataList(prevItems => prevItems.filter(item => 
+        !(item.code === itemDelete)
+      ));
+
       setSuccess(true);
+      setShowDeleteModal(false);
+      setItemDelete(null);
+
       // Bisa tambahkan aksi tambahan seperti refresh data atau notifikasi
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat menghapus data');

@@ -19,13 +19,15 @@ const KotakMasuk = () => {
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       {/* <div className="gap-4 md:gap-6 2xl:gap-7.5"> */}
         {/* <MainPage /> */}
         <MainPage/>
       {/* </div> */}
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

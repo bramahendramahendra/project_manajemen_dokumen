@@ -1,6 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
+// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import MainPage from "@/components/masterDinas";
 import { HiPlus } from "react-icons/hi2";
@@ -13,7 +13,8 @@ const SettingDinas = () => {
   ];
   
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mb-6 grid grid-cols-12">
         <button
@@ -33,7 +34,8 @@ const SettingDinas = () => {
           <MainPage />
         </div>
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

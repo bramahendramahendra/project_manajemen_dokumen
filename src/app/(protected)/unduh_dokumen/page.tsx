@@ -16,12 +16,14 @@ const UnduhDokumen = () => {
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="col-span-12 xl:col-span-12">
         <MainPage />
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

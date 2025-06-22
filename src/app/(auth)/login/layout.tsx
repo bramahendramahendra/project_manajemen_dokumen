@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Poppins } from "next/font/google";
 import "../../globals.css";
+import { MenuProvider } from "@/contexts/MenuContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -26,5 +27,11 @@ export default function Layout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return <div className={`body-login relative bg-white`}>{children}</div>;
+  return (
+    <MenuProvider> 
+      <div className={`body-login relative bg-white`}>
+        {children}
+      </div>
+    </MenuProvider>
+  );
 }

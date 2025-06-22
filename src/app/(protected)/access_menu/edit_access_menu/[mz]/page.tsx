@@ -20,15 +20,15 @@ const EditPage = () => {
 
   const key = process.env.NEXT_PUBLIC_APP_KEY;
   const encrypted = searchParams.get(`${key}`);
-  const token = Cookies.get("token");
+  const user = Cookies.get("user");
 
   useEffect(() => {
-    if (!encrypted || !token) {
+    if (!encrypted || !user) {
       setError("Token atau data tidak tersedia.");
       return;
     }
 
-    const result = decryptObject(encrypted, token);
+    const result = decryptObject(encrypted, user);
     // console.log(result);
     
     if (!result) {
@@ -36,11 +36,11 @@ const EditPage = () => {
       return;
     }
 
-    const { code: decryptedLevelId, menu: decryptedCodeMenu } = result;
+    const { levelId: decryptedLevelId, codeMenu: decryptedCodeMenu } = result;
 
     setLevelId(decryptedLevelId);
     setCodeMenu(decryptedCodeMenu);
-  }, [encrypted, token]);
+  }, [encrypted, user]);
 
 
   useEffect(() => {
@@ -67,12 +67,13 @@ const EditPage = () => {
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Menu", href: "/menu" },
+    { name: "Access Menu", href: "/access_menu" },
     { name: `Edit Access Menu ${levelId}` },
   ];
 
   return (
-    <DefaultLayout>
+    // <DefaultLayout>
+    <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
         <div className="col-span-12 xl:col-span-6">
@@ -89,7 +90,8 @@ const EditPage = () => {
           )}
         </div>
       </div>
-    </DefaultLayout>
+    </>
+    // </DefaultLayout>
   );
 };
 

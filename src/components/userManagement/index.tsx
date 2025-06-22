@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
@@ -37,8 +37,8 @@ const MainPage = () => {
   // const [showDeleteModal, setShowDeleteModal] = useState(false);
   // const [itemDelete, setItemDelete] = useState<number | string | null>(null);
 
-  // Function untuk fetch data dengan parameter
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  // Function untuk fetch data dengan parameter - dibungkus dengan useCallback
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
 
@@ -98,11 +98,11 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, filters, fetchData]);
 
   // Handler untuk perubahan halaman
   const handlePageChange = (newPage: number) => {

@@ -29,9 +29,12 @@ const MainPage = () => {
       try {
         setLoading(true);
         setError(null);
+        const user = JSON.parse(Cookies.get("user") || "{}");
+
+        console.log(user);
         
-        const response = await apiRequest("/kotak_masuk/all-dinas", "GET");
         
+        const response = await apiRequest(`/kotak_masuk/all/${user.department_id}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Data dinas tidak ditemukan");

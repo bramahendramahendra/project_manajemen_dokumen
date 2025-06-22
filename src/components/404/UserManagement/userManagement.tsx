@@ -27,7 +27,7 @@ const UserManagement = ({ error }: { error: string | null }) => {
                 <tr>
                   <td
                     colSpan={5} // Menggabungkan semua kolom
-                    className="text-center py-30 text-red-500 font-semibold py-4"
+                    className="text-center text-red-500 font-semibold py-4"
                   >
                     {error}
                   </td>

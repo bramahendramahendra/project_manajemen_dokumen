@@ -12,6 +12,8 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [roles, setRoles] = useState<any[]>([]);
   const [maxRoles, setMaxRoles] = useState(0);
 
+  console.log(dataEdit);
+  
   useEffect(() => {
     const fetchRoles = async () => {
       setLoading(true);
@@ -45,7 +47,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
   useEffect(() => {
     if (dataEdit) {
-      setType(dataEdit.jenis || '');
+      setType(dataEdit.nama_jenis || '');
       console.log("Access User Data: ", dataEdit.roles);
       // setAccessUsers(dataEdit.roles || []);
       const userRoles = dataEdit.roles || [];
@@ -89,14 +91,13 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
       return;
     }
 
-
     const payload = {
       jenis: type,
-      level_id: cleanedAccessUsers,
+      level: cleanedAccessUsers,
     };
 
     try {
-      const response = await apiRequest(`/setting_types/${dataEdit.id}`, 'PUT', payload);
+      const response = await apiRequest(`/master_jenis/${dataEdit.jenis}`, 'PUT', payload);
       const result = await response.json();
 
       if (!response.ok) {

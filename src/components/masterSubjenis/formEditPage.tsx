@@ -20,18 +20,18 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/setting_types/", "GET");
+        const response = await apiRequest("/master_jenis/", "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Setting type data not found");
+            throw new Error("Master Jenis data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
 
         const fetchOptionSettingTypes = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          jenis: item.jenis,
+          id: item.jenis,
+          jenis: item.nama_jenis,
         }));
 
         setOptionTypes(fetchOptionSettingTypes);
@@ -80,8 +80,8 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
   useEffect(() => {
     if (dataEdit) {
-      setType(dataEdit.setting_jenis_id	 || '');
-      setSubtype(dataEdit.subjenis || '');
+      setType(dataEdit.subjenis	 || '');
+      setSubtype(dataEdit.nama_subjenis || '');
       const userRoles = dataEdit.roles || [];
       const userAccessLevels = userRoles.map((role: any) => role.level_id);
       setAccessUsers(userAccessLevels);
@@ -131,7 +131,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/setting_subtypes/${dataEdit.id}`, 'PUT', payload);
+      const response = await apiRequest(`/master_subjenis/${dataEdit.id}`, 'PUT', payload);
       const result = await response.json();
 
       if (!response.ok) {
