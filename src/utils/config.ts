@@ -1,6 +1,6 @@
 export const isDev = process.env.NODE_ENV !== 'production';
-console.log(`Aplikasi berjalan dalam mode: ${process.env.NODE_ENV}`);
-console.log(`Duration Token: ${process.env.NEXT_PUBLIC_ACCESS_TOKEN_DURATION}`);
+// console.log(`Aplikasi berjalan dalam mode: ${process.env.NODE_ENV}`);
+// console.log(`Duration Token: ${process.env.NEXT_PUBLIC_ACCESS_TOKEN_DURATION}`);
 
 
 // Konfigurasi durasi token
