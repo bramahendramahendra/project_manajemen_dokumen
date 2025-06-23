@@ -2,6 +2,7 @@ import "@/css/satoshi.css";
 import "./globals.css";
 import { Inter, Poppins } from "next/font/google";
 import { MenuProvider } from "@/contexts/MenuContext";
+import ClientLayout from "@/components/ClientLayout/ClientLayout";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className={`${inter.variable} ${poppins.variable}`}>
         <MenuProvider>
-          {children}
+          <ClientLayout>
+            {children}
+          </ClientLayout>
         </MenuProvider>
       </body>
     </html>
