@@ -193,7 +193,7 @@ const ValidationUploadTable = () => {
 
   // Fungsi untuk validasi semua
   const handleValidateAll = () => {
-    console.log("Validasi semua item berhasil!");
+    // console.log("Validasi semua item berhasil!");
     setIsModalOpen(false);
   };
 
@@ -207,7 +207,7 @@ const ValidationUploadTable = () => {
   // Fungsi untuk konfirmasi hapus
   const handleConfirmDelete = () => {
     if (itemToDelete !== null) {
-      console.log(`Item dengan index ${itemToDelete} telah dihapus`);
+      // console.log(`Item dengan index ${itemToDelete} telah dihapus`);
       // Di sini bisa tambahkan logika untuk menghapus item dari array data
       // contoh: const newData = [...validationUploadUraianData];
       // newData.splice(itemToDelete, 1);

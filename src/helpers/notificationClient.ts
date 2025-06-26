@@ -34,14 +34,14 @@ export class NotificationClient {
     this.shouldReconnect = true;
 
     try {
-      console.log('Establishing SSE connection...');
+      // console.log('Establishing SSE connection...');
       this.eventSource = new EventSource(`${this.baseUrl}/notifications/stream`, { 
         withCredentials: true // Penting untuk mengirim cookies
       });
 
       // Event ketika koneksi terbuka
       this.eventSource.onopen = () => {
-        console.log('SSE connection established successfully');
+        // console.log('SSE connection established successfully');
         this.isConnecting = false;
         this.reconnectAttempt = 0;
         this.notifySubscribers('connection', { status: 'connected' });
@@ -121,7 +121,7 @@ export class NotificationClient {
     if (!this.shouldReconnect) return;
 
     this.reconnectAttempt++;
-    console.log(`Attempting to reconnect (attempt ${this.reconnectAttempt}/${this.maxReconnectAttempt})...`);
+    // console.log(`Attempting to reconnect (attempt ${this.reconnectAttempt}/${this.maxReconnectAttempt})...`);
     
     this.notifySubscribers('connection', { 
       status: 'reconnecting', 
@@ -133,7 +133,7 @@ export class NotificationClient {
       const refreshResponse = await refreshAccessToken();
       
       if (refreshResponse.ok) {
-        console.log('Token refreshed successfully, reconnecting SSE...');
+        // console.log('Token refreshed successfully, reconnecting SSE...');
         // Tunggu sebentar sebelum reconnect
         setTimeout(() => {
           if (this.shouldReconnect) {
@@ -189,7 +189,7 @@ export class NotificationClient {
     this.heartbeatInterval = setInterval(() => {
       // Check if connection is still alive
       if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
-        console.log('Detected closed SSE connection, attempting reconnect...');
+        // console.log('Detected closed SSE connection, attempting reconnect...');
         this.closeConnection();
         this.attemptReconnect();
       }
@@ -235,7 +235,7 @@ export class NotificationClient {
 
   // Method untuk manual reconnect (dipanggil dari luar setelah token refresh)
   reconnect() {
-    console.log('Manual reconnect requested...');
+    // console.log('Manual reconnect requested...');
     this.close();
     this.reconnectAttempt = 0;
     this.shouldReconnect = true;

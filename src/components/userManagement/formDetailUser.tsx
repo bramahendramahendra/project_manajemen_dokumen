@@ -169,7 +169,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
       setResponsiblePerson(user.responsible_person || '');
       setAccessUser(user.level_id || '');
 
-      console.log(user);
+      // console.log(user);
 
       if (user.level_id) {
         fetchAksesData(user.level_id);

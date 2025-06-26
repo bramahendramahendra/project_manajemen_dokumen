@@ -48,7 +48,7 @@ const MainPage = () => {
 
   const handleSimpan = () => {
     // Implementasi penyimpanan data
-    console.log("Data disimpan:", { prihal, deskripsi, tableData });
+    // console.log("Data disimpan:", { prihal, deskripsi, tableData });
     alert("Data berhasil disimpan!");
   };
 

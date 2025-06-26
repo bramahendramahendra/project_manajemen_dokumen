@@ -113,13 +113,13 @@ const MainPage = () => {
   const handleSimpan = () => {
     // Implementasi penyimpanan data
     const perihalLengkap = subKategori ? `${kategoriUtama} - ${subKategori}` : kategoriUtama;
-    console.log("Data disimpan:", { 
-      kategoriUtama, 
-      subKategori, 
-      perihalLengkap,
-      deskripsi, 
-      tableData 
-    });
+    // console.log("Data disimpan:", { 
+    //   kategoriUtama, 
+    //   subKategori, 
+    //   perihalLengkap,
+    //   deskripsi, 
+    //   tableData 
+    // });
     alert("Data berhasil disimpan!");
   };
 

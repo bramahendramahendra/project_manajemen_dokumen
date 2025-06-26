@@ -119,7 +119,7 @@ const MainPage = () => {
     }
     
     // Logika download sebenarnya bisa ditambahkan di sini
-    console.log(`Mendownload dokumen dengan ID: ${id}`);
+    // console.log(`Mendownload dokumen dengan ID: ${id}`);
   };
 
   // Function untuk handle delete
@@ -154,7 +154,7 @@ const MainPage = () => {
       }
       
       // Logika delete ke API bisa ditambahkan di sini
-      console.log(`Menghapus dokumen dengan ID: ${id}`);
+      // console.log(`Menghapus dokumen dengan ID: ${id}`);
     }
   };
   

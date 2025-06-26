@@ -120,7 +120,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        console.log(`File ${fileName} berhasil didownload`);
+        // console.log(`File ${fileName} berhasil didownload`);
       } else {
         console.error('Download gagal:', response.status);
         setError('Gagal mendownload file');
@@ -164,7 +164,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        console.log(`Semua file berhasil didownload sebagai ${fileName}`);
+        // console.log(`Semua file berhasil didownload sebagai ${fileName}`);
       } else {
         console.error('Download semua file gagal:', response.status);
         setError('Gagal mendownload semua file');
@@ -184,7 +184,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       return;
     }
 
-    console.log(user);
+    // console.log(user);
 
     setLoading(true);
     setError(null);
@@ -196,7 +196,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       checker_role: user.level_id,
     };
 
-    console.log(payload);
+    // console.log(payload);
     
     try {
       const response = await apiRequest('/validation/document', 'POST', payload);
@@ -240,7 +240,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       checker_role: user.level_id,
     }));
 
-    console.log(payload);
+    // console.log(payload);
 
     try {
       const response = await apiRequest('/validation/documents', 'POST', { items: payload });
@@ -302,7 +302,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       checker_role: user.level_id,
     };
 
-    console.log("Reject payload:", payload);
+    // console.log("Reject payload:", payload);
 
     try {
       const response = await apiRequest('/validation/document/reject', 'POST', payload);
@@ -317,7 +317,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
         
-        console.log(`Item dengan index ${itemToDelete} telah di-reject`);
+        // console.log(`Item dengan index ${itemToDelete} telah di-reject`);
       } else {
         const result = await response.json();
         setError(result.message || "Terjadi kesalahan saat menolak dokumen");

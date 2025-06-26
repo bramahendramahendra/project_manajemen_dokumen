@@ -12,7 +12,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [roles, setRoles] = useState<any[]>([]);
   const [maxRoles, setMaxRoles] = useState(0);
 
-  console.log(dataEdit);
+  // console.log(dataEdit);
   
   useEffect(() => {
     const fetchRoles = async () => {
@@ -48,7 +48,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   useEffect(() => {
     if (dataEdit) {
       setType(dataEdit.nama_jenis || '');
-      console.log("Access User Data: ", dataEdit.roles);
+      // console.log("Access User Data: ", dataEdit.roles);
       // setAccessUsers(dataEdit.roles || []);
       const userRoles = dataEdit.roles || [];
       const userAccessLevels = userRoles.map((role: any) => role.level_id); // Ambil level_id dari data roles

@@ -410,11 +410,11 @@ const FormPengirimanLangsung = () => {
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Form submission started");
-    console.log("Selected official:", dinas);
-    console.log("Judul:", judul);
-    console.log("Selected documents:", selectedDocuments);
-    console.log("Lampiran:", lampiran);
+    // console.log("Form submission started");
+    // console.log("Selected official:", dinas);
+    // console.log("Judul:", judul);
+    // console.log("Selected documents:", selectedDocuments);
+    // console.log("Lampiran:", lampiran);
 
     // ✅ VALIDASI MINIMAL - HANYA DINAS DAN JUDUL YANG WAJIB
     if (!dinas) {
@@ -436,10 +436,10 @@ const FormPengirimanLangsung = () => {
     try {
       // ✅ Menyiapkan data dokumen yang dipilih - BISA KOSONG
       const documentIds = selectedDocuments.map(doc => doc.id);
-      console.log("Document IDs to be sent:", documentIds);
+      // console.log("Document IDs to be sent:", documentIds);
 
       const user = JSON.parse(Cookies.get("user") || "{}");
-      console.log("User cookie:", user);
+      // console.log("User cookie:", user);
 
       if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
         console.error("User tidak ditemukan di cookie.");
@@ -462,7 +462,7 @@ const FormPengirimanLangsung = () => {
         pengirim_department_name: user.department_name
       };
       
-      console.log("Starting actual API call with payload:", payload);
+      // console.log("Starting actual API call with payload:", payload);
 
       const response = await apiRequest("/direct-shipping/", "POST", payload);
 

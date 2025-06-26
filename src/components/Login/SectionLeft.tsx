@@ -14,7 +14,7 @@ const SectionLeft = () => {
 
   const handleSubmitLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log({ username, password });
+    // console.log({ username, password });
     router.push("/");
   };
 

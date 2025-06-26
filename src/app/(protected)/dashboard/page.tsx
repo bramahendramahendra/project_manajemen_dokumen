@@ -10,7 +10,7 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-  console.log(user);
+  // console.log(user);
   
 
   useEffect(() => {
@@ -23,7 +23,7 @@ const Dashboard = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     localStorage.setItem("hasVisited", "false");
-    console.log("🛑 hasVisited set to false on modal close:", localStorage.getItem("hasVisited"));
+    // console.log("🛑 hasVisited set to false on modal close:", localStorage.getItem("hasVisited"));
   };
 
   return (
