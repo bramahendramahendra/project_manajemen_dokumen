@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { encryptObject } from "@/utils/crypto";
+import { htmlToReadableText } from "@/utils/htmlTextFormatter";
 import {
   HiOutlinePencilSquare,
   HiOutlineTrash,
@@ -102,7 +103,6 @@ const MainPage = () => {
     setCurrentPage(1); // Reset ke halaman pertama
   };
 
-
   const handleEdit = (id: number, subperihal: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
@@ -137,7 +137,10 @@ const MainPage = () => {
       }
 
       setSuccess(true);
-      // Bisa tambahkan aksi tambahan seperti refresh data atau notifikasi
+      // Refresh data setelah delete berhasil
+      fetchData(currentPage, itemsPerPage, filters);
+      setShowDeleteModal(false);
+      setItemDelete(null);
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat menghapus data');
     } finally {
@@ -151,6 +154,16 @@ const MainPage = () => {
     setItemDelete(null);
   };
 
+  // Handler untuk show full description
+  const handleShowFullDescription = (description: string) => {
+    const fullText = htmlToReadableText(description, 2000, {
+      preserveLineBreaks: true,
+      convertLists: true,
+      bulletSymbol: '• ',
+      truncateSuffix: ''
+    });
+    alert('Deskripsi Lengkap:\n\n' + fullText);
+  };
 
   return (
     <>
@@ -175,6 +188,9 @@ const MainPage = () => {
                 <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                   Sub Perihal
                 </th>
+                <th className="min-w-[300px] px-4 py-4 font-medium text-dark dark:text-white">
+                  Deskripsi
+                </th>
                 <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Actions
                 </th>
@@ -190,6 +206,9 @@ const MainPage = () => {
                       </td>
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                      </td>
+                      <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
+                        <div className="h-4 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
                       </td>
                       <td className="border-[#eee] px-4 py-4 dark:border-dark-3">
                         <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
@@ -220,6 +239,27 @@ const MainPage = () => {
                         {item.nama_subperihal}
                       </p>
                     </td>
+                    <td className={`border-[#eee] px-4 py-4 dark:border-dark-3`} >
+                      <div className="text-dark dark:text-white">
+                        {item.deskripsi ? (
+                          <div className="relative">
+                            <pre className="text-sm leading-relaxed whitespace-pre-wrap font-sans">
+                              {htmlToReadableText(item.deskripsi, 180)}
+                            </pre>
+                            {item.deskripsi.length > 180 && (
+                              <button 
+                                className="text-blue-600 hover:text-blue-800 text-xs mt-1 underline"
+                                onClick={() => handleShowFullDescription(item.deskripsi)}
+                              >
+                                Lihat selengkapnya
+                              </button>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">Tidak ada deskripsi</span>
+                        )}
+                      </div>
+                    </td>
                     <td className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`} >
                       <div className="flex items-center justify-end space-x-3.5">
                         <button
@@ -234,7 +274,10 @@ const MainPage = () => {
                           </span>
                         </button>
 
-                        <button className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6">
+                        <button 
+                          onClick={() => handleDeleteClick(item.subperihal)}
+                          className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
+                        >
                           <span className="text-[20px]">
                             <HiOutlineTrash />
                           </span>
@@ -263,27 +306,28 @@ const MainPage = () => {
        {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black opacity-50"></div>
-          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-gray-dark">
             <div className="mb-4 text-center">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 Konfirmasi Hapus
               </h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Apakah anda yakin ingin menghapus subjenis ini?
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                Apakah anda yakin ingin menghapus subperihal ini?
               </p>
             </div>
             <div className="mt-6 flex justify-center space-x-4">
               <button
                 onClick={handleCancelDelete}
-                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
               >
                 Tidak
               </button>
               <button
                 onClick={handleConfirmDelete}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                disabled={loading}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
               >
-                Iya
+                {loading ? 'Menghapus...' : 'Iya'}
               </button>
             </div>
           </div>

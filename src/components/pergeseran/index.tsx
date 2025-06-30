@@ -1,15 +1,41 @@
 "use client";
-import { useState, ChangeEvent } from "react";
+import { useState, useEffect, ChangeEvent } from "react";
 import * as XLSX from "xlsx";
+import { apiRequest } from "@/helpers/apiClient";
+import { htmlToPlainText } from "@/utils/htmlTextFormatter";
+
+interface PerihalOption {
+  perihal: number;
+  nama_perihal: string;
+}
+
+interface SubperihalOption {
+  subperihal: number;
+  nama_subperihal: string;
+  deskripsi: string;
+}
 
 const MainPage = () => {
   // State untuk dropdown bertingkat
   const [kategoriUtama, setKategoriUtama] = useState<string>("");
+  const [kategoriUtamaId, setKategoriUtamaId] = useState<number | null>(null);
   const [subKategori, setSubKategori] = useState<string>("");
+  const [subKategoriId, setSubKategoriId] = useState<number | null>(null);
+  const [selectedDeskripsiDetail, setSelectedDeskripsiDetail] = useState<string>("");
   
   // State untuk dropdown controls
   const [isKategoriOpen, setIsKategoriOpen] = useState<boolean>(false);
   const [isSubKategoriOpen, setIsSubKategoriOpen] = useState<boolean>(false);
+  
+  // State untuk data API
+  const [kategoriUtamaOptions, setKategoriUtamaOptions] = useState<PerihalOption[]>([]);
+  const [subKategoriOptions, setSubKategoriOptions] = useState<SubperihalOption[]>([]);
+  
+  // State untuk loading dan error
+  const [loadingPerihal, setLoadingPerihal] = useState<boolean>(false);
+  const [loadingSubperihal, setLoadingSubperihal] = useState<boolean>(false);
+  const [errorPerihal, setErrorPerihal] = useState<string | null>(null);
+  const [errorSubperihal, setErrorSubperihal] = useState<string | null>(null);
   
   // State lainnya tetap sama
   const [deskripsi, setDeskripsi] = useState<string>("");
@@ -17,49 +43,89 @@ const MainPage = () => {
   const [headers, setHeaders] = useState<string[]>([]);
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
 
-  // Data untuk dropdown bertingkat
-  const kategoriUtamaOptions = ["Pendapatan", "Belanja", "Pembiayaan"];
-  
-  const subKategoriOptions: Record<string, string[]> = {
-    "Pendapatan": ["Pergeseran Pendapatan"],
-    "Belanja": ["Pergeseran Belanja", "Perubahan Belanja"],
-    "Pembiayaan": ["Pergeseran Pembiayaan"]
-  };
-  
-  const detailSpesifikOptions: Record<string, string[]> = {
-    "Pergeseran Pendapatan": [
-      "Pergeseran Pendapatan Antar jenis pendapatan"
-    ],
-    "Pergeseran Belanja": [
-      "Pasal 6 ayat 2 & 3 Lokasi, keluaran, sasaran",
-      "Pasal 6 huruf b Antar rincian objek",
-      "Pasal 6 huruf c Antar sub rincian objek",
-      "Pasal 7 Hibah/Bansos (ubah atau tidak substansi)",
-      "Perubahan Keterangan Uraian belanja",
-      "Perubahan Sumber Dana Sumber dana"
-    ],
-    "Perubahan Belanja": [
-      "Pasal 4 Ayat 2 Antar organisasi/unit organisasi",
-      "Pasal 4 Ayat 3 Antar sub kegiatan",
-      "Pasal 4 Ayat 4 Antar jenis belanja",
-      "Pasal 4 Ayat 5 Antar program atau kegiatan",
-      "Pasal 4 Ayat 6 Antar uraian dalam sub rincian objek",
-      "Pasal 4f Antar kelompok belanja"
-    ],
-    "Pergeseran Pembiayaan": [
-      "Pergeseran Pembiayaan Antar jenis pembiayaan"
-    ]
+  // Fetch data perihal saat komponen mount
+  useEffect(() => {
+    fetchPerihalOptions();
+  }, []);
+
+  // Fetch data perihal dari API
+  const fetchPerihalOptions = async () => {
+    setLoadingPerihal(true);
+    setErrorPerihal(null);
+    
+    try {
+      const response = await apiRequest("/master_perihal/opt", "GET");
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.responseCode === 200) {
+        setKategoriUtamaOptions(result.responseData.items);
+      } else {
+        throw new Error(result.responseDesc || "Gagal mengambil data perihal");
+      }
+    } catch (err: any) {
+      setErrorPerihal(err.message === "Failed to fetch" ? "Gagal mengambil data perihal" : err.message);
+      console.error("Error fetching perihal options:", err);
+    } finally {
+      setLoadingPerihal(false);
+    }
   };
 
-  // Handler functions untuk dropdown bertingkat
-  const handleKategoriSelect = (option: string) => {
-    setKategoriUtama(option);
+  // Fetch data subperihal berdasarkan ID perihal
+  const fetchSubperihalOptions = async (perihalId: number) => {
+    setLoadingSubperihal(true);
+    setErrorSubperihal(null);
+    setSubKategoriOptions([]);
+    
+    try {
+      const response = await apiRequest(`/master_subperihal/opt/${perihalId}`, "GET");
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          setSubKategoriOptions([]);
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.responseCode === 200) {
+        setSubKategoriOptions(result.responseData.items);
+      } else {
+        throw new Error(result.responseDesc || "Gagal mengambil data subperihal");
+      }
+    } catch (err: any) {
+      setErrorSubperihal(err.message === "Failed to fetch" ? "Gagal mengambil data subperihal" : err.message);
+      console.error("Error fetching subperihal options:", err);
+      setSubKategoriOptions([]);
+    } finally {
+      setLoadingSubperihal(false);
+    }
+  };
+
+  // Handler untuk memilih kategori utama
+  const handleKategoriSelect = (option: PerihalOption) => {
+    setKategoriUtama(option.nama_perihal);
+    setKategoriUtamaId(option.perihal);
     setSubKategori(""); // Reset sub kategori
+    setSubKategoriId(null);
+    setSelectedDeskripsiDetail("");
     setIsKategoriOpen(false);
+    
+    // Fetch subperihal options untuk kategori yang dipilih
+    fetchSubperihalOptions(option.perihal);
   };
 
-  const handleSubKategoriSelect = (option: string) => {
-    setSubKategori(option);
+  // Handler untuk memilih sub kategori
+  const handleSubKategoriSelect = (option: SubperihalOption) => {
+    setSubKategori(option.nama_subperihal);
+    setSubKategoriId(option.subperihal);
+    setSelectedDeskripsiDetail(option.deskripsi);
     setIsSubKategoriOpen(false);
   };
 
@@ -113,13 +179,15 @@ const MainPage = () => {
   const handleSimpan = () => {
     // Implementasi penyimpanan data
     const perihalLengkap = subKategori ? `${kategoriUtama} - ${subKategori}` : kategoriUtama;
-    // console.log("Data disimpan:", { 
-    //   kategoriUtama, 
-    //   subKategori, 
-    //   perihalLengkap,
-    //   deskripsi, 
-    //   tableData 
-    // });
+    console.log("Data disimpan:", { 
+      kategoriUtamaId,
+      kategoriUtama, 
+      subKategoriId,
+      subKategori, 
+      perihalLengkap,
+      deskripsi, 
+      tableData 
+    });
     alert("Data berhasil disimpan!");
   };
 
@@ -360,13 +428,13 @@ const MainPage = () => {
                 Perihal Utama
               </label>
               <div
-                className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
-                onClick={() => setIsKategoriOpen(!isKategoriOpen)}
+                className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingPerihal ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => !loadingPerihal && setIsKategoriOpen(!isKategoriOpen)}
               >
                 <span
                   className={`truncate ${kategoriUtama ? "text-gray-900" : "text-gray-400"}`}
                 >
-                  {kategoriUtama || "Pilih Perihal"}
+                  {loadingPerihal ? "Memuat data perihal..." : (kategoriUtama || "Pilih Perihal")}
                 </span>
                 <svg
                   className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
@@ -381,7 +449,20 @@ const MainPage = () => {
                 </svg>
               </div>
 
-              {isKategoriOpen && (
+              {/* Error message untuk perihal */}
+              {errorPerihal && (
+                <div className="mt-1 text-sm text-red-500">
+                  {errorPerihal}
+                  <button 
+                    onClick={fetchPerihalOptions}
+                    className="ml-2 text-blue-500 underline hover:text-blue-700"
+                  >
+                    Coba lagi
+                  </button>
+                </div>
+              )}
+
+              {isKategoriOpen && !loadingPerihal && kategoriUtamaOptions.length > 0 && (
                 <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                   {kategoriUtamaOptions.map((option, index) => (
                     <div
@@ -389,7 +470,7 @@ const MainPage = () => {
                       className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
                       onClick={() => handleKategoriSelect(option)}
                     >
-                      {option}
+                      {option.nama_perihal}
                     </div>
                   ))}
                 </div>
@@ -397,19 +478,24 @@ const MainPage = () => {
             </div>
 
             {/* Dropdown Level 2 - Sub Kategori */}
-            {kategoriUtama && (
+            {kategoriUtamaId && (
               <div className="relative">
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Sub Perihal
                 </label>
                 <div
-                  className="flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm"
-                  onClick={() => setIsSubKategoriOpen(!isSubKategoriOpen)}
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingSubperihal ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  onClick={() => !loadingSubperihal && subKategoriOptions.length > 0 && setIsSubKategoriOpen(!isSubKategoriOpen)}
                 >
                   <span
                     className={`truncate ${subKategori ? "text-gray-900" : "text-gray-400"}`}
                   >
-                    {subKategori || "Pilih Sub Perihal"}
+                    {loadingSubperihal 
+                      ? "Memuat data subperihal..." 
+                      : subKategoriOptions.length === 0 
+                        ? "Tidak ada subperihal tersedia"
+                        : (subKategori || "Pilih Sub Perihal")
+                    }
                   </span>
                   <svg
                     className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
@@ -424,15 +510,28 @@ const MainPage = () => {
                   </svg>
                 </div>
 
-                {isSubKategoriOpen && (
+                {/* Error message untuk subperihal */}
+                {errorSubperihal && (
+                  <div className="mt-1 text-sm text-red-500">
+                    {errorSubperihal}
+                    <button 
+                      onClick={() => kategoriUtamaId && fetchSubperihalOptions(kategoriUtamaId)}
+                      className="ml-2 text-blue-500 underline hover:text-blue-700"
+                    >
+                      Coba lagi
+                    </button>
+                  </div>
+                )}
+
+                {isSubKategoriOpen && !loadingSubperihal && subKategoriOptions.length > 0 && (
                   <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                    {subKategoriOptions[kategoriUtama]?.map((option, index) => (
+                    {subKategoriOptions.map((option, index) => (
                       <div
                         key={index}
                         className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
                         onClick={() => handleSubKategoriSelect(option)}
                       >
-                        {option}
+                        {option.nama_subperihal}
                       </div>
                     ))}
                   </div>
@@ -440,21 +539,19 @@ const MainPage = () => {
               </div>
             )}
 
-            {/* Dropdown Level 3 - Detail Spesifik */}
-            {subKategori && detailSpesifikOptions[subKategori] && (
+            {/* Detail Spesifik dengan deskripsi dari API */}
+            {selectedDeskripsiDetail && (
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
                 <label className="mb-3 block text-sm font-medium text-gray-700">
                   Detail Spesifik - {subKategori}
                 </label>
-                <div className="space-y-2">
-                  {detailSpesifikOptions[subKategori].map((detail, index) => (
-                    <div key={index} className="flex items-start">
-                      <span className="mr-2 mt-1 h-2 w-2 rounded-full bg-blue-500 flex-shrink-0"></span>
-                      <span className="text-sm text-gray-700 leading-relaxed">
-                        {detail}
-                      </span>
-                    </div>
-                  ))}
+                <div className="text-sm text-gray-700 leading-relaxed">
+                  <div 
+                    className="formatted-description"
+                    dangerouslySetInnerHTML={{ 
+                      __html: selectedDeskripsiDetail 
+                    }}
+                  />
                 </div>
               </div>
             )}
@@ -632,6 +729,30 @@ const MainPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Custom CSS untuk formatting HTML deskripsi */}
+      <style jsx global>{`
+        .formatted-description ul {
+          list-style-type: disc;
+          margin-left: 1.5em;
+          margin-bottom: 0.5em;
+        }
+        
+        .formatted-description li {
+          margin-bottom: 0.25em;
+          line-height: 1.4;
+        }
+        
+        .formatted-description ol {
+          list-style-type: decimal;
+          margin-left: 1.5em;
+          margin-bottom: 0.5em;
+        }
+        
+        .formatted-description p {
+          margin-bottom: 0.5em;
+        }
+      `}</style>
     </div>
   );
 };

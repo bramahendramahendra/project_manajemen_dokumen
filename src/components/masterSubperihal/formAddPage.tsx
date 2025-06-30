@@ -1,5 +1,15 @@
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { apiRequest } from "@/helpers/apiClient";
+
+// Import ReactQuill secara dynamic untuk menghindari SSR issues
+const ReactQuill = dynamic(() => import('react-quill'), { 
+  ssr: false,
+  loading: () => <p>Loading editor...</p>
+});
+
+// Import styles untuk ReactQuill
+import 'react-quill/dist/quill.snow.css';
 
 const FormAddPage = () => {
   const [loading, setLoading] = useState(false);
@@ -11,6 +21,30 @@ const FormAddPage = () => {
   const [deskripsi, setDeskripsi] = useState('');
   
   const [optionPerihal, setOptionPerihal] = useState<any[]>([]);
+
+  // Konfigurasi toolbar untuk ReactQuill
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+      [{ 'indent': '-1'}, { 'indent': '+1' }],
+      ['link'],
+      [{ 'align': [] }],
+      [{ 'color': [] }, { 'background': [] }],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'indent',
+    'link',
+    'align',
+    'color', 'background'
+  ];
 
   useEffect(() => {
     const fetchOptionTypes = async () => {
@@ -27,8 +61,8 @@ const FormAddPage = () => {
         const result = await response.json();
 
         const res = result.responseData.items.map((item: any) => ({
-          perihal: item.jenis,
-          nama_perihal: item.nama_jenis,
+          perihal: item.perihal,
+          nama_perihal: item.nama_perihal,
         }));
 
         setOptionPerihal(res);
@@ -104,6 +138,7 @@ const FormAddPage = () => {
                 )}
               </select>
             </div>
+
             {/* Subperihal */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
@@ -114,24 +149,32 @@ const FormAddPage = () => {
                 value={subperihal}
                 onChange={(e) => setSubperihal(e.target.value)}
                 placeholder="Enter your subjenis"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               />
             </div>
 
-            {/* Deskripsi */}
+            {/* Deskripsi dengan Editor */}
             <div className="mb-4.5">
               <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                 Deskripsi
               </label>
-              <input
-                type="text"
-                value={deskripsi}
-                onChange={(e) => setDeskripsi(e.target.value)}
-                placeholder="Enter your deskripsi"
-                className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                required
-              />
+              <div className="quill-wrapper">
+                <ReactQuill
+                  theme="snow"
+                  value={deskripsi}
+                  onChange={setDeskripsi}
+                  modules={quillModules}
+                  formats={quillFormats}
+                  placeholder="Masukkan deskripsi detail..."
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: '1px solid #1D92F9',
+                    borderRadius: '7px',
+                    minHeight: '150px'
+                  }}
+                />
+              </div>
             </div>
            
             <button 
@@ -148,6 +191,65 @@ const FormAddPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Custom CSS untuk styling editor */}
+      <style jsx global>{`
+        .quill-wrapper .ql-container {
+          border-bottom-left-radius: 7px;
+          border-bottom-right-radius: 7px;
+          background: transparent;
+        }
+        
+        .quill-wrapper .ql-toolbar {
+          border-top-left-radius: 7px;
+          border-top-right-radius: 7px;
+          border-color: #1D92F9;
+        }
+        
+        .quill-wrapper .ql-container {
+          border-color: #1D92F9;
+          min-height: 120px;
+        }
+        
+        .quill-wrapper .ql-editor {
+          min-height: 120px;
+          background: transparent;
+        }
+        
+        .quill-wrapper .ql-editor.ql-blank::before {
+          color: #9ca3af;
+          font-style: normal;
+        }
+        
+        /* Dark mode styling */
+        .dark .quill-wrapper .ql-toolbar {
+          background: #374151;
+          border-color: #1D92F9;
+        }
+        
+        .dark .quill-wrapper .ql-container {
+          background: #374151;
+          color: white;
+          border-color: #1D92F9;
+        }
+        
+        .dark .quill-wrapper .ql-editor {
+          background: #374151;
+          color: white;
+        }
+        
+        .dark .quill-wrapper .ql-stroke {
+          stroke: white;
+        }
+        
+        .dark .quill-wrapper .ql-fill {
+          fill: white;
+        }
+        
+        .dark .quill-wrapper .ql-picker-label {
+          color: white;
+        }
+      `}</style>
     </div>
   );
 };
