@@ -61,7 +61,7 @@ const AddDocument = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
   // Fungsi untuk menangani upload final dan mencegah refresh
   const handleFinalUpload = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();  // Mencegah refresh otomatis
-    console.log('Files uploaded to the server:', files);
+    // console.log('Files uploaded to the server:', files);
     
     // Lakukan operasi upload ke server di sini, misalnya:
     // fetch('/upload-endpoint', { method: 'POST', body: formData });

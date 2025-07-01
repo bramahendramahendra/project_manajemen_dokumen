@@ -1,4 +1,4 @@
-// DocumentModal.tsx dengan ikon yang dikoreksi
+// DocumentModal.tsx - Updated dengan data dari API
 import React from "react";
 import { HiX } from "react-icons/hi";
 import { 
@@ -8,12 +8,13 @@ import {
   HiXMark 
 } from "react-icons/hi2";
 
-// Definisikan tipe dokumen
+// Update interface sesuai dengan response API
 interface DocumentItem {
-  nameDocument: string;
-  status: "Proses" | "Diterima" | "Tolak";
-  dateTime: Date;
-  link: string;
+  id: number;
+  subjenis: string;
+  maker_date: string;
+  status_code: string;
+  status_doc: string;
 }
 
 interface DocumentModalProps {
@@ -23,55 +24,77 @@ interface DocumentModalProps {
   title: string;
 }
 
-// Fungsi untuk mendapatkan warna status
-const getStatusColor = (status: "Proses" | "Diterima" | "Tolak") => {
-  switch (status) {
-    case 'Proses':
-      return 'bg-yellow-100 text-yellow-800'; // Warna kuning untuk Proses
-    case 'Tolak':
-      return 'bg-red-100 text-red-800'; // Warna merah untuk Tolak
-    case 'Diterima':
-      return 'bg-green-100 text-green-800'; // Warna hijau untuk Diterima
+// Fungsi untuk mendapatkan warna status berdasarkan status_code
+const getStatusColor = (statusCode: string) => {
+  switch (statusCode) {
+    case '001': // Pending/Proses
+      return 'bg-yellow-100 text-yellow-800';
+    case '002': // Ditolak
+      return 'bg-red-100 text-red-800';
+    case '003': // Diterima
+      return 'bg-green-100 text-green-800';
     default:
       return 'bg-gray-100 text-gray-800';
   }
 };
 
-// Fungsi untuk mendapatkan ikon status
-const getStatusIcon = (status: "Proses" | "Diterima" | "Tolak") => {
-  switch (status) {
-    case 'Proses':
-      return <HiClock className="inline-block mr-1.5 h-4 w-4" />; // Ikon jam untuk Proses
-    case 'Tolak':
-      return <HiXMark className="inline-block mr-1.5 h-4 w-4" />; // Ikon X untuk Tolak
-    case 'Diterima':
-      return <HiCheck className="inline-block mr-1.5 h-4 w-4" />; // Ikon centang untuk Diterima
+// Fungsi untuk mendapatkan ikon status berdasarkan status_code
+const getStatusIcon = (statusCode: string) => {
+  switch (statusCode) {
+    case '001': // Pending/Proses
+      return <HiClock className="inline-block mr-1.5 h-4 w-4" />;
+    case '002': // Ditolak
+      return <HiXMark className="inline-block mr-1.5 h-4 w-4" />;
+    case '003': // Diterima
+      return <HiCheck className="inline-block mr-1.5 h-4 w-4" />;
     default:
       return null;
   }
 };
 
 // Fungsi untuk mendapatkan ikon dokumen dengan warna sesuai status
-const getDocumentIcon = (status: "Proses" | "Diterima" | "Tolak") => {
-  switch (status) {
-    case 'Proses':
-      return <HiDocument className="h-5 w-5 text-yellow-500" />; // Dokumen dengan warna kuning untuk proses
-    case 'Tolak':
-      return <HiDocument className="h-5 w-5 text-red-500" />; // Dokumen dengan warna merah untuk tolak
-    case 'Diterima':
-      return <HiDocument className="h-5 w-5 text-green-500" />; // Dokumen dengan warna hijau untuk diterima
+const getDocumentIcon = (statusCode: string) => {
+  switch (statusCode) {
+    case '001': // Pending/Proses
+      return <HiDocument className="h-5 w-5 text-yellow-500" />;
+    case '002': // Ditolak
+      return <HiDocument className="h-5 w-5 text-red-500" />;
+    case '003': // Diterima
+      return <HiDocument className="h-5 w-5 text-green-500" />;
     default:
       return <HiDocument className="h-5 w-5 text-gray-400" />;
   }
 };
 
-// Format tanggal dalam bahasa Indonesia
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+// Format tanggal dalam bahasa Indonesia dari ISO string
+const formatDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  } catch (error) {
+    console.error("Error formatting date:", error);
+    return "Tanggal tidak valid";
+  }
+};
+
+// Fungsi untuk mengubah nama status sesuai dengan mapping
+const getDisplayStatusName = (statusCode: string, statusDoc: string) => {
+  switch (statusCode) {
+    case '001':
+      return 'Diproses';
+    case '002':
+      return 'Ditolak';
+    case '003':
+      return 'Diterima';
+    default:
+      return statusDoc; // fallback ke status dari API
+  }
 };
 
 const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, documents, title }) => {
@@ -102,7 +125,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, document
                   Dokumen
                 </th>
                 <th className="px-4 py-3 text-center font-medium text-dark dark:text-gray-300">
-                  Tanggal
+                  Tanggal Dibuat
                 </th>
                 <th className="px-4 py-3 text-center font-medium text-dark dark:text-gray-300">
                   Status
@@ -113,7 +136,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, document
               {documents.length > 0 ? (
                 documents.map((document, index) => (
                   <tr 
-                    key={index}
+                    key={document.id}
                     className={`hover:bg-gray-50 dark:hover:bg-gray-700 ${
                       index === documents.length - 1 
                         ? "" 
@@ -123,19 +146,24 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, document
                     <td className="px-4 py-3 text-sm font-medium text-dark dark:text-white">
                       <div className="flex items-center">
                         <div className="mr-3">
-                          {getDocumentIcon(document.status)}
+                          {getDocumentIcon(document.status_code)}
                         </div>
-                        <span>{document.nameDocument.replace(/_/g, " ")}</span>
+                        <div>
+                          <div className="font-medium">{document.subjenis}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            ID: {document.id}
+                          </div>
+                        </div>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center text-sm text-dark dark:text-white">
-                      {formatDate(document.dateTime)}
+                      {formatDate(document.maker_date)}
                     </td>
                     <td className="px-4 py-3 text-center">
                       <div className="flex items-center justify-center">
-                        <div className={`${getStatusColor(document.status)} flex items-center px-3 py-1 rounded-full text-xs`}>
-                          {getStatusIcon(document.status)}
-                          <span>{document.status}</span>
+                        <div className={`${getStatusColor(document.status_code)} flex items-center px-3 py-1 rounded-full text-xs`}>
+                          {getStatusIcon(document.status_code)}
+                          <span>{getDisplayStatusName(document.status_code, document.status_doc)}</span>
                         </div>
                       </div>
                     </td>

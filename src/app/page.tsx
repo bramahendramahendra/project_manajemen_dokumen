@@ -1,18 +1,15 @@
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import React from "react";
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
-export const metadata: Metadata = {
-  title: "Dashboard",
-  description: "",
-};
+export default function HomePage() {
+  const cookieStore = cookies();
+  const userCookie = cookieStore.get("user");
 
-export default function Dashboard() {
-  return (
-    <>
-      <DefaultLayout>
-        Login
-      </DefaultLayout>
-    </>
-  );
+  if (userCookie) {
+    // Jika sudah login, redirect ke dashboard
+    redirect("/dashboard");
+  } else {
+    // Jika belum login, redirect ke login
+    redirect("/login");
+  }
 }

@@ -18,7 +18,7 @@ const PengelolaanDokumen = () => {
     const fetchData = async () => {
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
-        console.log(user);
+        // console.log(user);
         
         const response = await apiRequest(`/document_managements/all-data/verif-done/type/${user.department_id}`, "GET");
         if (!response.ok) {

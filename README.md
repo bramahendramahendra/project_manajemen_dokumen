@@ -81,4 +81,9 @@ berbentuk tulisan diubah ke pdf
 npm install jspdf jspdf-autotable
 ```
 
+## Install Text Editor
+```bash
+npm install react-quill quill
+npm install --save-dev @types/react-quill
+```
 

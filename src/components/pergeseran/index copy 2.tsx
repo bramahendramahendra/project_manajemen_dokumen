@@ -88,10 +88,10 @@ const MainPage = () => {
   };
 
    const handleSimpan = async () => {
-    console.log("Form submission started");
-    console.log("Prihal:", prihal);
-    console.log("Deskripsi:", deskripsi);
-    console.log("Selected File:", selectedFile);
+    // console.log("Form submission started");
+    // console.log("Prihal:", prihal);
+    // console.log("Deskripsi:", deskripsi);
+    // console.log("Selected File:", selectedFile);
 
     // Validasi form
     if (!prihal.trim()) {
@@ -134,7 +134,7 @@ const MainPage = () => {
       formData.append('pembuat_id_dinas', user.department_id);
       formData.append('pembuat_dinas', user.department_name);
       
-      console.log("Starting API call with FormData");
+      // console.log("Starting API call with FormData");
 
       // Gunakan apiRequest yang sudah ada (sudah support FormData)
       const response = await apiRequest("/pergeseran/", "POST", formData);
@@ -145,7 +145,7 @@ const MainPage = () => {
       }
 
       const result = await response.json();
-      console.log("API response:", result);
+      // console.log("API response:", result);
       
       // Jika berhasil
       alert("Data pergeseran berhasil disimpan!");

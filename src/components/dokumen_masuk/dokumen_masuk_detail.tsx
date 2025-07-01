@@ -237,9 +237,9 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
       // console.log('Encoded file path:', encodedFilePath);
       
       // Menggunakan downloadFileRequest helper untuk download dengan path yang sudah di-encode
-      const response = await downloadFileRequest(`/kotak_masuk/download/${encodedFilePath}`);
+      const response = await downloadFileRequest(`/files/download/${encodedFilePath}`);
       
-      console.log('Download response status:', response.status);
+      // console.log('Download response status:', response.status);
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -272,7 +272,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         throw new Error('File kosong atau tidak dapat dibaca');
       }
       
-      console.log('Blob size:', blob.size, 'bytes');
+      // console.log('Blob size:', blob.size, 'bytes');
       
       // Membuat URL object untuk blob
       const blobUrl = window.URL.createObjectURL(blob);
@@ -291,7 +291,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         downloadFileName = cleanFilePath.split('/').pop() || 'download';
       }
       
-      console.log('Download filename:', downloadFileName);
+      // console.log('Download filename:', downloadFileName);
       
       // Membuat link download
       const link = document.createElement('a');
@@ -307,7 +307,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
       
-      console.log('Download completed successfully');
+      // console.log('Download completed successfully');
       
       // Tampilkan notifikasi sukses (opsional)
       // alert(`File "${downloadFileName}" berhasil diunduh!`);
@@ -337,7 +337,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         zip_name: `${jenis}_${subjenis}`.replace(/[^a-zA-Z0-9]/g, '_') || 'document_group_files'
       };
 
-      console.log('Download group request:', requestBody);
+      // console.log('Download group request:', requestBody);
 
       const response = await apiRequest('/files/download/multiple', 'POST', requestBody);
       
@@ -358,7 +358,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        console.log(`File grup ${jenis} - ${subjenis} berhasil didownload sebagai ${fileName}`);
+        // console.log(`File grup ${jenis} - ${subjenis} berhasil didownload sebagai ${fileName}`);
       } else {
         console.error('Download grup file gagal:', response.status);
         alert('Gagal mendownload file grup');
@@ -405,7 +405,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         zip_name: selectedDownloadData.documentTitle.replace(/[^a-zA-Z0-9]/g, '_') || 'all_document_files'
       };
 
-      console.log('Download all request:', requestBody);
+      // console.log('Download all request:', requestBody);
 
       const response = await apiRequest('/files/download/multiple', 'POST', requestBody);
       
@@ -426,7 +426,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
-        console.log(`Semua file berhasil didownload sebagai ${fileName}`);
+        // console.log(`Semua file berhasil didownload sebagai ${fileName}`);
       } else {
         console.error('Download semua file gagal:', response.status);
         alert('Gagal mendownload semua file');

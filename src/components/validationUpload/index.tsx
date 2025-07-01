@@ -151,9 +151,9 @@ const MainPage = () => {
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
           
-          console.log(`File ${fileName} berhasil didownload`);
+          // console.log(`File ${fileName} berhasil didownload`);
         } else {
-          console.error('Download gagal:', response.status);
+          // console.error('Download gagal:', response.status);
           setError('Gagal mendownload file');
         }
       } catch (error) {
@@ -195,7 +195,7 @@ const MainPage = () => {
           document.body.removeChild(link);
           window.URL.revokeObjectURL(url);
           
-          console.log(`Semua file berhasil didownload sebagai ${fileName}`);
+          // console.log(`Semua file berhasil didownload sebagai ${fileName}`);
         } else {
           console.error('Download semua file gagal:', response.status);
           setError('Gagal mendownload semua file');

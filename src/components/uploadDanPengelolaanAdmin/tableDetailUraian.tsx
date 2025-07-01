@@ -15,7 +15,7 @@ const TableDetailUraian = ({
   filterList,
   onSelectUraian,
 }: TableDetailUraianProps) => {
-    console.log( filterList);
+    // console.log( filterList);
 
   const [filteredData, setFilteredData] = useState<DokumenPerTahun[]>([]);
   const [years, setYears] = useState<number[]>([]);

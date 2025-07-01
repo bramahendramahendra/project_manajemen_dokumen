@@ -157,17 +157,17 @@ const MainPage = () => {
     setIsConfirmModalOpen(false);
     
     // Implementasi pengiriman data ke API
-    console.log('Data siap dikirim:', {
-      // firstName,
-      // lastName,
-      // username,
-      // email,
-      // dinas,
-      // responsiblePerson,
-      // role,
-      password,
-      confirmPassword
-    });
+    // console.log('Data siap dikirim:', {
+    //   // firstName,
+    //   // lastName,
+    //   // username,
+    //   // email,
+    //   // dinas,
+    //   // responsiblePerson,
+    //   // role,
+    //   password,
+    //   confirmPassword
+    // });
 
     const payload = {
       password,

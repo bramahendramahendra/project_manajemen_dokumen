@@ -28,7 +28,7 @@ const EditPage = () => {
     }
 
     const result = decryptObject(encrypted, user);
-    console.log(result);
+    // console.log(result);
     
     if (!result) {
       setError("Gagal dekripsi atau data rusak.");
