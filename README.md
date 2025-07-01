@@ -4,7 +4,7 @@ This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next
 
 First, run the development server:
 
-```bash
+```bash 
 npm run dev
 # or
 yarn dev
@@ -14,7 +14,7 @@ pnpm dev
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result..
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -36,8 +36,49 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
 
 
-## Install 
-
+## Install Next JS
 ```bash
 npx create-next-app@latest
 ```
+
+## Install Next JS
+```bash
+npm i @nextui-org/react framer-motion
+```
+
+## Install Plugin Tailwindcss 
+```bash
+npm install -D prettier prettier-plugin-tailwindcss
+```
+
+## Install loader lottie
+```bash
+npm install lottie-react
+npm install @lottiefiles/react-lottie-player
+```
+
+## Install Cookie
+```bash
+npm install js-cookie
+npm install --save-dev @types/js-cookie
+```
+
+## Install Encryptor
+```bash
+npm install crypto-js
+npm i --save-dev @types/crypto-js
+```
+
+## Install Print PDF
+
+berbentuk capture diubah ke pdf
+```bash
+npm install jspdf html2canvas
+```
+
+berbentuk tulisan diubah ke pdf
+```bash
+npm install jspdf jspdf-autotable
+```
+
+
