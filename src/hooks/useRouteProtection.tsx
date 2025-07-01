@@ -103,7 +103,7 @@ export const useRouteProtection = (): RouteProtectionResult => {
         } else {
           // Jika menu groups kosong, mungkin ada error atau user tidak punya akses apapun
           setHasAccess(false);
-          setError('No menu access found');
+          // setError('No menu access found');
         }
       } catch (err) {
         console.error('Route protection error:', err);

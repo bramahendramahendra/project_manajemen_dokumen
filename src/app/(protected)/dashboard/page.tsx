@@ -1,5 +1,4 @@
 "use client";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import DataStatsPage from "@/components/dashboard/dataStatsPage";
 import TablePage from "@/components/dashboard/tablePage";
 import { useState, useEffect } from "react";
@@ -27,7 +26,6 @@ const Dashboard = () => {
   };
 
   return (
-    // <DefaultLayout>
     <>
       <ModalPopup isOpen={isModalOpen} onClose={handleCloseModal} />
 
@@ -49,7 +47,6 @@ const Dashboard = () => {
         </div>
       </div>
     </>
-    // </DefaultLayout>
   );
 };
 

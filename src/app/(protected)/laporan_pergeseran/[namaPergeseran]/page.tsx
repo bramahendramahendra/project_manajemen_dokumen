@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import Breadcrumb from "@/components/breadcrumbs";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import LaporanPergeseranInstansiIndex from "@/components/laporan_pergeseran/detail_laporan_pergeseran/";
 
 const formatTitle = (text: string) => {
@@ -26,12 +25,10 @@ const LaporanPergeseranInstansi = ({ params }: { params: { namaPergeseran: strin
   ];
 
   return (
-    // <DefaultLayout>
     <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <LaporanPergeseranInstansiIndex />
     </>
-    // </DefaultLayout>
   );
 };
 

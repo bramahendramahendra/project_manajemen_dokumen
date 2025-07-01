@@ -224,7 +224,7 @@ const MainPage = () => {
       console.log('Downloading file from path:', cleanFilePath);
       
       // Menggunakan downloadFileRequest helper untuk download
-      const response = await downloadFileRequest(`/kotak_masuk/download/${encodedFilePath}`);
+      const response = await downloadFileRequest(`/files/download/${encodedFilePath}`);
       
       if (!response.ok) {
         if (response.status === 404) {

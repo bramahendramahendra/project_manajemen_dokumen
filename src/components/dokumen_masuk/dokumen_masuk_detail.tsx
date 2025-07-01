@@ -237,7 +237,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
       // console.log('Encoded file path:', encodedFilePath);
       
       // Menggunakan downloadFileRequest helper untuk download dengan path yang sudah di-encode
-      const response = await downloadFileRequest(`/kotak_masuk/download/${encodedFilePath}`);
+      const response = await downloadFileRequest(`/files/download/${encodedFilePath}`);
       
       // console.log('Download response status:', response.status);
       
