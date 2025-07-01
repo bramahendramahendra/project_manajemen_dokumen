@@ -1,3 +1,4 @@
+// DataStatsPage.tsx - Updated dengan API
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -168,9 +169,18 @@ const DataStatsOne: React.FC<dataStats> = () => {
     setModalTitle(title);
     setIsModalOpen(true);
     
-    // Fetch documents for this status
-    const documents = await fetchDocumentsByStatus(statusCode);
-    setFilteredDocuments(documents);
+    // Cek apakah count untuk status ini adalah 0
+    const countItem = countData.find(item => item.status_code === statusCode);
+    const count = countItem?.total_documnet || 0;
+    
+    if (count === 0) {
+      // Jika count 0, tidak perlu panggil API, langsung set dokumen kosong
+      setFilteredDocuments([]);
+    } else {
+      // Jika count > 0, fetch documents for this status
+      const documents = await fetchDocumentsByStatus(statusCode);
+      setFilteredDocuments(documents);
+    }
   };
 
   // Render loading skeleton
