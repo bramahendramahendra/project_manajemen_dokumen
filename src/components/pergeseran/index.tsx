@@ -3,6 +3,7 @@ import { useState, useEffect, ChangeEvent } from "react";
 import * as XLSX from "xlsx";
 import { apiRequest } from "@/helpers/apiClient";
 import { htmlToPlainText } from "@/utils/htmlTextFormatter";
+import Cookies from "js-cookie";
 
 interface PerihalOption {
   perihal: number;
@@ -32,6 +33,9 @@ const MainPage = () => {
   const [subKategoriOptions, setSubKategoriOptions] = useState<SubperihalOption[]>([]);
   
   // State untuk loading dan error
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
   const [loadingPerihal, setLoadingPerihal] = useState<boolean>(false);
   const [loadingSubperihal, setLoadingSubperihal] = useState<boolean>(false);
   const [errorPerihal, setErrorPerihal] = useState<string | null>(null);
@@ -42,6 +46,9 @@ const MainPage = () => {
   const [tableData, setTableData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
+  
+  // State untuk file upload
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Fetch data perihal saat komponen mount
   useEffect(() => {
@@ -137,6 +144,9 @@ const MainPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Simpan file untuk dikirim ke API
+    setSelectedFile(file);
+
     // Mulai loading
     setIsLoadingFile(true);
     setTableData([]);
@@ -176,19 +186,100 @@ const MainPage = () => {
     reader.readAsBinaryString(file);
   };
 
-  const handleSimpan = () => {
-    // Implementasi penyimpanan data
-    const perihalLengkap = subKategori ? `${kategoriUtama} - ${subKategori}` : kategoriUtama;
-    console.log("Data disimpan:", { 
-      kategoriUtamaId,
-      kategoriUtama, 
-      subKategoriId,
-      subKategori, 
-      perihalLengkap,
-      deskripsi, 
-      tableData 
-    });
-    alert("Data berhasil disimpan!");
+  const handleSimpan = async () => {
+    // Validasi form
+    if (!kategoriUtamaId || !kategoriUtama.trim()) {
+      alert("Perihal harus dipilih");
+      return;
+    }
+    
+    if (!subKategoriId || !subKategori.trim()) {
+      alert("Sub Perihal harus dipilih");
+      return;
+    }
+    
+    if (!deskripsi.trim()) {
+      alert("Deskripsi alasan pergeseran harus diisi");
+      return;
+    }
+
+    if (!selectedFile) {
+      alert("File Excel harus diupload");
+      return;
+    }
+    
+    // Set loading
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    
+    try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
+
+      // Buat FormData untuk upload file
+      const formData = new FormData();
+      formData.append('perihal', kategoriUtamaId.toString());
+      formData.append('subperihal', subKategoriId.toString());
+      formData.append('deskripsi', deskripsi);
+      formData.append('file', selectedFile);
+      formData.append('pembuat_userid', user.userid);
+      formData.append('pembuat_nama', user.name);
+      formData.append('pembuat_id_dinas', user.department_id);
+      formData.append('pembuat_dinas', user.department_name);
+      
+      console.log("Sending data:", {
+        perihal: kategoriUtamaId,
+        subperihal: subKategoriId,
+        deskripsi: deskripsi,
+        file: selectedFile.name,
+        pembuat_userid: user.userid,
+        pembuat_nama: user.name,
+        pembuat_id_dinas: user.department_id,
+        pembuat_dinas: user.department_name
+      });
+
+      // Gunakan apiRequest yang sudah ada (sudah support FormData)
+      const response = await apiRequest("/pergeseran/", "POST", formData);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.responseDesc || "Gagal menyimpan data pergeseran");
+      }
+
+      const result = await response.json();
+      console.log("API response:", result);
+      
+      // Jika berhasil
+      // alert("Data pergeseran berhasil disimpan!");
+      setSuccess(true);
+      
+      // Reset form setelah berhasil
+      setKategoriUtama("");
+      setKategoriUtamaId(null);
+      setSubKategori("");
+      setSubKategoriId(null);
+      setSelectedDeskripsiDetail("");
+      setDeskripsi("");
+      setTableData([]);
+      setHeaders([]);
+      setSelectedFile(null);
+      
+      // Reset file input
+      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      
+    } catch (error) {
+      // Handle error
+      console.error("Error saving data:", error);
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan data";
+      alert(`Penyimpanan Gagal: ${errorMessage}`);
+      setError(errorMessage);
+      setSuccess(false);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCetak = () => {
@@ -420,6 +511,18 @@ const MainPage = () => {
         </div>
 
         <div className="px-7.5 pb-7.5">
+          {/* Error and Success Messages */}
+          {error && (
+            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4">
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          )}
+          {success && (
+            <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-4">
+              <p className="text-green-700 text-sm">Data pergeseran berhasil disimpan!</p>
+            </div>
+          )}
+          
           <div className="flex flex-col space-y-4">
             
             {/* Dropdown Level 1 - Kategori Utama */}
@@ -593,6 +696,7 @@ const MainPage = () => {
                 )}
                 <input
                   type="file"
+                  id="file-upload"
                   accept=".xlsx, .xls"
                   onChange={handleFileUpload}
                   className="hidden"
@@ -601,10 +705,10 @@ const MainPage = () => {
               </label>
               <button
                 onClick={handleSimpan}
-                disabled={isLoadingFile}
-                className={`rounded-md bg-blue-600 px-6 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 ${isLoadingFile ? 'opacity-50 cursor-not-allowed' : ''}`}
+                disabled={loading || isLoadingFile}
+                className={`rounded-md bg-blue-600 px-6 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 ${(loading || isLoadingFile) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Simpan
+                {loading ? "Menyimpan..." : "Simpan"}
               </button>
             </div>
 

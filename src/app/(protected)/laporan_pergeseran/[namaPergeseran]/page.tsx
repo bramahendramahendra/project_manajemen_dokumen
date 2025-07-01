@@ -9,15 +9,15 @@ const formatTitle = (text: string) => {
     .replace(/\b\w/g, (char) => char.toUpperCase()); // Ubah huruf pertama setiap kata menjadi kapital
 };
 
-export async function generateMetadata({ params }: { params: { namaDokumen: string } }): Promise<Metadata> {
-  const detailUraian = formatTitle(params.namaDokumen || "");
+export async function generateMetadata({ params }: { params: { namaPergeseran: string } }): Promise<Metadata> {
+  const detailUraian = formatTitle(params.namaPergeseran || "");
   return {
     title: `Laporan Dokumen - ${detailUraian}`,
   };
 }
 
-const LaporanPergeseranInstansi = ({ params }: { params: { namaDokumen: string } }) => {
-  const detailUraianString = formatTitle(params.namaDokumen || "");
+const LaporanPergeseranInstansi = ({ params }: { params: { namaPergeseran: string } }) => {
+  const detailUraianString = formatTitle(params.namaPergeseran || "");
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },

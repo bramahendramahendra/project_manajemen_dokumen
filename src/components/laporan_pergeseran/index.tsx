@@ -82,26 +82,13 @@ const MainPage = () => {
     encodeURIComponent(nama.toLowerCase().replace(/\s+/g, "-"));
 
   const handleDetailsClick = (id: number, nama: string) => {
-    const key = process.env.NEXT_PUBLIC_APP_KEY || "defaultKey"; // Tambahkan nilai default
+    const key = process.env.NEXT_PUBLIC_APP_KEY; // Tambahkan nilai default
     const user = Cookies.get("user");
+     if (!user) return alert("Token tidak ditemukan!");
+    const encrypted = encryptObject({ id, nama }, user);
+    const formattedUrl = nama.replace(/\s+/g, "-").toLowerCase();
     
-    let queryParam = "";
-    
-    if (user) {
-      // Jika token ada, gunakan enkripsi
-      const encrypted = encryptObject({ id, nama }, user);
-      queryParam = `?${key}=${encrypted}`;
-    } else {
-      // Jika token tidak ada, gunakan parameter ID langsung
-      queryParam = `?id=${id}&nama=${encodeURIComponent(nama)}`;
-      console.warn("Token tidak ditemukan, menggunakan mode alternatif");
-    }
-    
-    const formattedNama = encodeURIComponent(
-      nama.toLowerCase().replace(/\s+/g, "-")
-    );
-    
-    router.push(`/laporan_pergeseran/${formattedNama}${queryParam}`);
+    router.push(`/laporan_pergeseran/${formattedUrl}?$${key}=${encrypted}`);
   };
   
   return (
