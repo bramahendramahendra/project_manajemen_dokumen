@@ -9,7 +9,7 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
 
   const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-  // console.log(user);
+  console.log(user);
   
 
   useEffect(() => {
