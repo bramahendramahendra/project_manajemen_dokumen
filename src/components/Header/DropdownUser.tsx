@@ -4,10 +4,13 @@ import Image from "next/image";
 import ClickOutside from "@/components/ClickOutside";
 import { useRouter } from "next/navigation";
 import { logoutRequest } from "@/helpers/apiClient";
+import Cookies from "js-cookie";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const router = useRouter();
+
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
 
   const handleLogout = async () => {
     try {
@@ -91,10 +94,10 @@ const DropdownUser = () => {
 
             <span className="block">
               <span className="block font-medium text-dark dark:text-white">
-                Name
+                {user.name || "Name"}
               </span>
               <span className="block font-medium text-dark-5 dark:text-dark-6">
-                email@nextadmin.com
+                {user.username || "sipaduke"}
               </span>
             </span>
           </div>
