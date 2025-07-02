@@ -315,7 +315,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
             }
             const result = await response.json();
 
-            console.log(result);
+            // console.log(result);
             
             // setDataDetail(result.responseData);
             // const formattedData: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({

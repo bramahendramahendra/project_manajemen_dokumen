@@ -32,20 +32,20 @@ const TokenRefresher = () => {
         const success = await checkAndRefreshTokenIfNeeded();
         
         if (success) {
-          console.log('Token refreshed successfully by TokenRefresher');
+          // console.log('Token refreshed successfully by TokenRefresher');
           
           // Notify SSE client untuk reconnect dengan token baru
           try {
             const notificationClient = await getNotificationClient();
             if (notificationClient) {
-              console.log('Notifying SSE client to reconnect after token refresh');
+              // console.log('Notifying SSE client to reconnect after token refresh');
               notificationClient.reconnect();
             }
           } catch (sseError) {
             console.error('Error notifying SSE client in TokenRefresher:', sseError);
           }
         } else {
-          console.log('Token refresh failed, redirecting to login');
+          // console.log('Token refresh failed, redirecting to login');
           
           // Close SSE connection before redirect
           try {

@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import Cookies from "js-cookie";
-import { loginRequest } from "@/helpers/apiClient";
+import { loginRequest, apiRequest } from "@/helpers/apiClient"; // Import apiRequest
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useMenu } from "@/contexts/MenuContext";
 
@@ -24,21 +24,30 @@ const SectionRight = () => {
   // Gunakan menu context
   const { fetchMenuData } = useMenu();
 
-  // Generate CAPTCHA
+  // Generate CAPTCHA menggunakan apiClient
   const fetchCaptcha = async () => {
     setIsRefreshing(true);
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/auths/generate-captcha`, {
-          credentials: "include",
+      const response = await apiRequest("/auths/generate-captcha", "GET");
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Validasi response structure
+        if (data.responseCode === 200 && data.responseData) {
+          setCaptchaID(data.responseData.captcha_id);
+          setCaptchaURL(`${process.env.NEXT_PUBLIC_API_URL}${data.responseData.captcha_url}`);
+        } else {
+          console.error("Invalid captcha response:", data);
+          setErrorMessage("Gagal memuat CAPTCHA. Silakan refresh halaman.");
         }
-      );
-      const data = await response.json();
-
-      setCaptchaID(data.captcha_id);
-      setCaptchaURL(`${process.env.NEXT_PUBLIC_API_URL}${data.captcha_url}`);
+      } else {
+        console.error("Failed to fetch captcha:", response.status);
+        setErrorMessage("Gagal memuat CAPTCHA. Silakan coba lagi.");
+      }
     } catch (error) {
       console.error("Error fetching CAPTCHA:", error);
+      setErrorMessage("Terjadi kesalahan saat memuat CAPTCHA.");
     } finally {
       // Tambahkan delay kecil untuk efek visual
       setTimeout(() => setIsRefreshing(false), 800);
@@ -163,13 +172,15 @@ const SectionRight = () => {
                 {/* CAPTCHA */}
                 <div className="mt-[15px]">
                   <div className="mt-2 flex items-center">
-                    <Image
-                      src={captchaURL}
-                      alt="captcha"
-                      width={240}
-                      height={80}
-                      unoptimized
-                    />
+                    {captchaURL && (
+                      <Image
+                        src={captchaURL}
+                        alt="captcha"
+                        width={240}
+                        height={80}
+                        unoptimized
+                      />
+                    )}
                     <div className="group relative inline-block">
                       <button
                         type="button"

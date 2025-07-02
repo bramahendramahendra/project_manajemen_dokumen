@@ -30,7 +30,7 @@ export default function ProtectedLayout({
   useEffect(() => {
     const user = Cookies.get('user');
     if (!user) {
-      console.log('No user found, redirecting to login...');
+      // console.log('No user found, redirecting to login...');
       router.push('/login');
     } else {
       setIsInitialized(true);
@@ -40,7 +40,7 @@ export default function ProtectedLayout({
   // Initialize notification manager setelah user terverifikasi
   useEffect(() => {
     if (isInitialized) {
-      console.log('Initializing notification manager in protected layout...');
+      // console.log('Initializing notification manager in protected layout...');
       
       // Delay initialization sedikit untuk memastikan semua komponen sudah ready
       const initTimeout = setTimeout(() => {
@@ -54,7 +54,7 @@ export default function ProtectedLayout({
       // Cleanup saat component unmount atau user logout
       return () => {
         clearTimeout(initTimeout);
-        console.log('Cleaning up notification manager...');
+        // console.log('Cleaning up notification manager...');
         try {
           closeNotificationConnection();
         } catch (error) {
@@ -69,7 +69,7 @@ export default function ProtectedLayout({
     const checkUserStatus = () => {
       const user = Cookies.get('user');
       if (!user && isInitialized) {
-        console.log('User logged out, cleaning up...');
+        // console.log('User logged out, cleaning up...');
         setIsInitialized(false);
         closeNotificationConnection();
         router.push('/login');
@@ -86,7 +86,7 @@ export default function ProtectedLayout({
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && isInitialized) {
-        console.log('Page became visible, checking notification connection...');
+        // console.log('Page became visible, checking notification connection...');
         // Notification manager akan handle reconnection otomatis
       }
     };

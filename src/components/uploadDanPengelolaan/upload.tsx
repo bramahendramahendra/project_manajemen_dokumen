@@ -105,32 +105,33 @@ const UploadDokumen = () => {
   // Tambahkan useEffect untuk debugging js-cookie
   useEffect(() => {
     // Log semua cookies
-    console.log("=== COOKIES DEBUG INFO ===");
+    // console.log("=== COOKIES DEBUG INFO ===");
     const allCookies = Cookies.get();
-    console.log("Semua cookies:", allCookies);
+    // console.log("Semua cookies:", allCookies);
     
     // Coba parse cookie user
     try {
       const userCookie = Cookies.get("user");
       if (userCookie) {
         const userData = JSON.parse(userCookie);
-        console.log("User data (parsed):", userData);
+        // console.log("User data (parsed):", userData);
         
         // Log userid dan level_id
-        console.log("UserID:", userData.userid);
-        console.log("User level:", userData.level_id);
+        // console.log("UserID:", userData.userid);
+        // console.log("User level:", userData.level_id);
         
         // Set nilai dinas dengan userData.userid
         if (userData.userid) {
           setDinas(typeof userData.userid === 'number' ? userData.userid : userData.userid);
         }
       } else {
-        console.log("User cookie tidak ditemukan");
+        // console.log("User cookie tidak ditemukan");
+        console.error("User cookie tidak ditemukan");
       }
     } catch (error) {
       console.error("Error saat parsing user cookie:", error);
     }
-    console.log("=== END COOKIES DEBUG INFO ===");
+    // console.log("=== END COOKIES DEBUG INFO ===");
   }, []);
 
   useEffect(() => {
@@ -386,7 +387,7 @@ const UploadDokumen = () => {
       userData = userCookie ? JSON.parse(userCookie) : {};
       
       // Debug: Log user data
-      console.log("User data untuk payload:", userData);
+      // console.log("User data untuk payload:", userData);
     } catch (error) {
       console.error("Error parsing user cookie:", error);
       userData = {};
@@ -405,7 +406,7 @@ const UploadDokumen = () => {
     };
 
     // Debug: Log payload
-    console.log("Submitting payload:", payload);
+    // console.log("Submitting payload:", payload);
 
     try {
       const response = await apiRequest(

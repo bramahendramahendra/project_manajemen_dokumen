@@ -87,23 +87,23 @@ export const useRouteProtection = (): RouteProtectionResult => {
           
           // Jika tidak punya akses, redirect ke unauthorized page
           if (!access) {
-            console.log('❌ Access denied for path:', pathname);
-            console.log('Available menu routes:', 
-              menuGroups.flatMap(group => 
-                group.menuItems.flatMap((item: any) => [
-                  item.route,
-                  ...(item.children?.map((child: any) => child.route) || [])
-                ])
-              )
-            );
+            // console.log('❌ Access denied for path:', pathname);
+            // console.log('Available menu routes:', 
+            //   menuGroups.flatMap(group => 
+            //     group.menuItems.flatMap((item: any) => [
+            //       item.route,
+            //       ...(item.children?.map((child: any) => child.route) || [])
+            //     ])
+            //   )
+            // );
             router.push('/unauthorized');
           } else {
-            console.log('✅ Access granted for path:', pathname);
+            // console.log('✅ Access granted for path:', pathname);
           }
         } else {
           // Jika menu groups kosong, mungkin ada error atau user tidak punya akses apapun
           setHasAccess(false);
-          setError('No menu access found');
+          // setError('No menu access found');
         }
       } catch (err) {
         console.error('Route protection error:', err);

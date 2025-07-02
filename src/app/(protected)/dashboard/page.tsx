@@ -1,5 +1,4 @@
 "use client";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import DataStatsPage from "@/components/dashboard/dataStatsPage";
 import TablePage from "@/components/dashboard/tablePage";
 import { useState, useEffect } from "react";
@@ -23,11 +22,10 @@ const Dashboard = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     localStorage.setItem("hasVisited", "false");
-    console.log("🛑 hasVisited set to false on modal close:", localStorage.getItem("hasVisited"));
+    // console.log("🛑 hasVisited set to false on modal close:", localStorage.getItem("hasVisited"));
   };
 
   return (
-    // <DefaultLayout>
     <>
       <ModalPopup isOpen={isModalOpen} onClose={handleCloseModal} />
 
@@ -49,7 +47,6 @@ const Dashboard = () => {
         </div>
       </div>
     </>
-    // </DefaultLayout>
   );
 };
 

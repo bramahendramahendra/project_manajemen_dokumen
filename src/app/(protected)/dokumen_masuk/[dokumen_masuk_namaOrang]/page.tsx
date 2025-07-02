@@ -37,7 +37,7 @@ const DokumenMasukDetail = () => {
     // setTotalPending(total);
   }, [encrypted, user]);
 
-  console.log(namaDinas);
+  // console.log(namaDinas);
   
 
   const breadcrumbs = [

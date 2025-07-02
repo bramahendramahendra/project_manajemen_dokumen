@@ -84,7 +84,7 @@ export const apiRequest = async (
         isRefreshing = true;
         
         try {
-          console.log('Token expired, attempting refresh...');
+          // console.log('Token expired, attempting refresh...');
           const refreshResponse = await refreshAccessToken();
           
           if (refreshResponse.ok) {
@@ -96,7 +96,7 @@ export const apiRequest = async (
             // Notify SSE client untuk reconnect dengan token baru
             try {
               const notifClient = await getNotificationClient();
-              console.log('Notifying SSE client to reconnect after token refresh...');
+              // console.log('Notifying SSE client to reconnect after token refresh...');
               notifClient.reconnect();
             } catch (sseError) {
               console.error('Error notifying SSE client:', sseError);
@@ -110,7 +110,7 @@ export const apiRequest = async (
           } else {
             // Jika refresh gagal, redirect ke login
             isRefreshing = false;
-            console.log('Token refresh failed, redirecting to login...');
+            // console.log('Token refresh failed, redirecting to login...');
             await handleLogout();
             throw new Error("Session expired, please log in again.");
           }
@@ -171,7 +171,7 @@ export const downloadFileRequest = async (
   retried: boolean = false
 ): Promise<Response> => {
   try {
-    console.log(`Making download request: ${process.env.NEXT_PUBLIC_API_URL}${endpoint}`);
+    // console.log(`Making download request: ${process.env.NEXT_PUBLIC_API_URL}${endpoint}`);
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
       method: "GET",
@@ -179,11 +179,11 @@ export const downloadFileRequest = async (
       // Tidak perlu set headers khusus untuk download
     });
 
-    console.log(`Download response status: ${response.status} for ${endpoint}`);
+    // console.log(`Download response status: ${response.status} for ${endpoint}`);
     
     // Periksa jika token expired (status 401) - sama seperti apiRequest
     if (response.status === 401 && !retried) {
-      console.log('Token expired during download, attempting refresh...');
+      // console.log('Token expired during download, attempting refresh...');
       
       // Jika tidak sedang refresh token, lakukan refresh
       if (!isRefreshing) {

@@ -31,7 +31,7 @@ const MainPage = () => {
         setError(null);
         const user = JSON.parse(Cookies.get("user") || "{}");
 
-        console.log(user);
+        // console.log(user);
         
         
         const response = await apiRequest(`/kotak_masuk/all/${user.department_id}`, "GET");
