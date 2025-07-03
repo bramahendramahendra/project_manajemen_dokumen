@@ -7,8 +7,8 @@ import {
   HiOutlineLockClosed,
   HiOutlineLockOpen,
   HiOutlinePencilSquare,
-  // HiOutlineTrash,
-  HiOutlineArrowTopRightOnSquare
+  HiOutlineArrowTopRightOnSquare,
+  HiOutlineTrash
 } from "react-icons/hi2";
 import { User, UserResponse } from "@/types/user";
 import Pagination from "@/components/pagination/Pagination";
@@ -34,8 +34,9 @@ const MainPage = () => {
     sort_dir: 'DESC'
   });
 
-  // const [showDeleteModal, setShowDeleteModal] = useState(false);
-  // const [itemDelete, setItemDelete] = useState<number | string | null>(null);
+  // State untuk modal delete - diperlukan untuk fitur hapus
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemDelete, setItemDelete] = useState<number | string | null>(null);
 
   // Function untuk fetch data dengan parameter - dibungkus dengan useCallback
   const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
@@ -80,10 +81,10 @@ const MainPage = () => {
       setTotalPages(result.responseMeta.total_pages);
       setTotalRecords(result.responseMeta.total_records);
 
-      // Inisialisasi suspendedStatus berdasarkan is_active
+      // Inisialisasi suspendedStatus berdasarkan isActive
       const initialSuspendedStatus: { [key: string]: boolean } = {};
-      result.responseData.items.forEach(user => {
-        // is_active === 0 berarti suspended (true), is_active === 1 berarti active (false)
+      users.forEach(user => {
+        // isActive === 0 berarti suspended (true), isActive === 1 berarti active (false)
         initialSuspendedStatus[user.userid] = user.isActive === 0;
       });
       setSuspendedStatus(initialSuspendedStatus);
@@ -115,35 +116,7 @@ const MainPage = () => {
     setCurrentPage(1); // Reset ke halaman pertama
   };
 
-  // // Handler untuk filter
-  // const handleFilterChange = (key: string, value: string) => {
-  //   setFilters(prev => ({
-  //     ...prev,
-  //     [key]: value
-  //   }));
-  // };
-
-  // // Handler untuk apply filter
-  // const handleApplyFilter = () => {
-  //   setCurrentPage(1); // Reset ke halaman pertama saat filter
-  //   fetchData(1, itemsPerPage, filters);
-  // };
-
-  // Handler untuk reset filter
-  // const handleResetFilter = () => {
-  //   setFilters({
-  //     // username: '',
-  //     // email: '',
-  //     // department_id: '',
-  //     // level_id: '',
-  //     // is_active: '',
-  //     sort_by: '',
-  //     sort_dir: 'ASC'
-  //   });
-  //   setCurrentPage(1);
-  //   fetchData(1, itemsPerPage, {});
-  // };
-
+  // Handler untuk activate/suspend user
   const handleActivate = async (userid: string) => {
     // Toggle suspendedStatus untuk UI
     const newStatus = !suspendedStatus[userid];
@@ -178,6 +151,7 @@ const MainPage = () => {
     }
   };
 
+  // Handler untuk edit user
   const handleEdit = (userid: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
@@ -200,45 +174,45 @@ const MainPage = () => {
   };
 
   // Handler untuk membuka modal konfirmasi hapus
-  // const handleDeleteClick = (userid: string) => {
-  //   setItemDelete(userid);
-  //   setShowDeleteModal(true);
-  // };
+  const handleDeleteClick = (userid: string) => {
+    setItemDelete(userid);
+    setShowDeleteModal(true);
+  };
 
   // Handler untuk konfirmasi hapus
-  // const handleConfirmDelete = async () => {
-  //   if (!itemDelete) return;
+  const handleConfirmDelete = async () => {
+    if (!itemDelete) return;
 
-  //   setLoading(true);
-  //   setError(null);
-  //   setSuccess(false);
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
 
-  //   try {
-  //     const response = await apiRequest(`/users/${itemDelete}`, 'DELETE');
-  //     const result = await response.json();
+    try {
+      const response = await apiRequest(`/users/${itemDelete}`, 'DELETE');
+      const result = await response.json();
 
-  //     if (!response.ok) {
-  //       throw new Error(result.responseDesc || 'Gagal menghapus data');
-  //     }
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Gagal menghapus data');
+      }
 
-  //     setSuccess(true);
-  //     // Refresh data setelah hapus
-  //     fetchData(currentPage, itemsPerPage, filters);
-  //     setShowDeleteModal(false);
-  //     setItemDelete(null);
+      setSuccess(true);
+      // Refresh data setelah hapus
+      fetchData(currentPage, itemsPerPage, filters);
+      setShowDeleteModal(false);
+      setItemDelete(null);
       
-  //   } catch (error: any) {
-  //     setError(error.message || 'Terjadi kesalahan saat menghapus data');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+    } catch (error: any) {
+      setError(error.message || 'Terjadi kesalahan saat menghapus data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // // Handler untuk membatalkan hapus
-  // const handleCancelDelete = () => {
-  //   setShowDeleteModal(false);
-  //   setItemDelete(null);
-  // };
+  // Handler untuk membatalkan hapus
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setItemDelete(null);
+  };
 
   return (
     <>
@@ -338,6 +312,7 @@ const MainPage = () => {
                       </td>
                       <td className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5`}>
                         <div className="flex items-center justify-end space-x-3.5">
+                          {/* Button Activate/Suspend */}
                           <button
                             onClick={() => handleActivate(item.userid)}
                             className={`group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r ${
@@ -359,6 +334,8 @@ const MainPage = () => {
                                 : "Suspend"}
                             </span>
                           </button>
+
+                          {/* Button Detail */}
                           <button
                             onClick={() => handleDetailsClick(item.userid)}
                             className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
@@ -370,6 +347,8 @@ const MainPage = () => {
                               Detail
                             </span>
                           </button>
+
+                          {/* Button Edit */}
                           <button
                             onClick={() => handleEdit(item.userid)}
                             className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#f59e0b] to-[#d97706] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#d97706] hover:to-[#b45309] hover:pr-6"
@@ -382,7 +361,7 @@ const MainPage = () => {
                             </span>
                           </button>
 
-                          {/*
+                          {/* Button Delete */}
                           <button
                             onClick={() => handleDeleteClick(item.userid)}
                             className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
@@ -393,7 +372,7 @@ const MainPage = () => {
                             <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
                               Hapus
                             </span>
-                          </button> */}
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -415,22 +394,22 @@ const MainPage = () => {
       </div>
 
       {/* Modal Konfirmasi Hapus */}
-      {/* {showDeleteModal && (
+      {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black opacity-50"></div>
-          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg dark:bg-gray-dark">
             <div className="mb-4 text-center">
-              <h3 className="text-lg font-medium text-gray-900">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 Konfirmasi Hapus
               </h3>
-              <p className="mt-2 text-sm text-gray-500">
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
                 Apakah anda yakin ingin menghapus user ini?
               </p>
             </div>
             <div className="mt-6 flex justify-center space-x-4">
               <button
                 onClick={handleCancelDelete}
-                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300"
+                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500"
               >
                 Tidak
               </button>
@@ -438,12 +417,12 @@ const MainPage = () => {
                 onClick={handleConfirmDelete}
                 className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
               >
-                Iya
+                Iya, Hapus
               </button>
             </div>
           </div>
         </div>
-      )} */}
+      )}
     </>
   );
 };
