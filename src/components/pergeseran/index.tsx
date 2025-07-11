@@ -22,16 +22,21 @@ const MainPage = () => {
   const [kategoriUtamaId, setKategoriUtamaId] = useState<number | null>(null);
   const [subKategori, setSubKategori] = useState<string>("");
   const [subKategoriId, setSubKategoriId] = useState<number | null>(null);
-  const [selectedDeskripsiDetail, setSelectedDeskripsiDetail] = useState<string>("");
-  
+  const [selectedDeskripsiDetail, setSelectedDeskripsiDetail] =
+    useState<string>("");
+
   // State untuk dropdown controls
   const [isKategoriOpen, setIsKategoriOpen] = useState<boolean>(false);
   const [isSubKategoriOpen, setIsSubKategoriOpen] = useState<boolean>(false);
-  
+
   // State untuk data API
-  const [kategoriUtamaOptions, setKategoriUtamaOptions] = useState<PerihalOption[]>([]);
-  const [subKategoriOptions, setSubKategoriOptions] = useState<SubperihalOption[]>([]);
-  
+  const [kategoriUtamaOptions, setKategoriUtamaOptions] = useState<
+    PerihalOption[]
+  >([]);
+  const [subKategoriOptions, setSubKategoriOptions] = useState<
+    SubperihalOption[]
+  >([]);
+
   // State untuk loading dan error
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,13 +45,13 @@ const MainPage = () => {
   const [loadingSubperihal, setLoadingSubperihal] = useState<boolean>(false);
   const [errorPerihal, setErrorPerihal] = useState<string | null>(null);
   const [errorSubperihal, setErrorSubperihal] = useState<string | null>(null);
-  
+
   // State lainnya tetap sama
   const [deskripsi, setDeskripsi] = useState<string>("");
   const [tableData, setTableData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
-  
+
   // State untuk file upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -59,23 +64,27 @@ const MainPage = () => {
   const fetchPerihalOptions = async () => {
     setLoadingPerihal(true);
     setErrorPerihal(null);
-    
+
     try {
       const response = await apiRequest("/master_perihal/opt", "GET");
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.responseCode === 200) {
         setKategoriUtamaOptions(result.responseData.items);
       } else {
         throw new Error(result.responseDesc || "Gagal mengambil data perihal");
       }
     } catch (err: any) {
-      setErrorPerihal(err.message === "Failed to fetch" ? "Gagal mengambil data perihal" : err.message);
+      setErrorPerihal(
+        err.message === "Failed to fetch"
+          ? "Gagal mengambil data perihal"
+          : err.message,
+      );
       console.error("Error fetching perihal options:", err);
     } finally {
       setLoadingPerihal(false);
@@ -87,10 +96,13 @@ const MainPage = () => {
     setLoadingSubperihal(true);
     setErrorSubperihal(null);
     setSubKategoriOptions([]);
-    
+
     try {
-      const response = await apiRequest(`/master_subperihal/opt/${perihalId}`, "GET");
-      
+      const response = await apiRequest(
+        `/master_subperihal/opt/${perihalId}`,
+        "GET",
+      );
+
       if (!response.ok) {
         if (response.status === 404) {
           setSubKategoriOptions([]);
@@ -98,16 +110,22 @@ const MainPage = () => {
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const result = await response.json();
-      
+
       if (result.responseCode === 200) {
         setSubKategoriOptions(result.responseData.items);
       } else {
-        throw new Error(result.responseDesc || "Gagal mengambil data subperihal");
+        throw new Error(
+          result.responseDesc || "Gagal mengambil data subperihal",
+        );
       }
     } catch (err: any) {
-      setErrorSubperihal(err.message === "Failed to fetch" ? "Gagal mengambil data subperihal" : err.message);
+      setErrorSubperihal(
+        err.message === "Failed to fetch"
+          ? "Gagal mengambil data subperihal"
+          : err.message,
+      );
       console.error("Error fetching subperihal options:", err);
       setSubKategoriOptions([]);
     } finally {
@@ -123,7 +141,7 @@ const MainPage = () => {
     setSubKategoriId(null);
     setSelectedDeskripsiDetail("");
     setIsKategoriOpen(false);
-    
+
     // Fetch subperihal options untuk kategori yang dipilih
     fetchSubperihalOptions(option.perihal);
   };
@@ -174,7 +192,9 @@ const MainPage = () => {
       } catch (error) {
         console.error("Error reading file:", error);
         setIsLoadingFile(false);
-        alert("Terjadi kesalahan saat membaca file. Pastikan file adalah format Excel yang valid.");
+        alert(
+          "Terjadi kesalahan saat membaca file. Pastikan file adalah format Excel yang valid.",
+        );
       }
     };
 
@@ -192,12 +212,12 @@ const MainPage = () => {
       alert("Perihal harus dipilih");
       return;
     }
-    
+
     if (!subKategoriId || !subKategori.trim()) {
       alert("Sub Perihal harus dipilih");
       return;
     }
-    
+
     if (!deskripsi.trim()) {
       alert("Deskripsi alasan pergeseran harus diisi");
       return;
@@ -207,26 +227,26 @@ const MainPage = () => {
       alert("File Excel harus diupload");
       return;
     }
-    
+
     // Set loading
     setLoading(true);
     setError(null);
     setSuccess(false);
-    
+
     try {
       const user = JSON.parse(Cookies.get("user") || "{}");
 
       // Buat FormData untuk upload file
       const formData = new FormData();
-      formData.append('perihal', kategoriUtamaId.toString());
-      formData.append('subperihal', subKategoriId.toString());
-      formData.append('deskripsi', deskripsi);
-      formData.append('file', selectedFile);
-      formData.append('pembuat_userid', user.userid);
-      formData.append('pembuat_nama', user.name);
-      formData.append('pembuat_id_dinas', user.department_id);
-      formData.append('pembuat_dinas', user.department_name);
-      
+      formData.append("perihal", kategoriUtamaId.toString());
+      formData.append("subperihal", subKategoriId.toString());
+      formData.append("deskripsi", deskripsi);
+      formData.append("file", selectedFile);
+      formData.append("pembuat_userid", user.userid);
+      formData.append("pembuat_nama", user.name);
+      formData.append("pembuat_id_dinas", user.department_id);
+      formData.append("pembuat_dinas", user.department_name);
+
       console.log("Sending data:", {
         perihal: kategoriUtamaId,
         subperihal: subKategoriId,
@@ -235,7 +255,7 @@ const MainPage = () => {
         pembuat_userid: user.userid,
         pembuat_nama: user.name,
         pembuat_id_dinas: user.department_id,
-        pembuat_dinas: user.department_name
+        pembuat_dinas: user.department_name,
       });
 
       // Gunakan apiRequest yang sudah ada (sudah support FormData)
@@ -243,16 +263,18 @@ const MainPage = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.responseDesc || "Gagal menyimpan data pergeseran");
+        throw new Error(
+          errorData.responseDesc || "Gagal menyimpan data pergeseran",
+        );
       }
 
       const result = await response.json();
       console.log("API response:", result);
-      
+
       // Jika berhasil
       // alert("Data pergeseran berhasil disimpan!");
       setSuccess(true);
-      
+
       // Reset form setelah berhasil
       setKategoriUtama("");
       setKategoriUtamaId(null);
@@ -263,23 +285,33 @@ const MainPage = () => {
       setTableData([]);
       setHeaders([]);
       setSelectedFile(null);
-      
+
       // Reset file input
-      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      const fileInput = document.getElementById(
+        "file-upload",
+      ) as HTMLInputElement;
       if (fileInput) {
-        fileInput.value = '';
+        fileInput.value = "";
       }
-      
     } catch (error) {
       // Handle error
       console.error("Error saving data:", error);
-      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan data";
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat menyimpan data";
       alert(`Penyimpanan Gagal: ${errorMessage}`);
       setError(errorMessage);
       setSuccess(false);
     } finally {
       setLoading(false);
     }
+  };
+
+
+  // template downloadnya disini
+  const handleDownloadTemplate = () => {
+
   };
 
   const handleCetak = () => {
@@ -513,31 +545,36 @@ const MainPage = () => {
         <div className="px-7.5 pb-7.5">
           {/* Error and Success Messages */}
           {error && (
-            <div className="mb-4 rounded-lg bg-red-50 border border-red-200 p-4">
-              <p className="text-red-700 text-sm">{error}</p>
+            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4">
+              <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
           {success && (
-            <div className="mb-4 rounded-lg bg-green-50 border border-green-200 p-4">
-              <p className="text-green-700 text-sm">Data pergeseran berhasil disimpan!</p>
+            <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
+              <p className="text-sm text-green-700">
+                Data pergeseran berhasil disimpan!
+              </p>
             </div>
           )}
-          
+
           <div className="flex flex-col space-y-4">
-            
             {/* Dropdown Level 1 - Kategori Utama */}
             <div className="relative">
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Perihal Utama
               </label>
               <div
-                className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingPerihal ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={() => !loadingPerihal && setIsKategoriOpen(!isKategoriOpen)}
+                className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingPerihal ? "cursor-not-allowed opacity-50" : ""}`}
+                onClick={() =>
+                  !loadingPerihal && setIsKategoriOpen(!isKategoriOpen)
+                }
               >
                 <span
                   className={`truncate ${kategoriUtama ? "text-gray-900" : "text-gray-400"}`}
                 >
-                  {loadingPerihal ? "Memuat data perihal..." : (kategoriUtama || "Pilih Perihal")}
+                  {loadingPerihal
+                    ? "Memuat data perihal..."
+                    : kategoriUtama || "Pilih Perihal"}
                 </span>
                 <svg
                   className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
@@ -556,7 +593,7 @@ const MainPage = () => {
               {errorPerihal && (
                 <div className="mt-1 text-sm text-red-500">
                   {errorPerihal}
-                  <button 
+                  <button
                     onClick={fetchPerihalOptions}
                     className="ml-2 text-blue-500 underline hover:text-blue-700"
                   >
@@ -565,19 +602,21 @@ const MainPage = () => {
                 </div>
               )}
 
-              {isKategoriOpen && !loadingPerihal && kategoriUtamaOptions.length > 0 && (
-                <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                  {kategoriUtamaOptions.map((option, index) => (
-                    <div
-                      key={index}
-                      className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
-                      onClick={() => handleKategoriSelect(option)}
-                    >
-                      {option.nama_perihal}
-                    </div>
-                  ))}
-                </div>
-              )}
+              {isKategoriOpen &&
+                !loadingPerihal &&
+                kategoriUtamaOptions.length > 0 && (
+                  <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                    {kategoriUtamaOptions.map((option, index) => (
+                      <div
+                        key={index}
+                        className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
+                        onClick={() => handleKategoriSelect(option)}
+                      >
+                        {option.nama_perihal}
+                      </div>
+                    ))}
+                  </div>
+                )}
             </div>
 
             {/* Dropdown Level 2 - Sub Kategori */}
@@ -587,18 +626,21 @@ const MainPage = () => {
                   Sub Perihal
                 </label>
                 <div
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingSubperihal ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  onClick={() => !loadingSubperihal && subKategoriOptions.length > 0 && setIsSubKategoriOpen(!isSubKategoriOpen)}
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingSubperihal ? "cursor-not-allowed opacity-50" : ""}`}
+                  onClick={() =>
+                    !loadingSubperihal &&
+                    subKategoriOptions.length > 0 &&
+                    setIsSubKategoriOpen(!isSubKategoriOpen)
+                  }
                 >
                   <span
                     className={`truncate ${subKategori ? "text-gray-900" : "text-gray-400"}`}
                   >
-                    {loadingSubperihal 
-                      ? "Memuat data subperihal..." 
-                      : subKategoriOptions.length === 0 
+                    {loadingSubperihal
+                      ? "Memuat data subperihal..."
+                      : subKategoriOptions.length === 0
                         ? "Tidak ada subperihal tersedia"
-                        : (subKategori || "Pilih Sub Perihal")
-                    }
+                        : subKategori || "Pilih Sub Perihal"}
                   </span>
                   <svg
                     className="ml-2 h-5 w-5 flex-shrink-0 text-gray-400"
@@ -617,8 +659,11 @@ const MainPage = () => {
                 {errorSubperihal && (
                   <div className="mt-1 text-sm text-red-500">
                     {errorSubperihal}
-                    <button 
-                      onClick={() => kategoriUtamaId && fetchSubperihalOptions(kategoriUtamaId)}
+                    <button
+                      onClick={() =>
+                        kategoriUtamaId &&
+                        fetchSubperihalOptions(kategoriUtamaId)
+                      }
                       className="ml-2 text-blue-500 underline hover:text-blue-700"
                     >
                       Coba lagi
@@ -626,19 +671,21 @@ const MainPage = () => {
                   </div>
                 )}
 
-                {isSubKategoriOpen && !loadingSubperihal && subKategoriOptions.length > 0 && (
-                  <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                    {subKategoriOptions.map((option, index) => (
-                      <div
-                        key={index}
-                        className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
-                        onClick={() => handleSubKategoriSelect(option)}
-                      >
-                        {option.nama_subperihal}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {isSubKategoriOpen &&
+                  !loadingSubperihal &&
+                  subKategoriOptions.length > 0 && (
+                    <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                      {subKategoriOptions.map((option, index) => (
+                        <div
+                          key={index}
+                          className="cursor-pointer px-4 py-2 text-sm text-gray-700 hover:bg-blue-50"
+                          onClick={() => handleSubKategoriSelect(option)}
+                        >
+                          {option.nama_subperihal}
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
             )}
 
@@ -648,11 +695,11 @@ const MainPage = () => {
                 <label className="mb-3 block text-sm font-medium text-gray-700">
                   Detail Spesifik - {subKategori}
                 </label>
-                <div className="text-sm text-gray-700 leading-relaxed">
-                  <div 
+                <div className="text-sm leading-relaxed text-gray-700">
+                  <div
                     className="formatted-description"
-                    dangerouslySetInnerHTML={{ 
-                      __html: selectedDeskripsiDetail 
+                    dangerouslySetInnerHTML={{
+                      __html: selectedDeskripsiDetail,
                     }}
                   />
                 </div>
@@ -668,47 +715,98 @@ const MainPage = () => {
             />
 
             {/* Tombol untuk Upload dan Simpan */}
-            <div className="flex space-x-4">
-              <label className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-6 py-2 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                {isLoadingFile ? (
-                  <>
-                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-                    Memproses...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="mr-2 h-5 w-5 text-blue-500"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                    Upload Excel
-                  </>
-                )}
-                <input
-                  type="file"
-                  id="file-upload"
-                  accept=".xlsx, .xls"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  disabled={isLoadingFile}
-                />
-              </label>
+            <div className="flex items-center justify-between">
+              {/* Tombol di sisi kiri */}
+              <div className="flex space-x-4">
+                <label
+                  className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-6 py-2 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+                >
+                  {isLoadingFile ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                      Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="mr-2 h-5 w-5 text-blue-500"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                      Upload Excel
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    id="file-upload"
+                    accept=".xlsx, .xls"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isLoadingFile}
+                  />
+                </label>
+                <button
+                  onClick={handleSimpan}
+                  disabled={loading || isLoadingFile}
+                  className={`group relative flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:px-6 ${loading || isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+                >
+                  <div className="flex items-center justify-center">
+                    {loading ? (
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="ml-0 w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                    {loading ? "Menyimpan..." : "Simpan"}
+                  </span>
+                </button>
+              </div>
+
+              {/* Tombol di sisi kanan dengan efek hover yang sama */}
               <button
-                onClick={handleSimpan}
-                disabled={loading || isLoadingFile}
-                className={`rounded-md bg-blue-600 px-6 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 ${(loading || isLoadingFile) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={handleDownloadTemplate}
+                className="group relative flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0F6838] to-[#22C55E] px-3.5 py-3 font-medium text-white transition-all duration-300 ease-in-out hover:from-[#0F6838] hover:to-[#0F6838] hover:px-6 dark:bg-white/10 dark:text-white"
               >
-                {loading ? "Menyimpan..." : "Simpan"}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <span className="ml-0 w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                  Download Template
+                </span>
               </button>
             </div>
 
@@ -722,14 +820,15 @@ const MainPage = () => {
                       {/* Spinner Loading */}
                       <div className="relative">
                         <div className="h-12 w-12 rounded-full border-4 border-gray-200"></div>
-                        <div className="absolute top-0 h-12 w-12 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div>
+                        <div className="absolute top-0 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
                       </div>
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    <h3 className="mb-2 text-lg font-medium text-gray-900">
                       Memproses File Excel...
                     </h3>
-                    <p className="text-sm text-gray-500 text-center max-w-sm">
-                      Sedang membaca dan memvalidasi data dari file yang Anda upload. Mohon tunggu sebentar.
+                    <p className="max-w-sm text-center text-sm text-gray-500">
+                      Sedang membaca dan memvalidasi data dari file yang Anda
+                      upload. Mohon tunggu sebentar.
                     </p>
                   </div>
                 ) : tableData.length > 0 ? (
@@ -841,18 +940,18 @@ const MainPage = () => {
           margin-left: 1.5em;
           margin-bottom: 0.5em;
         }
-        
+
         .formatted-description li {
           margin-bottom: 0.25em;
           line-height: 1.4;
         }
-        
+
         .formatted-description ol {
           list-style-type: decimal;
           margin-left: 1.5em;
           margin-bottom: 0.5em;
         }
-        
+
         .formatted-description p {
           margin-bottom: 0.5em;
         }

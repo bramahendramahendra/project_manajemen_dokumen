@@ -364,12 +364,12 @@ const MainPage = () => {
                           {/* Button Delete */}
                           <button
                             onClick={() => handleDeleteClick(item.userid)}
-                            className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
+                            className="bg-gradient-to-r from-[#B91C1C] to-[#EF4444] hover:from-[#B91C1C] hover:to-[#B91C1C] transition-all duration-300 text-white dark:bg-white/10 dark:text-white group relative flex items-center justify-center rounded-[7px] px-3.5 py-3 font-medium duration-300 ease-in-out overflow-hidden hover:px-6"
                           >
                             <span className="text-[20px]">
                               <HiOutlineTrash />
                             </span>
-                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            <span className="ml-0 w-0 overflow-hidden opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100 whitespace-nowrap">
                               Hapus
                             </span>
                           </button>
