@@ -65,6 +65,10 @@ const MainPage = () => {
       if (!result.responseData || !result.responseData.items) {
         throw new Error("Format data tidak valid");
       }
+
+      if (!result.responseMeta) {
+        throw new Error("Format meta tidak valid");
+      }
       
       const res: Dinas[] = result.responseData.items.map((item: any) => ({
           id: item.dinas,

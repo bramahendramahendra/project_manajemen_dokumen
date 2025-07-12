@@ -8,3 +8,25 @@ export type DASHBOARD = {
     dateTime: Date;
     link:string;
 };
+
+export type Document = {
+  id: number;
+  subjenis: string;
+  maker_date: string;
+  status_code: string;
+  status_doc: string;
+}
+
+export type DocumentResponse = {
+  responseCode: number;
+  responseDesc: string;
+  responseData: {
+    items: Document[];
+  };
+  responseMeta: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_records: number;
+  };
+}
