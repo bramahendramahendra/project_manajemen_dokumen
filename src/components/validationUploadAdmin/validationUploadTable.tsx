@@ -7,6 +7,7 @@ import {
   HiOutlineTrash,
   HiOutlineArrowDownTray,
   HiOutlineXMark,
+  HiOutlineXCircle,
 } from "react-icons/hi2";
 import { ValidationUploadUraianAdmin, FileItem } from "@/types/validationUploadUraian";
 import Pagination from "@/components/pagination/Pagination";
@@ -46,6 +47,11 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   const [selectedUraian, setSelectedUraian] = useState<string>("");
   const [downloadingFile, setDownloadingFile] = useState<number | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
+
+  // State untuk modal tolak
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [itemToReject, setItemToReject] = useState<number | null>(null);
+  const [rejectNote, setRejectNote] = useState<string>("");
 
   const totalPages = Math.ceil(dataDetail.length / itemsPerPage);
   const currentItems = dataDetail.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -95,6 +101,78 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
     setShowReviewModal(false);
     setSelectedFiles([]);
     setSelectedUraian("");
+  };
+
+  // Fungsi untuk membuka modal tolak
+  const handleOpenRejectModal = (index: number) => {
+    const globalIndex = (currentPage - 1) * itemsPerPage + index;
+    setItemToReject(globalIndex);
+    setRejectNote("");
+    setShowRejectModal(true);
+  };
+
+  // Fungsi untuk menutup modal tolak
+  const handleCloseRejectModal = () => {
+    setShowRejectModal(false);
+    setItemToReject(null);
+    setRejectNote("");
+  };
+
+  // Fungsi untuk konfirmasi tolak dengan catatan
+  const handleConfirmReject = async () => {
+    if (itemToReject === null) return;
+
+    const user = JSON.parse(Cookies.get("user") || "{}");
+    if (!user.userid || !user.role) {
+      console.error("User tidak ditemukan di cookie.");
+      return;
+    }
+
+    // Dapatkan ID item yang akan di-reject
+    const itemId = dataDetail[itemToReject]?.id;
+    if (!itemId) {
+      console.error("ID item tidak ditemukan.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    const payload = {
+      id: itemId,
+      checker: user.userid,
+      checker_role: user.level_id,
+      catatan: rejectNote || "", // Menambahkan catatan ke payload
+    };
+
+    console.log("Reject payload:", payload);
+
+    try {
+      const response = await apiRequest('/validation/document/reject', 'POST', payload);
+      if (response.ok) {
+        setSuccess(true);
+        
+        // Update data dengan menghapus item yang di-reject
+        const updatedData = dataDetail.filter((_, idx) => idx !== itemToReject);
+        onDataUpdate(updatedData);
+        
+        // Reset checkbox states setelah update data
+        setCheckedItems(new Array(updatedData.length).fill(false));
+        setIsAllChecked(false);
+        
+        console.log(`Item dengan index ${itemToReject} telah di-reject dengan catatan: ${rejectNote}`);
+      } else {
+        const result = await response.json();
+        setError(result.message || "Terjadi kesalahan saat menolak dokumen");
+      }
+    } catch (error) {
+      setError("Terjadi kesalahan saat mengirim data penolakan");
+    } finally {
+      setLoading(false);
+      // Reset modal state
+      handleCloseRejectModal();
+    }
   };
 
   // Fungsi untuk download file
@@ -375,9 +453,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                 <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                   Tanggal Upload
                 </th>
-                {/* <th className="min-w-[100px] px-4 py-4 font-medium text-dark dark:text-white">
-                  Total Files
-                </th> */}
                 <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Actions
                 </th>
@@ -419,17 +494,11 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                         {formatDate(new Date(item.tanggal))}
                       </p>
                     </td>
-                    {/* <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                    >
-                      <p className="text-dark dark:text-white">
-                        {item.total_files} file(s)
-                      </p>
-                    </td> */}
                     <td
                       className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
                     >
                       <div className="flex items-center justify-end">
+                        {/* Button Validasi */}
                         <div className="pl-1 capitalize text-dark dark:text-white">
                           <button 
                             onClick={() => handleValidateItem(item.id)}
@@ -444,6 +513,22 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                           </button>
                         </div>
 
+                        {/* Button Tolak */}
+                        <div className="pl-4 capitalize text-dark dark:text-white">
+                          <button 
+                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-orange-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-orange-600 hover:pr-6"
+                            onClick={() => handleOpenRejectModal(index)}
+                          >
+                            <span className="text-[20px]">
+                              <HiOutlineXCircle />
+                            </span>
+                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                              Tolak
+                            </span>
+                          </button>
+                        </div>
+
+                        {/* Button Hapus */}
                         <div className="pl-4 capitalize text-dark dark:text-white">
                           <button 
                             className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
@@ -458,7 +543,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                           </button>
                         </div>
 
-                        {/* Button Review Document - Updated */}
+                        {/* Button Review Document */}
                         <div className="pl-4 capitalize text-dark dark:text-white">
                           <button
                             onClick={() => handleOpenReviewModal(item.files, item.uraian)}
@@ -468,7 +553,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                               <HiOutlineDocumentMagnifyingGlass />
                             </span>
                             <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                              Review
+                              Reviews
                             </span>
                           </button>
                         </div>
@@ -490,6 +575,63 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
           )}
         </div>
       </div>
+
+      {/* Modal Tolak dengan Form Catatan */}
+      {showRejectModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-lg">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Tolak Dokumen
+              </h3>
+              <button
+                onClick={handleCloseRejectModal}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <HiOutlineXMark className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Anda akan menolak dokumen ini. Silakan berikan alasan penolakan:
+              </p>
+              
+              <label htmlFor="rejectNote" className="block text-sm font-medium text-gray-700 mb-2">
+                Catatan Penolakan
+              </label>
+              <textarea
+                id="rejectNote"
+                value={rejectNote}
+                onChange={(e) => setRejectNote(e.target.value)}
+                rows={4}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                placeholder="Masukkan alasan penolakan dokumen..."
+              />
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCloseRejectModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
+                disabled={loading}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmReject}
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-500 rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-colors duration-200"
+                disabled={loading}
+              >
+                {loading ? "Menolak..." : "Kirim Penolakan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Review Files */}
       {showReviewModal && (
