@@ -1,5 +1,6 @@
 "use client";
 import { AiOutlineCheckCircle, AiOutlineClose } from "react-icons/ai";
+import Cookies from "js-cookie";
 
 interface ModalPopupProps {
   isOpen: boolean;
@@ -7,11 +8,14 @@ interface ModalPopupProps {
 }
 
 const ModalPopup: React.FC<ModalPopupProps> = ({ isOpen, onClose }) => {
+  // Mengambil data user dari cookies
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="relative max-w-sm rounded-lg bg-white p-6 text-center shadow-lg">
+      <div className="relative max-w-md w-full mx-4 rounded-lg bg-white p-6 text-center shadow-lg">
         {/* Tombol silang (X) */}
         <button
           onClick={onClose}
@@ -27,18 +31,22 @@ const ModalPopup: React.FC<ModalPopupProps> = ({ isOpen, onClose }) => {
 
         {/* Judul Modal */}
         <h3 className="mt-4 text-lg font-semibold text-gray-900">
-          User Andalanku
+          {user.name || "User Sipaduke"}
         </h3>
 
         {/* Deskripsi */}
-        <p className="mt-2 text-sm text-gray-500">
+        {/* <p className="mt-2 text-sm text-gray-500">
           Aku hanya memberitahu bahwa saat ini sedang ada <b>Update Sipaduke</b>
           , yaitu
+        </p> */}
+
+        <p className="mt-2 text-sm text-gray-500">
+          Di Website Aplikasi <b>Sipaduke</b>
         </p>
 
-        <div>
+        {/* <div>
           <p>asd</p>
-        </div>
+        </div> */}
 
         {/* Tombol Tutup */}
         <button
