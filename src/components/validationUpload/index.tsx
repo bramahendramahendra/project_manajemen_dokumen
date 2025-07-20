@@ -2,26 +2,10 @@
 import { useState, useEffect } from "react";
 import { ValidationUpload, FileItem } from "@/types/validationUpload";
 import Pagination from "../pagination/Pagination";
-import { HiOutlineArrowTopRightOnSquare, HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray } from "react-icons/hi2";
+import { HiOutlineArrowTopRightOnSquare, HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray, HiOutlineExclamationTriangle } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
-
-// Tambahkan properti status pada tipe ValidationUpload
-// interface EnhancedValidationUpload extends ValidationUpload {
-//   status: 'Proses' | 'Tolak' | 'Diterima';
-// }
-
-// const validationUpload: EnhancedValidationUpload[] = [
-//   { skpd: "Dinas Pendidikan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 1, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Proses" },
-//   { skpd: "Dinas Kesehatan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 3, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Diterima" },
-//   { skpd: "Dinas Pertanian", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 5, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Tolak" },
-//   { skpd: "Dinas Kelautan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 0, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Diterima" },
-//   { skpd: "Dinas Kesejahteraan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 1, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Proses" },
-//   { skpd: "Dinas Politik", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 4, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Tolak" },
-//   { skpd: "Dinas Pertahanan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 1, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Proses" },
-//   { skpd: "Dinas Keuangan", uraian: "Bantuan pangan untuk warga terdampak bencana", belumValidasi: 5, tanggal: new Date("2024-08-21T10:00:00Z"), status: "Diterima" },
-// ];
 
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("id-ID", {
@@ -60,13 +44,16 @@ const MainPage = () => {
   const [downloadingFile, setDownloadingFile] = useState<number | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
 
+  // State untuk modal status tolak
+  const [showRejectStatusModal, setShowRejectStatusModal] = useState(false);
+  const [rejectedItem, setRejectedItem] = useState<ValidationUpload | null>(null);
+  const [rejectionNote, setRejectionNote] = useState<string>("");
+
   const totalPages = Math.ceil(dataList.length / itemsPerPage);
   const currentItems = dataList.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage,
   );
-
-  // const user = Cookies.get("user");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,9 +68,7 @@ const MainPage = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
-        // console.log(result);
         
-        // setDataDetail(result.responseData);
         const res: ValidationUpload[] = result.responseData.items.map((item: any) => ({
           id: item.id,
           uraian: item.subjenis,
@@ -91,7 +76,8 @@ const MainPage = () => {
           status_code: item.status_code,
           status_doc: item.status_doc,
           total_files: item.total_files || 0,
-          files: item.files || []
+          files: item.files || [],
+          catatan: item.catatan || "" // Tambahkan catatan dari API
         }));
     
         setDataList(res);
@@ -104,7 +90,6 @@ const MainPage = () => {
 
     fetchData();
   }, []);
-  
 
   const formatSkpdForUrl = (document_name: string) =>
     document_name.toLowerCase().replace(/\s+/g, "-");
@@ -112,6 +97,34 @@ const MainPage = () => {
   const handleDetailsClick = (document: number, document_name: string) => {
     const formattedUrl = formatSkpdForUrl(document_name);
     router.push(`/validation_upload/${formattedUrl}`);
+  };
+
+  // Fungsi untuk menangani klik status tolak
+  const handleRejectStatusClick = async (item: ValidationUpload) => {
+    setRejectedItem(item);
+    
+    // Fetch catatan penolakan dari API jika diperlukan
+    try {
+      const response = await apiRequest(`/document_managements/rejection-note/${item.id}`, "GET");
+      if (response.ok) {
+        const result = await response.json();
+        setRejectionNote(result.responseData?.catatan || "Tidak ada catatan penolakan.");
+      } else {
+        // setRejectionNote(item.catatan || "Tidak ada catatan penolakan.");
+      }
+    } catch (error) {
+      // Fallback ke catatan yang sudah ada
+      // setRejectionNote(item.catatan || "Tidak ada catatan penolakan.");
+    }
+    
+    setShowRejectStatusModal(true);
+  };
+
+  // Fungsi untuk menutup modal status tolak
+  const handleCloseRejectStatusModal = () => {
+    setShowRejectStatusModal(false);
+    setRejectedItem(null);
+    setRejectionNote("");
   };
 
   // Fungsi untuk membuka modal review
@@ -122,92 +135,86 @@ const MainPage = () => {
   };
 
   // Fungsi untuk menutup modal review
-    const handleCloseReviewModal = () => {
-      setShowReviewModal(false);
-      setSelectedFiles([]);
-      setSelectedUraian("");
-    };
-  
-    // Fungsi untuk download file
-    const handleDownloadFile = async (file: FileItem) => {
-      setDownloadingFile(file.id);
-      try {
-        const response = await downloadFileRequest(`/files/download/${file.file_name}`);
-        
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          
-          // Ekstrak nama file dari path
-          const fileName = file.file_name.split('/').pop() || `file_${file.id}`;
-          link.download = fileName;
-          
-          document.body.appendChild(link);
-          link.click();
-          
-          // Cleanup
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          
-          // console.log(`File ${fileName} berhasil didownload`);
-        } else {
-          // console.error('Download gagal:', response.status);
-          setError('Gagal mendownload file');
-        }
-      } catch (error) {
-        console.error('Error downloading file:', error);
-        setError('Terjadi kesalahan saat mendownload file');
-      } finally {
-        setDownloadingFile(null);
-      }
-    };
-  
-    // Fungsi untuk download semua file sebagai ZIP
-    const handleDownloadAllFiles = async () => {
-      if (!selectedFiles || selectedFiles.length <= 1) return;
+  const handleCloseReviewModal = () => {
+    setShowReviewModal(false);
+    setSelectedFiles([]);
+    setSelectedUraian("");
+  };
+
+  // Fungsi untuk download file
+  const handleDownloadFile = async (file: FileItem) => {
+    setDownloadingFile(file.id);
+    try {
+      const response = await downloadFileRequest(`/files/download/${file.file_name}`);
       
-      setDownloadingAll(true);
-      try {
-        // Buat request body dengan list filepath
-        const requestBody = {
-          files: selectedFiles.map(file => file.file_name),
-          zip_name: selectedUraian.replace(/[^a-zA-Z0-9]/g, '_') || 'document_files'
-        };
-  
-        const response = await apiRequest('/files/download/multiple', 'POST', requestBody);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
         
-        if (response.ok) {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          
-          // Nama file ZIP berdasarkan uraian
-          const fileName = `${selectedUraian.replace(/[^a-zA-Z0-9]/g, '_')}_all_files.zip`;
-          link.download = fileName;
-          
-          document.body.appendChild(link);
-          link.click();
-          
-          // Cleanup
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          
-          // console.log(`Semua file berhasil didownload sebagai ${fileName}`);
-        } else {
-          console.error('Download semua file gagal:', response.status);
-          setError('Gagal mendownload semua file');
-        }
-      } catch (error) {
-        console.error('Error downloading all files:', error);
-        setError('Terjadi kesalahan saat mendownload semua file');
-      } finally {
-        setDownloadingAll(false);
+        // Ekstrak nama file dari path
+        const fileName = file.file_name.split('/').pop() || `file_${file.id}`;
+        link.download = fileName;
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        setError('Gagal mendownload file');
       }
-    };
-  
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      setError('Terjadi kesalahan saat mendownload file');
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
+
+  // Fungsi untuk download semua file sebagai ZIP
+  const handleDownloadAllFiles = async () => {
+    if (!selectedFiles || selectedFiles.length <= 1) return;
+    
+    setDownloadingAll(true);
+    try {
+      // Buat request body dengan list filepath
+      const requestBody = {
+        files: selectedFiles.map(file => file.file_name),
+        zip_name: selectedUraian.replace(/[^a-zA-Z0-9]/g, '_') || 'document_files'
+      };
+
+      const response = await apiRequest('/files/download/multiple', 'POST', requestBody);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Nama file ZIP berdasarkan uraian
+        const fileName = `${selectedUraian.replace(/[^a-zA-Z0-9]/g, '_')}_all_files.zip`;
+        link.download = fileName;
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error('Download semua file gagal:', response.status);
+        setError('Gagal mendownload semua file');
+      }
+    } catch (error) {
+      console.error('Error downloading all files:', error);
+      setError('Terjadi kesalahan saat mendownload semua file');
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
 
   return (
     <div className="col-span-12 xl:col-span-12">
@@ -243,7 +250,7 @@ const MainPage = () => {
             <tbody>
               {dataList.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
+                  <td colSpan={6} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
                     Data belum tersedia
                   </td>
                 </tr>
@@ -275,7 +282,6 @@ const MainPage = () => {
                     <td className="px-3 py-4">
                       <div className="flex items-center justify-center">
                         <div className="pl-1 capitalize text-dark dark:text-white">
-                          {/* {brand.tanggal} */}
                           {formatDate(new Date(item.tanggal))}
                         </div>
                       </div>
@@ -289,30 +295,20 @@ const MainPage = () => {
                     </td>
                     <td className="px-3 py-4">
                       <div className="flex items-center justify-center">
-                        <span className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status_code)}`}>
+                        <button
+                          onClick={() => item.status_code === '002' ? handleRejectStatusClick(item) : undefined}
+                          className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status_code)} ${
+                            item.status_code === '002' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                          }`}
+                          disabled={item.status_code !== '002'}
+                        >
                           {item.status_doc}
-                        </span>
+                        </button>
                       </div>
                     </td>
 
                     <td className="px-3 py-4 xl:pr-7.5">
                       <div className="flex items-center justify-end">
-                        {/* <div className="pl-1 capitalize text-dark dark:text-white">
-                          <button className="group active:scale-[.97] 2xsm:col-span-12 md:col-span-3 md:col-start-10 lg:col-span-3 lg:col-start-10 xl:col-span-2 xl:col-start-11">
-                            <div
-                              className="flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
-                              onClick={() => handleDetailsClick(item.id, item.uraian)}
-                            >
-                              <span className="text-[20px]">
-                                <HiOutlineArrowTopRightOnSquare />
-                              </span>
-                              <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                                Detail
-                              </span>
-                            </div>
-                          </button>
-                        </div> */}
-
                         <div className="pl-4 capitalize text-dark dark:text-white">
                           <button
                             onClick={() => handleOpenReviewModal(item.files, item.uraian)}
@@ -343,6 +339,62 @@ const MainPage = () => {
           />
         </div>
       </div>
+
+      {/* Modal Status Tolak */}
+      {showRejectStatusModal && rejectedItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-lg">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mr-3">
+                  <HiOutlineExclamationTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Dokumen Ditolak
+                </h3>
+              </div>
+              <button
+                onClick={handleCloseRejectStatusModal}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <HiOutlineXMark className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="mb-6">
+              <p className="text-sm text-gray-600 mb-4">
+                <strong>Pengelolaan Dokumen ditolak</strong>
+              </p>
+              
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm font-medium text-gray-700 mb-2">Catatan Penolakan:</p>
+                <div className="text-sm text-gray-600 whitespace-pre-wrap">
+                  {rejectionNote || "Tidak ada catatan penolakan."}
+                </div>
+              </div>
+              
+              {rejectedItem && (
+                <div className="mt-4 text-xs text-gray-500">
+                  <p><strong>Dokumen:</strong> {rejectedItem.uraian}</p>
+                  <p><strong>Tanggal Upload:</strong> {formatDate(new Date(rejectedItem.tanggal))}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleCloseRejectStatusModal}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Review Files */}
       {showReviewModal && (
