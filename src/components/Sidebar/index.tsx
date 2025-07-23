@@ -242,7 +242,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   alt="Guide Book"
                   width={100}
                   height={100}
-                  className="mx-auto h-auto w-full cursor-pointer transition-opacity duration-200 hover:opacity-80"
+                  className="mx-auto rounded-lg h-auto w-full cursor-pointer transition-opacity duration-200 hover:opacity-80"
                 />
               </Link>
               <p className="mb-4 mt-2 text-center text-sm font-medium text-dark-4 dark:text-dark-6">

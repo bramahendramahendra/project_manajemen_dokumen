@@ -6,7 +6,7 @@ import Image from "next/image";
 import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import Cookies from "js-cookie";
 import { loginRequest, apiRequest } from "@/helpers/apiClient"; // Import apiRequest
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
 import { useMenu } from "@/contexts/MenuContext";
 
 const SectionRight = () => {
@@ -20,6 +20,9 @@ const SectionRight = () => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
+  
+  // State untuk floating guide button
+  const [showGuidePopup, setShowGuidePopup] = useState<boolean>(false);
 
   // Gunakan menu context
   const { fetchMenuData } = useMenu();
@@ -221,7 +224,7 @@ const SectionRight = () => {
                 </div>
 
                 <div>
-                  <span className="float-right mt-[20px] font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
+                  <span className="float-right mt-[20px] mb-2 font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
                     <Link href={`lupa-password`}>Lupa Password?</Link>
                   </span>
                 </div>
@@ -229,7 +232,7 @@ const SectionRight = () => {
                 <button
                   type="submit"
                   disabled={isLoggingIn}
-                  className="mt-[10px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  className="mt-[20px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {isLoggingIn ? (
                     <>
@@ -277,6 +280,74 @@ const SectionRight = () => {
             priority
           />
         </motion.div>
+
+        {/* Floating Guide Button */}
+        <div className="fixed bottom-6 right-[70px] z-50">
+          <button
+            onClick={() => setShowGuidePopup(true)}
+            className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all duration-300 hover:bg-green-600 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
+            aria-label="Panduan Penggunaan"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+            </svg>
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 scale-0 rounded bg-gray-800 px-3 py-1 text-sm text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap">
+              Panduan Penggunaan
+            </div>
+          </button>
+        </div>
+
+        {/* Guide Popup */}
+        {showGuidePopup && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative max-w-sm w-full mx-4 rounded-lg bg-white p-6 text-center shadow-lg"
+            >
+              {/* Tombol silang (X) */}
+              {/* <button
+                onClick={() => setShowGuidePopup(false)}
+                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              >
+                <FaTimes size={20} />
+              </button> */}
+
+              <Link href="/guide_book" onClick={() => setShowGuidePopup(false)}>
+                <Image
+                  src="https://storage.googleapis.com/fastwork-static/d4d162c2-2ab3-4414-9827-4663627c807e.jpg"
+                  alt="Guide Book"
+                  width={150}
+                  height={150}
+                  className="mx-auto h-auto w-full cursor-pointer transition-opacity duration-200 hover:opacity-80 rounded-lg"
+                />
+              </Link>
+              <p className="mb-4 mt-4 text-center text-sm font-medium text-gray-700">
+                Panduan Lengkap Penggunaan Sipaduke
+              </p>
+              
+              <button
+                onClick={() => setShowGuidePopup(false)}
+                className="mt-2 w-full rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 transition-colors duration-200"
+              >
+                Tutup
+              </button>
+            </motion.div>
+          </div>
+        )}
       </div>
     </>
   );
