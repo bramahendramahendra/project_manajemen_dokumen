@@ -160,7 +160,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/users/${dataEdit.userid}`, 'PUT', payload);
+      const response = await apiRequest(`/users/update/${dataEdit.userid}`, 'POST', payload);
       
       if (response.ok) {
         setSuccess(true);

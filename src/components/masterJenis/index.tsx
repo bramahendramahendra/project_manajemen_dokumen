@@ -185,7 +185,7 @@ const MainPage = () => {
     setSuccess(null);
 
     try {
-      const response = await apiRequest(`/master_jenis/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/master_jenis/delete/${itemDelete}`, 'POST');
       
       if (!response.ok) {
         const result = await response.json();

@@ -170,7 +170,7 @@ const MainPage = () => {
       // Nilai is_active: 0 = suspen, 1 = active
       const newIsActive = newStatus ? 0 : 1;
       
-      const response = await apiRequest(`/users/is-active/${userid}`, "PUT", {
+      const response = await apiRequest(`/users/is-active/${userid}`, "POST", {
         is_active: newIsActive
       });
 
@@ -212,7 +212,7 @@ const MainPage = () => {
     setSuccess(false);
 
     try {
-      const response = await apiRequest(`/users/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/users/delete/${itemDelete}`, 'POST');
       const result = await response.json();
 
       if (!response.ok) {
