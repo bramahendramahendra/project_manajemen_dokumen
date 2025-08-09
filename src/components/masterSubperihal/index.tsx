@@ -160,7 +160,7 @@ const MainPage = () => {
     setSuccess(null);
 
     try {
-      const response = await apiRequest(`/master_subperihal/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/master_subperihal/delete/${itemDelete}`, 'POST');
       
       if (!response.ok) {
         const result = await response.json();

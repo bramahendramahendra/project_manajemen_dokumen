@@ -25,7 +25,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/master_dinas/${dataEdit.id}`, 'PUT', payload);
+      const response = await apiRequest(`/master_dinas/update/${dataEdit.id}`, 'POST', payload);
       const result = await response.json();
 
       if (!response.ok) {

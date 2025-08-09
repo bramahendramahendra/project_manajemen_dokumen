@@ -86,7 +86,7 @@ const MainPage = () => {
 
 
     try {
-      const response = await apiRequest(`/menus/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/menus/delete/${itemDelete}`, 'POST');
       const result = await response.json();
 
       if (!response.ok) {

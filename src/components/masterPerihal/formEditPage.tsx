@@ -20,7 +20,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/master_perihal/${dataEdit.jenis}`, 'PUT', payload);
+      const response = await apiRequest(`/master_perihal/update/${dataEdit.jenis}`, 'POST', payload);
       
       if (response.ok) {
         setSuccess(true);

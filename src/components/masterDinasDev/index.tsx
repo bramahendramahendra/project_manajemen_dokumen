@@ -84,7 +84,7 @@ const MainPage = () => {
     setSuccess(false);
 
     try {
-      const response = await apiRequest(`/officials/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/master_dinas/delete/${itemDelete}`, 'POST');
       const result = await response.json();
 
       if (!response.ok) {

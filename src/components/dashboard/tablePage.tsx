@@ -1,33 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Pagination from "@/components/pagination/Pagination";
-import { HiOutlineDocumentText } from "react-icons/hi";
-import { apiRequest } from "@/helpers/apiClient";
 import Cookies from "js-cookie";
+import { apiRequest } from "@/helpers/apiClient";
+import { HiOutlineDocumentText } from "react-icons/hi";
+import { Document, DocumentResponse } from "@/types/dashboard";
+import Pagination from "@/components/pagination/Pagination";
 
-// Update interface sesuai dengan response API
-interface DocumentItem {
-  id: number;
-  subjenis: string;
-  maker_date: string;
-  status_code: string;
-  status_doc: string;
-}
-
-interface DocumentListResponse {
-  responseCode: number;
-  responseDesc: string;
-  responseData: {
-    items: DocumentItem[];
-  };
-  responseMeta: {
-    page: number;
-    per_page: number;
-    total_pages: number;
-    total_records: number;
-  };
-}
 
 // Fungsi untuk mendapatkan warna status berdasarkan status_code
 const getStatusColor = (statusCode: string) => {
@@ -73,36 +52,40 @@ const formatDate = (dateString: string): string => {
 };
 
 const TablePage = () => {
-  const [documentData, setDocumentData] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [dataList, setDataList] = useState<Document[]>([]);
   
-  // State untuk pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
 
-  // Get user data untuk mendapatkan id_dinas
-  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-  const idDinas = user.department_id;
+  const [filters, setFilters] = useState({
+    sort_by: '',
+    sort_dir: 'DESC'
+  });
 
-  // Fetch data dari API
-  const fetchDocuments = async (page = 1, perPage = 5) => {
-    if (!idDinas) {
-      setError("ID Dinas tidak ditemukan");
-      setLoading(false);
-      return;
-    }
+  // Function untuk fetch data dengan parameter
+  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+    const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+    const idDinas = user.department_id;
+
+    setLoading(true);
+    setError(null);
 
     try {
-      setLoading(true);
-      setError(null);
-
       // Buat query parameters untuk pagination
       const queryParams = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
+        ...filterParams
+      });
+
+      // Hapus parameter kosong
+      Array.from(queryParams.entries()).forEach(([key, value]) => {
+        if (!value) queryParams.delete(key);
       });
 
       const response = await apiRequest(`/dashboard/document/list/${idDinas}?${queryParams.toString()}`, "GET");
@@ -114,31 +97,37 @@ const TablePage = () => {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
 
-      const result: DocumentListResponse = await response.json();
-      
-      if (result.responseCode === 200 && result.responseData?.items) {
-        setDocumentData(result.responseData.items);
-        
-        // Set pagination data jika ada responseMeta
-        if (result.responseMeta) {
-          setTotalPages(result.responseMeta.total_pages);
-          setTotalRecords(result.responseMeta.total_records);
-        } else {
-          // Fallback jika tidak ada pagination info
-          setTotalPages(1);
-          setTotalRecords(result.responseData.items.length);
-        }
-      } else {
-        throw new Error(result.responseDesc || "Gagal mengambil data dokumen");
+      const result: DocumentResponse = await response.json();
+
+      // Validasi struktur response
+      if (!result.responseData || !result.responseData.items) {
+        throw new Error("Format data tidak valid");
       }
+
+      if (!result.responseMeta) {
+        throw new Error("Format meta tidak valid");
+      }
+
+      const res: Document[] = result.responseData.items.map((item: any) => ({
+          id: item.id,
+          subjenis: item.subjenis,
+          maker_date: item.maker_date,
+          status_code: item.status_code,
+          status_doc: item.status_doc,
+      }));
+
+      // Set data dari response
+      setDataList(res);
+      setTotalPages(result.responseMeta.total_pages);
+      setTotalRecords(result.responseMeta.total_records);
     } catch (err: any) {
-      console.error("Error fetching documents:", err);
+      console.error("Error fetching data:", err);
       setError(
         err.message === "Failed to fetch"
           ? "Tidak dapat terhubung ke server"
           : err.message,
       );
-      setDocumentData([]);
+      setDataList([]);
       setTotalPages(0);
       setTotalRecords(0);
     } finally {
@@ -148,8 +137,18 @@ const TablePage = () => {
 
   // Load data saat component mount atau parameter berubah
   useEffect(() => {
-    fetchDocuments(currentPage, itemsPerPage);
-  }, [currentPage, itemsPerPage, idDinas]);
+    fetchData(currentPage, itemsPerPage, filters);
+  }, [currentPage, itemsPerPage, filters]);
+
+  // Auto hide success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
 
   // Handler untuk perubahan halaman
   const handlePageChange = (newPage: number) => {
@@ -157,14 +156,14 @@ const TablePage = () => {
   };
   
   // Handler untuk perubahan items per page
-  const handleItemsPerPageChange = (value: number) => {
-    setItemsPerPage(value);
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset ke halaman pertama saat mengubah items per page
   };
 
   // Handler untuk retry ketika error
   const handleRetry = () => {
-    fetchDocuments(currentPage, itemsPerPage);
+    fetchData(currentPage, itemsPerPage);
   };
 
   // Render loading skeleton
@@ -232,9 +231,9 @@ const TablePage = () => {
         </h4>
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {!loading && totalRecords > 0 && (
-            <>Total: {totalRecords} dokumen</>
+            <>Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data</>
           )}
-          {!loading && totalRecords === 0 && !error && "Tidak ada data"}
+          {!loading && totalRecords === 0 && "Tidak ada data"}
         </div>
       </div>
 
@@ -263,12 +262,12 @@ const TablePage = () => {
           <tbody>
             {loading && renderLoadingSkeleton()}
             {!loading && error && renderErrorState()}
-            {!loading && !error && documentData.length === 0 && renderEmptyState()}
-            {!loading && !error && documentData.length > 0 && documentData.map((item, index) => (
+            {!loading && !error && dataList.length === 0 && renderEmptyState()}
+            {!loading && !error && dataList.length > 0 && dataList.map((item, index) => (
               <tr
                 key={item.id}
                 className={`hover:bg-gray-2 ${
-                  index === documentData.length - 1
+                  index === dataList.length - 1
                     ? ""
                     : "border-b border-stroke dark:border-dark-3"
                 }`}
