@@ -181,7 +181,7 @@ const MainPage = () => {
     setSuccess(null);
 
     try {
-      const response = await apiRequest(`/master_perihal/${itemDelete}`, 'DELETE');
+      const response = await apiRequest(`/master_perihal/delete/${itemDelete}`, 'POST');
       
       if (!response.ok) {
         const result = await response.json();

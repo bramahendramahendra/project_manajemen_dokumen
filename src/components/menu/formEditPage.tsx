@@ -91,7 +91,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/menus/${dataEdit.code}`, 'PUT', payload);
+      const response = await apiRequest(`/menus/update/${dataEdit.code}`, 'POST', payload);
       const result = await response.json();
 
       if (!response.ok) {

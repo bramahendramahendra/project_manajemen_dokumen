@@ -97,7 +97,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/master_jenis/${dataEdit.jenis}`, 'PUT', payload);
+      const response = await apiRequest(`/master_jenis/update/${dataEdit.jenis}`, 'POST', payload);
       const result = await response.json();
 
       if (!response.ok) {

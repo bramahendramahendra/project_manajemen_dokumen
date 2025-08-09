@@ -72,7 +72,7 @@ const MainPage = () => {
       setError(null);
 
       try {
-        const response = await apiRequest(`/access_menus/${itemToDelete.levelId}/${itemToDelete.codeMenu}`, "DELETE");
+        const response = await apiRequest(`/access_menus/delete/${itemToDelete.levelId}/${itemToDelete.codeMenu}`, "POST");
         const result = await response.json();
 
         if (!response.ok) {

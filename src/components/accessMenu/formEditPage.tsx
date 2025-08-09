@@ -61,7 +61,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/access_menus/update/${dataEdit.level_id}/${dataEdit.code_menu}`, 'PUT', payload);
+      const response = await apiRequest(`/access_menus/update/${dataEdit.level_id}/${dataEdit.code_menu}`, 'POST', payload);
       const result = await response.json();
 
       if (!response.ok) {
