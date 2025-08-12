@@ -74,7 +74,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">Setting dinas berhasil update!</p>}  
+            {success && <p className="text-green-500 mt-2">Master dinas berhasil update!</p>}  
           </div>
         </form>
       </div>

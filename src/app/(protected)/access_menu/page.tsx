@@ -1,5 +1,4 @@
 "use client";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import MainPage from "@/components/accessMenu";
 import { HiPlus } from "react-icons/hi2";
@@ -13,7 +12,6 @@ const SettingJenis = () => {
   ];
   
   return (
-    // <DefaultLayout>
     <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mb-6 grid grid-cols-12">
@@ -35,7 +33,6 @@ const SettingJenis = () => {
         </div>
       </div>
     </>
-    // </DefaultLayout>
   );
 };
 

@@ -13,7 +13,15 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [maxRoles, setMaxRoles] = useState(0);
 
   // console.log(dataEdit);
-  
+  useEffect(() => {
+    if (dataEdit) {
+      setType(dataEdit.nama_jenis || '');
+      const userRoles = dataEdit.roles || [];
+      const userAccessLevels = userRoles.map((role: any) => role.level_id); // Ambil level_id dari data roles
+      setAccessUsers(userAccessLevels);
+    }
+  }, [dataEdit]);
+
   useEffect(() => {
     const fetchRoles = async () => {
       setLoading(true);
@@ -44,17 +52,6 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
     fetchRoles();
   }, []);
-
-  useEffect(() => {
-    if (dataEdit) {
-      setType(dataEdit.nama_jenis || '');
-      // console.log("Access User Data: ", dataEdit.roles);
-      // setAccessUsers(dataEdit.roles || []);
-      const userRoles = dataEdit.roles || [];
-      const userAccessLevels = userRoles.map((role: any) => role.level_id); // Ambil level_id dari data roles
-      setAccessUsers(userAccessLevels);
-    }
-  }, [dataEdit]);
   
   const addAccessUser = () => {
     if (accessUsers.length >= maxRoles) {
@@ -188,7 +185,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">Setting jenis berhasil update!</p>}  
+            {success && <p className="text-green-500 mt-2">Master jenis berhasil update!</p>}  
           </div>
         </form>
       </div>
