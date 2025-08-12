@@ -139,7 +139,7 @@ const MainPage = () => {
 
     try {
       const encrypted = encryptObject({ id }, user);
-      router.push(`/master_jenis/detail_setting_jenis/mz?${key}=${encrypted}`);
+      router.push(`/master_jenis/detail/mz?${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);
       alert("Terjadi kesalahan saat memproses data!");

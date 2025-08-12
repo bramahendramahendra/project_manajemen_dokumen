@@ -22,6 +22,21 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [optionRoles, setOptionRoles] = useState<any[]>([]);
   const [loadingDinas, setLoadingDinas] = useState(false);
 
+   // Set data saat edit
+  useEffect(() => {
+    if (dataEdit) {
+      // console.log(dataEdit);  
+      setFirstName(dataEdit.firstname || dataEdit.name?.split(' ')[0] || '');
+      setLastName(dataEdit.lastname || dataEdit.name?.split(' ')[1] || '');
+      setUsername(dataEdit.username);
+      setEmail(dataEdit.email || '');
+      setPhoneNumber(dataEdit.phone_number || '');
+      setDepartment(dataEdit.dinas || '');
+      setResponsiblePerson(dataEdit.responsible_person || '');
+      setAccessUser(dataEdit.level_id || '');
+    }
+  }, [dataEdit]);
+
   // Fetch dinas hanya ketika accessUser === 'DNS'
   useEffect(() => {
     if (accessUser === 'DNS' && optionOfficials.length === 0) {
@@ -99,20 +114,6 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     fetchRoles();
   }, []);
 
-  // Set data saat edit
-  useEffect(() => {
-    if (dataEdit) {
-      setFirstName(dataEdit.firstname || dataEdit.name?.split(' ')[0] || '');
-      setLastName(dataEdit.lastname || dataEdit.name?.split(' ')[1] || '');
-      setUsername(dataEdit.username);
-      setEmail(dataEdit.email || '');
-      setPhoneNumber(dataEdit.phone_number || '');
-      setDepartment(dataEdit.department_id || '');
-      setResponsiblePerson(dataEdit.responsible_person || '');
-      setAccessUser(dataEdit.level_id || '');
-    }
-  }, [dataEdit]);
-
   const handleCheckboxChange = () => {
     setIsDefaultPassword(!isDefaultPassword);
     setPassword(!isDefaultPassword ? 'm@nAj3mendokumen' : '');
@@ -142,8 +143,11 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       return;
     }
 
-    const selectedDepartment = optionOfficials.find((opt) => opt.id === String(department));
+    const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
     const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
+
+    console.log(selectedDepartment);
+    
 
     const payload = {
       firstname: firstName,
@@ -151,8 +155,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       username,
       email,
       phone_number: phoneNumber,
-      department_id: accessUser === 'DNS' ? department : 0,
-      department_name: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
+      dinas: accessUser === 'DNS' ? department : 0,
+      nama_dinas: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
       responsible_person: responsiblePerson,
       level_id: accessUser,
       change_password: changePassword,

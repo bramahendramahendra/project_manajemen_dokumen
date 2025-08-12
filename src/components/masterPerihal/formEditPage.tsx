@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 
 const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
@@ -8,6 +8,13 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
   const [perihal, setPerihal] = useState('');
   // console.log(dataEdit);
+
+  // console.log(dataEdit);
+  useEffect(() => {
+    if (dataEdit) {
+      setPerihal(dataEdit.nama_perihal || '');
+    }
+  }, [dataEdit]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +27,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/master_perihal/update/${dataEdit.jenis}`, 'POST', payload);
+      const response = await apiRequest(`/master_perihal/update/${dataEdit.perihal}`, 'POST', payload);
       
       if (response.ok) {
         setSuccess(true);
