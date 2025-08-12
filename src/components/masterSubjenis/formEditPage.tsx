@@ -14,6 +14,18 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [optionRoles, setOptionRoles] = useState<any[]>([]);
   const [maxRoles, setMaxRoles] = useState(0);
 
+  console.log(dataEdit);
+
+  useEffect(() => {
+  if (dataEdit) {
+      setType(dataEdit.jenis	 || '');
+      setSubtype(dataEdit.nama_subjenis || '');
+      const userRoles = dataEdit.roles || [];
+      const userAccessLevels = userRoles.map((role: any) => role.level_id);
+      // setAccessUsers(userAccessLevels);
+      setAccessUsers(userAccessLevels.length > 0 ? userAccessLevels : ['']);
+    }
+  }, [dataEdit]);
 
   useEffect(() => {
     const fetchSettingTypes = async () => {
@@ -78,15 +90,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     fetchRoles();
   }, [type]);
 
-  useEffect(() => {
-    if (dataEdit) {
-      setType(dataEdit.subjenis	 || '');
-      setSubtype(dataEdit.nama_subjenis || '');
-      const userRoles = dataEdit.roles || [];
-      const userAccessLevels = userRoles.map((role: any) => role.level_id);
-      setAccessUsers(userAccessLevels);
-    }
-  }, [dataEdit]);
+
   
   const addAccessUser = () => {
     if (accessUsers.length >= maxRoles) {
@@ -122,16 +126,15 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
       setLoading(false);
       return;
     }
-
-
+    
     const payload = {
-      setting_jenis_id: type,
+      jenis: type,
       subjenis: subtype,
-      level_id: cleanedAccessUsers,
+      level: cleanedAccessUsers,
     };
 
     try {
-      const response = await apiRequest(`/master_subjenis/update/${dataEdit.id}`, 'POST', payload);
+      const response = await apiRequest(`/master_subjenis/update/${dataEdit.subjenis}`, 'POST', payload);
       const result = await response.json();
 
       if (!response.ok) {
@@ -236,7 +239,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">Setting subjenis berhasil update!</p>}  
+            {success && <p className="text-green-500 mt-2">Master subjenis berhasil update!</p>}  
           </div>
         </form>
       </div>

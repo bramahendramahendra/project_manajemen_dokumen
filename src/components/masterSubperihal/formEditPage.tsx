@@ -79,8 +79,10 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   // useEffect untuk set data awal saat edit
   useEffect(() => {
     if (dataEdit) {
+      console.log(dataEdit);
+      
       setPerihal(dataEdit.perihal || '');
-      setSubperihal(dataEdit.subperihal || '');
+      setSubperihal(dataEdit.nama_subperihal || '');
       setDeskripsi(dataEdit.deskripsi || '');
     }
   }, [dataEdit]);
@@ -98,7 +100,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     };
 
     try {
-      const response = await apiRequest(`/master_subperihal/update/${dataEdit.id}`, 'POST', payload);
+      const response = await apiRequest(`/master_subperihal/update/${dataEdit.subperihal}`, 'POST', payload);
       const result = await response.json();
 
        if (response.ok) {

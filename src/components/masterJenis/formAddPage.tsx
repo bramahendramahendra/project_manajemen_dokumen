@@ -176,7 +176,7 @@ const FormAddPage = () => {
 
             {/* Error and Success Messages */}
             {error && <p className="text-red-500 mt-2">{error}</p>}
-            {success && <p className="text-green-500 mt-2">Setting jenis berhasil ditambahkan!</p>}  
+            {success && <p className="text-green-500 mt-2">Master jenis berhasil ditambahkan!</p>}  
           </div>
         </form>
       </div>

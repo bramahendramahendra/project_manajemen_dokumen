@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";
+import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import { User } from "@/types/user";
 import { apiRequest } from "@/helpers/apiClient";
@@ -72,6 +73,7 @@ const DetailUserManagement = () => {
   ];
 
   return (
+    // <DefaultLayout>
     <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
@@ -90,6 +92,7 @@ const DetailUserManagement = () => {
         </div>
       </div>
     </>
+    // </DefaultLayout>
   );
 };
 
