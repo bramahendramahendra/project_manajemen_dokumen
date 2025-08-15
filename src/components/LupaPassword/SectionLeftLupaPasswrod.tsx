@@ -23,7 +23,7 @@ const SectionLeftLupaPassword = () => {
     setSuccess(false);
     
     try {
-      const response = await lupaPassRequest(`/auths/lupa-pass/${username}`, 'PUT');
+      const response = await lupaPassRequest(`/auths/lupa-pass/${username}`, 'POST');
 
       if (response.ok) {
         setSuccess(true);
