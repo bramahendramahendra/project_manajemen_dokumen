@@ -1,3 +1,4 @@
+// File: src\components\LupaPassword\SectionLeftLupaPasswrod.tsx
 import Image from "next/image";
 import Background1 from "../../../public/assets/login-left2.svg";
 import { useState } from "react";
@@ -29,10 +30,15 @@ const SectionLeftLupaPassword = () => {
         setUsername('');
       } else {
         const result = await response.json();
-        setError(result.message || 'Terjadi kesalahan saat menambahkan user');
+        // Perbaikan pesan error yang lebih spesifik untuk lupa password
+        if (result.responseDesc && result.responseDesc.includes('tidak ditemukan')) {
+          setError('Username tidak ditemukan. Pastikan username yang dimasukkan benar.');
+        } else {
+          setError(result.message || result.responseDesc || 'Terjadi kesalahan saat memproses permintaan lupa password');
+        }
       }
     } catch (error: any) {
-      setError(error.message || 'Terjadi kesalahan saat mengirim data');
+      setError('Terjadi kesalahan koneksi. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }

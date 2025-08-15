@@ -25,7 +25,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
    // Set data saat edit
   useEffect(() => {
     if (dataEdit) {
-      // console.log(dataEdit);  
+      console.log(dataEdit);  
       setFirstName(dataEdit.firstname || dataEdit.name?.split(' ')[0] || '');
       setLastName(dataEdit.lastname || dataEdit.name?.split(' ')[1] || '');
       setUsername(dataEdit.username);
@@ -37,14 +37,15 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     }
   }, [dataEdit]);
 
-  // Fetch dinas hanya ketika accessUser === 'DNS'
+  // Fetch dinas berdasarkan level_id (DNS atau PGW)
   useEffect(() => {
-    if (accessUser === 'DNS' && optionOfficials.length === 0) {
-      const fetchDinas = async () => {
+    if ((accessUser === 'DNS' || accessUser === 'PGW') && optionOfficials.length === 0) {
+      const fetchOfficials = async () => {
         setLoadingDinas(true);
         setError(null);
         try {
-          const response = await apiRequest("/master_dinas/opt-dinas", "GET");
+          // Fetch dinas berdasarkan level_id
+          const response = await apiRequest(`/master_dinas/opt-dinas/${accessUser}`, "GET");
           if (!response.ok) {
             throw new Error("Data dinas tidak tersedia");
           }
@@ -64,12 +65,12 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
 
           // Cek jika data dinas kosong setelah fetch
           if (fetchedOfficials.length === 0) {
-            setError("Data dinas tidak tersedia. Silakan pilih access user yang lain.");
+            setError(`Data dinas untuk ${accessUser} tidak tersedia. Silakan pilih access user yang lain.`);
             setAccessUser(''); // Reset access user ke kosong
             setDepartment(0); // Reset department
           }
         } catch (err: any) {
-          setError("Data dinas tidak tersedia. Silakan pilih access user yang lain.");
+          setError(`Data dinas untuk ${accessUser} tidak tersedia. Silakan pilih access user yang lain.`);
           setAccessUser(''); // Reset access user ke kosong jika terjadi error
           setDepartment(0); // Reset department
         } finally {
@@ -77,7 +78,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
         }
       };
 
-      fetchDinas();
+      fetchOfficials();
     }
   }, [accessUser, optionOfficials.length]);
 
@@ -114,6 +115,28 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     fetchRoles();
   }, []);
 
+  // Function untuk mendapatkan dinas berdasarkan level_id
+  const getDinasByLevelId = async (levelId: string) => {
+    try {
+      const response = await apiRequest(`/master_dinas/opt-dinas/${levelId}`, "GET");
+      if (!response.ok) {
+        throw new Error("Data dinas tidak tersedia");
+      }
+      const result = await response.json();
+      
+      if (result && result.responseData && result.responseData.items && result.responseData.items.length > 0) {
+        return {
+          dinas: result.responseData.items[0].dinas,
+          nama_dinas: result.responseData.items[0].nama_dinas
+        }; // Ambil dinas pertama untuk ADM/DEV
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error fetching dinas for ${levelId}:`, error);
+      return null;
+    }
+  };
+
   const handleCheckboxChange = () => {
     setIsDefaultPassword(!isDefaultPassword);
     setPassword(!isDefaultPassword ? 'm@nAj3mendokumen' : '');
@@ -123,10 +146,11 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const handleAccessUserChange = (value: string) => {
     setError(null); // Clear error saat user mengubah access user
     setAccessUser(value);
+    
     // Reset department ketika access user berubah
-    if (value !== 'DNS') {
+    if (value !== 'DNS' && value !== 'PGW') {
       setDepartment(0);
-      setOptionOfficials([]); // Clear data dinas jika bukan DNS
+      setOptionOfficials([]); // Clear data dinas jika bukan DNS/PGW
     }
   };
 
@@ -136,18 +160,34 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     setError(null);
     setSuccess(false);
 
-    // Validasi tambahan untuk DNS
-    if (accessUser === 'DNS' && (!department || department === 0)) {
-      setError('Silakan pilih nama dinas terlebih dahulu');
+    // Validasi tambahan untuk DNS dan PGW
+    if ((accessUser === 'DNS' || accessUser === 'PGW') && (!department || department === 0)) {
+      setError(`Silakan pilih nama dinas untuk ${accessUser} terlebih dahulu`);
       setLoading(false);
       return;
     }
 
-    const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
-    const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
+    let finalDinas = 0;
+    let finalNamaDinas = "";
 
-    console.log(selectedDepartment);
-    
+    if (accessUser === 'DNS' || accessUser === 'PGW') {
+      // Untuk DNS dan PGW, gunakan dinas yang dipilih
+      const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
+      finalDinas = department;
+      finalNamaDinas = selectedDepartment?.dinas || "";
+    } else if (accessUser === 'ADM' || accessUser === 'DEV') {
+      // Untuk ADM dan DEV, ambil dinas otomatis berdasarkan level_id
+      const dinasData = await getDinasByLevelId(accessUser);
+      if (dinasData) {
+        finalDinas = dinasData.dinas;
+        finalNamaDinas = dinasData.nama_dinas;
+      } else {
+        // Fallback ke role name jika tidak ada dinas
+        const selectedRole = optionRoles.find((role) => role.level_id === accessUser);
+        finalDinas = 0;
+        finalNamaDinas = selectedRole?.role || "";
+      }
+    }
 
     const payload = {
       firstname: firstName,
@@ -155,8 +195,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       username,
       email,
       phone_number: phoneNumber,
-      dinas: accessUser === 'DNS' ? department : 0,
-      nama_dinas: accessUser === 'DNS' ? (selectedDepartment?.dinas || "") : (selectedRole?.role || ""),
+      dinas: finalDinas,
+      nama_dinas: finalNamaDinas,
       responsible_person: responsiblePerson,
       level_id: accessUser,
       change_password: changePassword,
@@ -291,8 +331,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                 )}
               </select>
             </div>
-            {/* Nama Dinas - Hanya tampil ketika accessUser === 'DNS' */}
-            {accessUser === 'DNS' && (
+            {/* Nama Dinas - Hanya tampil ketika accessUser === 'DNS' atau 'PGW' */}
+            {(accessUser === 'DNS' || accessUser === 'PGW') && (
               <div className="mb-4.5">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Nama Dinas
@@ -303,7 +343,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                   className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                   required
                 >
-                  <option value="" disabled>Pilih Dinas</option> 
+                  <option value={0} disabled>Pilih Dinas</option> 
                   {loadingDinas ? (
                     <option value="" disabled>Memuat data dinas...</option>
                   ) : optionOfficials.length > 0 ? (
@@ -316,6 +356,14 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
                     <option value="" disabled>Data dinas kosong</option>
                   )}
                 </select>
+              </div>
+            )}
+            {/* Info untuk ADM dan DEV */}
+            {(accessUser === 'ADM' || accessUser === 'DEV') && (
+              <div className="mb-4.5 p-3 bg-blue-50 border border-blue-200 rounded-[7px] dark:bg-blue-900/20 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  <strong>Info:</strong> Dinas untuk {accessUser} akan diisi otomatis berdasarkan level akses.
+                </p>
               </div>
             )}
             {/* Penanggung Jawab */}
