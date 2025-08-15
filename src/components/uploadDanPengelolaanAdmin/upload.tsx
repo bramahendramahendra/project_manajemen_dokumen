@@ -110,7 +110,7 @@ const UploadDokumen = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/master_dinas/opt-dinas", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas/DNS", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Officials data not found");
