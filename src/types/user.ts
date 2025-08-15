@@ -6,6 +6,7 @@ export type User = {
   role: string;
   dinas: string;
   isActive: number;
+  lupaPass?: number; 
 };
 
 export type UserResponse = {
