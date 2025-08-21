@@ -58,9 +58,11 @@ const UploadDokumen = () => {
       return '📦';
     } else if (fileName.endsWith('.rar')) {
       return '🗜️';
-    } else if (fileName.endsWith('.pdf')) {
+    } else if (fileName.endsWith('.pdf') || fileType === 'application/pdf') {
       return '📄';
-    } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+    } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx') || 
+               fileType === 'application/msword' || 
+               fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
       return '📝';
     } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
       return '📊';
@@ -104,34 +106,21 @@ const UploadDokumen = () => {
 
   // Tambahkan useEffect untuk debugging js-cookie
   useEffect(() => {
-    // Log semua cookies
-    // console.log("=== COOKIES DEBUG INFO ===");
-    const allCookies = Cookies.get();
-    // console.log("Semua cookies:", allCookies);
-    
-    // Coba parse cookie user
     try {
       const userCookie = Cookies.get("user");
       if (userCookie) {
         const userData = JSON.parse(userCookie);
-        // console.log("User data (parsed):", userData);
-        
-        // Log userid dan level_id
-        // console.log("UserID:", userData.userid);
-        // console.log("User level:", userData.level_id);
-        
+
         // Set nilai dinas dengan userData.userid
         if (userData.userid) {
           setDinas(typeof userData.userid === 'number' ? userData.userid : userData.userid);
         }
       } else {
-        // console.log("User cookie tidak ditemukan");
         console.error("User cookie tidak ditemukan");
       }
     } catch (error) {
       console.error("Error saat parsing user cookie:", error);
     }
-    // console.log("=== END COOKIES DEBUG INFO ===");
   }, []);
 
   useEffect(() => {
@@ -139,10 +128,10 @@ const UploadDokumen = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/master_dinas/opt-dinas/DNS", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS", "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Officials data not found");
+            throw new Error("Dinas data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -155,11 +144,7 @@ const UploadDokumen = () => {
 
         setOptionOfficials(fetchedOfficials);
       } catch (err: any) {
-        setError(
-          err.message === "Failed to fetch"
-            ? "Roles data not found"
-            : err.message,
-        );
+        setError(err.message === "Failed to fetch" ? "Dinas data not found" : err.message);
       } finally {
         setLoading(false);
       }
@@ -174,10 +159,7 @@ const UploadDokumen = () => {
       setError(null);
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(
-          `/master_jenis/all-data/by-role/${user.level_id}`,
-          "GET",
-        );
+        const response = await apiRequest(`/master_jenis/all-data/by-role/${user.level_id}`,"GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Jenis data not found");
@@ -186,20 +168,14 @@ const UploadDokumen = () => {
         }
         const result = await response.json();
 
-        const fetchOptionSettingTypes = result.responseData.items.map(
-          (item: any) => ({
+        const fetchOptionSettingTypes = result.responseData.items.map((item: any) => ({
             id: item.jenis,
             jenis: item.nama_jenis,
-          }),
-        );
+        }));
 
         setOptionTypes(fetchOptionSettingTypes);
       } catch (err: any) {
-        setError(
-          err.message === "Failed to fetch"
-            ? "Jenis data not found"
-            : err.message,
-        );
+        setError(err.message === "Failed to fetch" ? "Jenis data not found" : err.message);
       } finally {
         setLoading(false);
       }
@@ -216,10 +192,7 @@ const UploadDokumen = () => {
       setError(null);
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(
-          `/master_subjenis/all-data/by-role/${type}/${user.level_id}`,
-          "GET",
-        );
+        const response = await apiRequest(`/master_subjenis/all-data/by-role/${type}/${user.level_id}`,"GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Subjenis data not found");
@@ -228,20 +201,14 @@ const UploadDokumen = () => {
         }
         const result = await response.json();
 
-        const fetchOptionSettingSubtypes = result.responseData.items.map(
-          (item: any) => ({
+        const fetchOptionSettingSubtypes = result.responseData.items.map((item: any) => ({
             id: item.subjenis,
             subjenis: item.nama_subjenis,
-          }),
-        );
+        }));
 
         setOptionSubtypes(fetchOptionSettingSubtypes);
       } catch (err: any) {
-        setError(
-          err.message === "Failed to fetch"
-            ? "Subjenis data not found"
-            : err.message,
-        );
+        setError(err.message === "Failed to fetch" ? "Subjenis data not found" : err.message);
       } finally {
         setLoading(false);
       }
@@ -250,9 +217,7 @@ const UploadDokumen = () => {
     fetchOptionSubtypes();
   }, [type]);
 
-  const handleFileChange = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>,) => {
     if (event.target.files && event.target.files.length > 0) {
       const selectedFiles = Array.from(event.target.files);
       
@@ -341,9 +306,7 @@ const UploadDokumen = () => {
     if (tempFilePaths.length > 0) {
       for (const path of tempFilePaths) {
         try {
-          await apiRequest("/document_managements/delete-file", "POST", {
-            file_path: path,
-          });
+          await apiRequest("/document_managements/delete-file", "POST", {file_path: path,});
         } catch (error) {
           console.warn("Gagal hapus file:", error);
         }
@@ -380,20 +343,15 @@ const UploadDokumen = () => {
       return;
     }
 
-    // Dapatkan user data langsung dari cookie
     let userData;
     try {
       const userCookie = Cookies.get("user");
       userData = userCookie ? JSON.parse(userCookie) : {};
-      
-      // Debug: Log user data
-      // console.log("User data untuk payload:", userData);
     } catch (error) {
       console.error("Error parsing user cookie:", error);
       userData = {};
     }
 
-    // Gunakan userData.userid langsung sebagai dinas_id
     const payload = {
       dinas_id: userData.department_id || dinas,
       type_id: type,
@@ -405,15 +363,8 @@ const UploadDokumen = () => {
       maker_role: userData.level_id || "",
     };
 
-    // Debug: Log payload
-    // console.log("Submitting payload:", payload);
-
     try {
-      const response = await apiRequest(
-        "/document_managements/v2",
-        "POST",
-        payload,
-      );
+      const response = await apiRequest("/document_managements/v2","POST", payload);
 
       if (response.ok) {
         setSuccess(true);

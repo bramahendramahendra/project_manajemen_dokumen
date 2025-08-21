@@ -31,7 +31,7 @@ const FormAddUser = () => {
         setError(null);
         try {
           // Fetch dinas berdasarkan level_id
-          const response = await apiRequest(`/master_dinas/opt-dinas/${accessUser}`, "GET");
+          const response = await apiRequest(`/master_dinas/opt-dinas?level_id=${accessUser}`, "GET");
           if (!response.ok) {
             throw new Error("Data dinas tidak tersedia");
           }
@@ -104,7 +104,7 @@ const FormAddUser = () => {
   // Function untuk mendapatkan dinas berdasarkan level_id
   const getDinasByLevelId = async (levelId: string) => {
     try {
-      const response = await apiRequest(`/master_dinas/opt-dinas/${levelId}`, "GET");
+      const response = await apiRequest(`/master_dinas/opt-dinas?level_id=${levelId}`, "GET");
       if (!response.ok) {
         throw new Error("Data dinas tidak tersedia");
       }

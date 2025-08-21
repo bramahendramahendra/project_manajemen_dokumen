@@ -110,10 +110,10 @@ const UploadDokumen = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await apiRequest("/master_dinas/opt-dinas/DNS", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error("Officials data not found");
+            throw new Error("Dinas data not found");
           }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -220,14 +220,28 @@ const UploadDokumen = () => {
           maxSize = 100 * 1024 * 1024; // 100MB untuk ZIP/RAR
         } else if (fileName.match(/\.(pdf|doc|docx)$/)) {
           maxSize = 25 * 1024 * 1024; // 25MB untuk PDF/DOC
+        } else {
+          maxSize = 10 * 1024 * 1024; // 10MB untuk gambar dan file lainnya
         }
         
         return file.size > maxSize;
       });
       
       if (oversizedFiles.length > 0) {
-        const oversizedFileInfo = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
-        setError(`File terlalu besar: ${oversizedFileInfo}. Maksimal 100MB untuk ZIP/RAR, 25MB untuk PDF/DOC, dan 10MB untuk gambar.`);
+        const oversizedFileInfo = oversizedFiles.map(f => {
+          const fileName = f.name.toLowerCase();
+          let maxSizeText;
+          if (fileName.match(/\.(zip|rar)$/)) {
+            maxSizeText = "100MB";
+          } else if (fileName.match(/\.(pdf|doc|docx)$/)) {
+            maxSizeText = "25MB";
+          } else {
+            maxSizeText = "10MB";
+          }
+          return `${f.name} (${formatFileSize(f.size)}, maks: ${maxSizeText})`;
+        }).join(', ');
+        
+        setError(`File terlalu besar: ${oversizedFileInfo}.`);
         return;
       }
 
@@ -312,8 +326,15 @@ const UploadDokumen = () => {
       return;
     }
 
-    const user = JSON.parse(Cookies.get("user") || "{}");
-   
+    let userData;
+    try {
+      const userCookie = Cookies.get("user");
+      userData = userCookie ? JSON.parse(userCookie) : {};
+    } catch (error) {
+      console.error("Error parsing user cookie:", error);
+      userData = {};
+    }
+
     const payload = {
       dinas_id: dinas,
       type_id: type,
@@ -321,8 +342,8 @@ const UploadDokumen = () => {
       tahun: tahun,
       keterangan: keterangan,
       file_paths: tempFilePaths,
-      maker: user.userid || "",
-      maker_role: user.level_id || "",
+      maker: userData.userid || "",
+      maker_role: userData.level_id || "",
     };
 
     try {
@@ -330,6 +351,7 @@ const UploadDokumen = () => {
   
       if (response.ok) {
         setSuccess(true);
+        
         // Tampilkan modal sukses
         setIsSuccessModalOpen(true);
         

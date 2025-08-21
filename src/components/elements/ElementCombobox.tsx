@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 
 interface ElementComboboxProps {
-  label: string;
+  label?: string;
   placeholder: string;
   // options: { name: string | number }[];
   options: { name: string | number; id?: string | number }[];
