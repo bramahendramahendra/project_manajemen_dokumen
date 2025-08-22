@@ -48,6 +48,16 @@ const UploadDokumen = () => {
   // State untuk Success Modal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
+  // State untuk tracking loading data master
+  const [loadingOfficials, setLoadingOfficials] = useState(false);
+  const [loadingTypes, setLoadingTypes] = useState(false);
+  const [loadingSubtypes, setLoadingSubtypes] = useState(false);
+
+  // State untuk tracking apakah data master kosong
+  const [isOfficialsEmpty, setIsOfficialsEmpty] = useState(false);
+  const [isTypesEmpty, setIsTypesEmpty] = useState(false);
+  const [isSubtypesEmpty, setIsSubtypesEmpty] = useState(false);
+
   // Fungsi untuk mendapatkan icon berdasarkan tipe file
   const getFileIcon = (file: File) => {
     const fileName = file.name.toLowerCase();
@@ -105,96 +115,145 @@ const UploadDokumen = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  useEffect(() => {
-    const fetchOfficials = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Dinas data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
+  // Fungsi untuk retry fetch data
+  const retryFetchOfficials = () => {
+    fetchOfficials();
+  };
 
+  const retryFetchTypes = () => {
+    fetchOptionTypes();
+  };
+
+  const retryFetchSubtypes = () => {
+    if (type) {
+      fetchOptionSubtypes();
+    }
+  };
+
+  // Fungsi untuk fetch officials dengan handling yang lebih baik
+  const fetchOfficials = async () => {
+    setLoadingOfficials(true);
+    setError(null);
+    setIsOfficialsEmpty(false);
+    
+    try {
+      const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Dinas data not found");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
+
+      // Check jika items null atau array kosong
+      if (!result.responseData?.items || result.responseData.items.length === 0) {
+        setIsOfficialsEmpty(true);
+        setOptionOfficials([]);
+      } else {
         const fetchedOfficials = result.responseData.items.map((item: any) => ({
           id: item.dinas,
           dinas: item.nama_dinas,
         }));
-
         setOptionOfficials(fetchedOfficials);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Dinas data not found" : err.message);
-      } finally {
-        setLoading(false);
+        setIsOfficialsEmpty(false);
       }
-    };
+    } catch (err: any) {
+      setError(err.message === "Failed to fetch" ? "Gagal mengambil data dinas. Periksa koneksi internet." : err.message);
+      setIsOfficialsEmpty(true);
+    } finally {
+      setLoadingOfficials(false);
+    }
+  };
 
-    fetchOfficials();
-  }, []);
-
-  useEffect(() => {
-    const fetchOptionTypes = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(`/master_jenis/all-data/by-role/${user.level_id}`,"GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Jenis data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+  // Fungsi untuk fetch types dengan handling yang lebih baik
+  const fetchOptionTypes = async () => {
+    setLoadingTypes(true);
+    setError(null);
+    setIsTypesEmpty(false);
+    
+    try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
+      const response = await apiRequest(`/master_jenis/all-data/by-role/${user.level_id}`,"GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Jenis data not found");
         }
-        const result = await response.json();
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
 
+      // Check jika items null atau array kosong
+      if (!result.responseData?.items || result.responseData.items.length === 0) {
+        setIsTypesEmpty(true);
+        setOptionTypes([]);
+      } else {
         const fetchOptionSettingTypes = result.responseData.items.map((item: any) => ({
           id: item.jenis,
           jenis: item.nama_jenis,
         }));
-
         setOptionTypes(fetchOptionSettingTypes);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Jenis data not found" : err.message);
-      } finally {
-        setLoading(false);
+        setIsTypesEmpty(false);
       }
-    };
+    } catch (err: any) {
+      setError(err.message === "Failed to fetch" ? "Gagal mengambil data jenis. Periksa koneksi internet." : err.message);
+      setIsTypesEmpty(true);
+    } finally {
+      setLoadingTypes(false);
+    }
+  };
 
-    fetchOptionTypes();
-  }, []);
-
-  useEffect(() => {
-    if (!type) return;
-
-    const fetchOptionSubtypes = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(`/master_subjenis/all-data/by-role/${type}/${user.level_id}`,"GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Subjenis data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+  // Fungsi untuk fetch subtypes dengan handling yang lebih baik
+  const fetchOptionSubtypes = async () => {
+    setLoadingSubtypes(true);
+    setError(null);
+    setIsSubtypesEmpty(false);
+    
+    try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
+      const response = await apiRequest(`/master_subjenis/all-data/by-role/${type}/${user.level_id}`,"GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Subjenis data not found");
         }
-        const result = await response.json();
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result = await response.json();
 
+      // Check jika items null atau array kosong
+      if (!result.responseData?.items || result.responseData.items.length === 0) {
+        setIsSubtypesEmpty(true);
+        setOptionSubtypes([]);
+      } else {
         const fetchOptionSettingSubtypes = result.responseData.items.map((item: any) => ({
           id: item.subjenis,
           subjenis: item.nama_subjenis,
         }));
-
         setOptionSubtypes(fetchOptionSettingSubtypes);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Subjenis data not found" : err.message);
-      } finally {
-        setLoading(false);
+        setIsSubtypesEmpty(false);
       }
-    };
+    } catch (err: any) {
+      setError(err.message === "Failed to fetch" ? "Gagal mengambil data subjenis. Periksa koneksi internet." : err.message);
+      setIsSubtypesEmpty(true);
+    } finally {
+      setLoadingSubtypes(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchOfficials();
+  }, []);
+
+  useEffect(() => {
+    fetchOptionTypes();
+  }, []);
+
+  useEffect(() => {
+    if (!type) {
+      setOptionSubtypes([]);
+      setIsSubtypesEmpty(false);
+      return;
+    }
 
     fetchOptionSubtypes();
   }, [type]);
@@ -319,6 +378,13 @@ const UploadDokumen = () => {
     setError(null);
     setSuccess(false);
 
+    // Validasi data master kosong
+    if (isOfficialsEmpty || isTypesEmpty) {
+      setError("Data master belum lengkap. Pastikan data Dinas dan Jenis telah tersedia sebelum melakukan upload.");
+      setLoading(false);
+      return;
+    }
+
     if (!isUploadComplete || tempFilePaths.length === 0) {
       setError("Belum ada file yang berhasil diupload.");
       setLoading(false);
@@ -376,40 +442,135 @@ const UploadDokumen = () => {
     }
   };
 
+  // Komponen untuk menampilkan pesan data kosong
+  const EmptyDataMessage = ({ type, onRetry }: { type: string, onRetry: () => void }) => (
+    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800">
+      <div className="flex items-center">
+        <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+            Data {type} belum tersedia
+          </p>
+          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+            Hubungi administrator untuk menambahkan data {type} terlebih dahulu.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="ml-3 text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+        >
+          Coba Lagi
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="col-span-12 xl:col-span-6">
       <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
         <h4 className="mb-5.5 font-medium text-dark dark:text-white">
           Upload dokumenmu sekarang juga
         </h4>
+        
+        {/* Pesan jika data master kosong */}
+        {isOfficialsEmpty && (
+          <EmptyDataMessage type="Dinas" onRetry={retryFetchOfficials} />
+        )}
+        
+        {isTypesEmpty && (
+          <EmptyDataMessage type="Jenis" onRetry={retryFetchTypes} />
+        )}
+        
+        {type !== 0 && isSubtypesEmpty && (
+          <EmptyDataMessage type="Sub Jenis" onRetry={retryFetchSubtypes} />
+        )}
+
         <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
           <form onSubmit={handleSubmit}>
             <div className="p-6.5">
-              {/* Diganti dengan ElementComboboxAutocomplete */}
-              <ElementComboboxAutocomplete
-                label="Dinas"
-                placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
-                options={optionOfficials.map((t) => ({ name: t.dinas, id: t.id }))}
-                onChange={(value) => setDinas(Number(value))}
-                resetKey={resetKey}
-              />
-
-              <ElementCombobox
-                label="Jenis"
-                placeholder="Pilih jenis"
-                options={optionTypes.map((t) => ({ name: t.jenis, id: t.id }))}
-                onChange={(value) => setType(Number(value))}
-                resetKey={resetKey}
-              />
-              {type != 0 && (
-                <ElementCombobox
-                  label="Sub Jenis"
-                  placeholder="Pilih sub jenis"
-                  options={optionSubtypes.map((t) => ({ name: t.subjenis, id: t.id }))}
-                  onChange={(value) => setSubtype(Number(value))}
+              {/* Dinas Combobox with loading and empty state */}
+              <div className="mb-4.5">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-body-sm font-medium text-dark dark:text-white">
+                    Dinas
+                  </label>
+                  {loadingOfficials && (
+                    <span className="text-xs text-blue-500">Memuat data...</span>
+                  )}
+                </div>
+                <ElementComboboxAutocomplete
+                  label=""
+                  placeholder={
+                    loadingOfficials 
+                      ? "Memuat data dinas..." 
+                      : isOfficialsEmpty 
+                      ? "Data dinas belum tersedia" 
+                      : "Ketik minimal 3 huruf untuk mencari dinas..."
+                  }
+                  options={optionOfficials.map((t) => ({ name: t.dinas, id: t.id }))}
+                  onChange={(value) => setDinas(Number(value))}
                   resetKey={resetKey}
+                  disabled={loadingOfficials || isOfficialsEmpty}
                 />
+              </div>
+
+              {/* Jenis Combobox with loading and empty state */}
+              <div className="mb-4.5">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-body-sm font-medium text-dark dark:text-white">
+                    Jenis
+                  </label>
+                  {loadingTypes && (
+                    <span className="text-xs text-blue-500">Memuat data...</span>
+                  )}
+                </div>
+                <ElementCombobox
+                  label=""
+                  placeholder={
+                    loadingTypes 
+                      ? "Memuat data jenis..." 
+                      : isTypesEmpty 
+                      ? "Data jenis belum tersedia" 
+                      : "Pilih jenis"
+                  }
+                  options={optionTypes.map((t) => ({ name: t.jenis, id: t.id }))}
+                  onChange={(value) => setType(Number(value))}
+                  resetKey={resetKey}
+                  disabled={loadingTypes || isTypesEmpty}
+                />
+              </div>
+
+              {/* Sub Jenis Combobox - hanya muncul jika type dipilih */}
+              {type != 0 && (
+                <div className="mb-4.5">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-body-sm font-medium text-dark dark:text-white">
+                      Sub Jenis
+                    </label>
+                    {loadingSubtypes && (
+                      <span className="text-xs text-blue-500">Memuat data...</span>
+                    )}
+                  </div>
+                  <ElementCombobox
+                    label=""
+                    placeholder={
+                      loadingSubtypes 
+                        ? "Memuat data sub jenis..." 
+                        : isSubtypesEmpty 
+                        ? "Data sub jenis belum tersedia" 
+                        : "Pilih sub jenis"
+                    }
+                    options={optionSubtypes.map((t) => ({ name: t.subjenis, id: t.id }))}
+                    onChange={(value) => setSubtype(Number(value))}
+                    resetKey={resetKey}
+                    disabled={loadingSubtypes || isSubtypesEmpty}
+                  />
+                </div>
               )}
+
               <ElementCombobox
                 label="Tahun"
                 placeholder="Pilih tahun"
@@ -417,6 +578,7 @@ const UploadDokumen = () => {
                 onChange={(value) => setTahun(value)}
                 resetKey={resetKey}
               />
+              
               <div className="mb-4.5">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Keterangan
@@ -560,14 +722,20 @@ const UploadDokumen = () => {
 
               <button
                 type="submit"
-                className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] p-[13px] font-medium text-white hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                disabled={loading || isUploading || !isUploadComplete}
+                className={`flex w-full justify-center rounded-[7px] p-[13px] font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
+                  loading || isUploading || !isUploadComplete || isOfficialsEmpty || isTypesEmpty
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F]"
+                }`}
+                disabled={loading || isUploading || !isUploadComplete || isOfficialsEmpty || isTypesEmpty}
               >
                 {isUploading
                   ? "Uploading..."
                   : isUploadComplete
                     ? loading
                       ? "Menambahkan..."
+                      : isOfficialsEmpty || isTypesEmpty
+                      ? "Data Master Belum Lengkap"
                       : "Simpan Document"
                     : "Menunggu Upload"}
               </button>
