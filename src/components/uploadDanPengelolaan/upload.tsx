@@ -30,8 +30,8 @@ const UploadDokumen = () => {
   const [dinas, setDinas] = useState<number>(0);
   const [type, setType] = useState<number>(0);
   const [subtype, setSubtype] = useState<number>(0);
-  const [tahun, setTahun] = useState<string | number>("");
-  const [keterangan, setKeterangan] = useState("");
+  const [tahun, setTahun] = useState<string | number>('');
+  const [keterangan, setKeterangan] = useState('');
   const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
 
   const [files, setFiles] = useState<File[]>([]);
@@ -44,7 +44,7 @@ const UploadDokumen = () => {
   const [optionSubtypes, setOptionSubtypes] = useState<any[]>([]);
   const [resetKey, setResetKey] = useState(0);
   
-  // State untuk SuccessModal
+  // State untuk Success Modal
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   // Fungsi untuk mendapatkan icon berdasarkan tipe file
@@ -169,8 +169,8 @@ const UploadDokumen = () => {
         const result = await response.json();
 
         const fetchOptionSettingTypes = result.responseData.items.map((item: any) => ({
-            id: item.jenis,
-            jenis: item.nama_jenis,
+          id: item.jenis,
+          jenis: item.nama_jenis,
         }));
 
         setOptionTypes(fetchOptionSettingTypes);
@@ -202,8 +202,8 @@ const UploadDokumen = () => {
         const result = await response.json();
 
         const fetchOptionSettingSubtypes = result.responseData.items.map((item: any) => ({
-            id: item.subjenis,
-            subjenis: item.nama_subjenis,
+          id: item.subjenis,
+          subjenis: item.nama_subjenis,
         }));
 
         setOptionSubtypes(fetchOptionSettingSubtypes);
@@ -217,7 +217,7 @@ const UploadDokumen = () => {
     fetchOptionSubtypes();
   }, [type]);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>,) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const selectedFiles = Array.from(event.target.files);
       
@@ -228,15 +228,15 @@ const UploadDokumen = () => {
         return;
       }
 
-      // Validasi ukuran file dengan kategori yang lebih spesifik
+      // Validasi ukuran file (maksimal 100MB per file untuk ZIP/RAR, 25MB untuk PDF/DOC, 10MB untuk image)
       const oversizedFiles = selectedFiles.filter(file => {
         const fileName = file.name.toLowerCase();
-        let maxSize;
+        let maxSize = 10 * 1024 * 1024; // Default 10MB untuk image
         
         if (fileName.match(/\.(zip|rar)$/)) {
           maxSize = 100 * 1024 * 1024; // 100MB untuk ZIP/RAR
         } else if (fileName.match(/\.(pdf|doc|docx)$/)) {
-          maxSize = 25 * 1024 * 1024; // 25MB untuk dokumen
+          maxSize = 25 * 1024 * 1024; // 25MB untuk PDF/DOC
         } else {
           maxSize = 10 * 1024 * 1024; // 10MB untuk gambar dan file lainnya
         }
@@ -280,7 +280,7 @@ const UploadDokumen = () => {
             (progress) => {
               progresses[i] = progress;
               setUploadProgress([...progresses]);
-            },
+            }
           );
 
           if (status === 200 && response.responseData?.temp_file_path) {
@@ -306,7 +306,7 @@ const UploadDokumen = () => {
     if (tempFilePaths.length > 0) {
       for (const path of tempFilePaths) {
         try {
-          await apiRequest("/document_managements/delete-file", "POST", {file_path: path,});
+          await apiRequest("/document_managements/delete-file", "POST", { file_path: path });
         } catch (error) {
           console.warn("Gagal hapus file:", error);
         }
@@ -369,15 +369,15 @@ const UploadDokumen = () => {
       if (response.ok) {
         setSuccess(true);
         
-        // Buka modal sukses
+        // Tampilkan modal sukses
         setIsSuccessModalOpen(true);
         
         // Reset form
         setDinas(0);
         setType(0);
         setSubtype(0);
-        setTahun("");
-        setKeterangan("");
+        setTahun('');
+        setKeterangan('');
         setFiles([]);
         setUploadProgress([]);
         setTempFilePaths([]);
@@ -385,9 +385,7 @@ const UploadDokumen = () => {
         setResetKey((prev) => prev + 1);
       } else {
         const result = await response.json();
-        setError(
-          result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen",
-        );
+        setError(result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen");
       }
     } catch (error) {
       setError("Terjadi kesalahan saat mengirim data");
@@ -460,10 +458,7 @@ const UploadDokumen = () => {
                 <ElementCombobox
                   label="Sub Jenis"
                   placeholder="Pilih sub jenis"
-                  options={optionSubtypes.map((t) => ({
-                    name: t.subjenis,
-                    id: t.id,
-                  }))}
+                  options={optionSubtypes.map((t) => ({ name: t.subjenis, id: t.id }))}
                   onChange={(value) => setSubtype(Number(value))}
                   resetKey={resetKey}
                 />
@@ -537,7 +532,7 @@ const UploadDokumen = () => {
 
               {files.length > 0 && (
                 <div className="mt-4">
-                  <h5 className="mb-3 font-semibold text-dark dark:text-white">
+                  <h5 className="text-dark dark:text-white font-semibold mb-3">
                     File Terpilih
                   </h5>
                   {files.map((file, index) => {
@@ -546,37 +541,32 @@ const UploadDokumen = () => {
                     const fileIcon = getFileIcon(file);
 
                     return (
-                      <div
-                        key={index}
-                        className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2 mb-2"
-                      >
+                      <div key={index} className="relative p-3 border rounded-md bg-white dark:bg-dark-2 shadow-sm flex gap-4 items-center mb-2">
                         {isImage ? (
                           <Image
                             src={URL.createObjectURL(file)}
                             alt="preview"
                             width={48}
                             height={48}
-                            className="rounded-md border object-cover"
+                            className="object-cover rounded-md border"
                           />
                         ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 text-2xl dark:bg-gray-700">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
                             {fileIcon}
                           </div>
                         )}
 
                         <div className="flex-1 overflow-hidden">
-                          <div className="mb-1 flex items-center justify-between">
-                            <span className="max-w-[70%] truncate text-sm font-medium">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-sm font-medium truncate max-w-[70%]">
                               {file.name}
                             </span>
-                            <span className="text-xs text-gray-500">
-                              {percent}%
-                            </span>
+                            <span className="text-xs text-gray-500">{percent}%</span>
                           </div>
                           <div className="mb-1 text-xs text-gray-400">
                             {formatFileSize(file.size)}
                           </div>
-                          <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
                             <div
                               className={`h-2.5 rounded-full transition-all duration-300 ${
                                 percent === 100 ? "bg-green-500" : "bg-blue-600"
@@ -597,7 +587,7 @@ const UploadDokumen = () => {
                               setIsUploading(false);
                               setIsUploadComplete(false);
                             }}
-                            className="ml-2 text-sm text-red-500 hover:text-red-700"
+                            className="ml-2 text-red-500 hover:text-red-700 text-sm"
                             title="Batalkan Upload"
                           >
                             ✖
@@ -609,7 +599,7 @@ const UploadDokumen = () => {
                           <button
                             type="button"
                             onClick={handleRemoveFile}
-                            className="mt-1 flex-shrink-0 text-sm text-red-500 hover:text-red-700"
+                            className="text-red-500 hover:text-red-700 text-sm mt-1 flex-shrink-0"
                             title="Hapus File"
                           >
                             🗑️
@@ -636,12 +626,8 @@ const UploadDokumen = () => {
               </button>
 
               {/* Error and Success Messages */}
-              {error && <p className="mt-2 text-red-500">{error}</p>}
-              {success && (
-                <p className="mt-2 text-green-500">
-                  Upload Dokumen berhasil ditambahkan!
-                </p>
-              )}
+              {error && <p className="text-red-500 mt-2">{error}</p>}
+              {success && (<p className="mt-2 text-green-500">Upload Dokumen berhasil ditambahkan!</p>)}
             </div>
           </form>
         </div>

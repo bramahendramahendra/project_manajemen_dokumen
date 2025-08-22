@@ -141,7 +141,7 @@ const UploadDokumen = () => {
       setError(null);
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(`/master_jenis/all-data/by-role/${user.level_id}`, "GET");
+        const response = await apiRequest(`/master_jenis/all-data/by-role/${user.level_id}`,"GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Jenis data not found");
@@ -166,7 +166,6 @@ const UploadDokumen = () => {
     fetchOptionTypes();
   }, []);
 
-  
   useEffect(() => {
     if (!type) return;
 
@@ -175,7 +174,7 @@ const UploadDokumen = () => {
       setError(null);
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
-        const response = await apiRequest(`/master_subjenis/all-data/by-role/${type}/${user.level_id}`, "GET");
+        const response = await apiRequest(`/master_subjenis/all-data/by-role/${type}/${user.level_id}`,"GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Subjenis data not found");
@@ -250,10 +249,10 @@ const UploadDokumen = () => {
       setIsUploading(true);
       setIsUploadComplete(false);
       setError(null);
-  
+
       const uploadedPaths: string[] = [];
       const progresses: number[] = [];
-  
+
       for (let i = 0; i < selectedFiles.length; i++) {
         const file = selectedFiles[i];
         try {
@@ -265,7 +264,7 @@ const UploadDokumen = () => {
               setUploadProgress([...progresses]);
             }
           );
-  
+
           if (status === 200 && response.responseData?.temp_file_path) {
             uploadedPaths.push(response.responseData.temp_file_path);
           } else {
@@ -278,7 +277,7 @@ const UploadDokumen = () => {
           return;
         }
       }
-  
+
       setTempFilePaths(uploadedPaths);
       setIsUploadComplete(true);
       setIsUploading(false);
@@ -347,15 +346,15 @@ const UploadDokumen = () => {
     };
 
     try {
-      const response = await apiRequest("/document_managements/v2", "POST", payload);
-  
+      const response = await apiRequest("/document_managements/v2","POST", payload);
+
       if (response.ok) {
         setSuccess(true);
         
         // Tampilkan modal sukses
         setIsSuccessModalOpen(true);
         
-        // Reset semua field form
+        // Reset form
         setDinas(0);
         setType(0);
         setSubtype(0);
@@ -365,7 +364,7 @@ const UploadDokumen = () => {
         setUploadProgress([]);
         setTempFilePaths([]);
         setIsUploadComplete(false);
-        setResetKey(prev => prev + 1);
+        setResetKey((prev) => prev + 1);
       } else {
         const result = await response.json();
         setError(result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen");
@@ -442,7 +441,7 @@ const UploadDokumen = () => {
                   multiple
                   name="profilePhoto"
                   id="profilePhoto"
-                  accept="image/png, image/jpg, image/jpeg, image/gif, image/svg+xml, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, .zip, .rar, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
+                  accept="image/png, image/jpg, image/jpeg, image/gif, image/svg+xml, .pdf, .doc, .docx, .zip, .rar, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
                   className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
                   onChange={handleFileChange}
                 />
@@ -470,7 +469,7 @@ const UploadDokumen = () => {
                     drag and drop
                   </p>
                   <p className="mt-1 text-body-xs">
-                    PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, RAR
+                    PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, RAR<br/>
                   </p>
                   <p className="mt-1 text-body-xs text-gray-500">
                     (Maksimal 100MB untuk arsip, 25MB untuk dokumen, 10MB untuk gambar)
@@ -567,15 +566,15 @@ const UploadDokumen = () => {
                 {isUploading
                   ? "Uploading..."
                   : isUploadComplete
-                    ? loading 
-                      ? 'Menambahkan...'
+                    ? loading
+                      ? "Menambahkan..."
                       : "Simpan Document"
                     : "Menunggu Upload"}
               </button>
 
               {/* Error and Success Messages */}
               {error && <p className="text-red-500 mt-2">{error}</p>}
-              {success && <p className="text-green-500 mt-2">Upload Dokumen berhasil ditambahkan!</p>}  
+              {success && (<p className="mt-2 text-green-500">Upload Dokumen berhasil ditambahkan!</p>)}
             </div>
           </form>
         </div>
