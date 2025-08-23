@@ -60,7 +60,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
 
   // Get user data untuk mendapatkan id_dinas
   const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-  const idDinas = user.department_id;
+  const dinas = user.dinas;
 
   // Mapping status code ke display name dan warna
   const statusMapping = {
@@ -98,7 +98,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
 
   // Fetch count data dari API
   const fetchCountData = async () => {
-    if (!idDinas) {
+    if (!dinas) {
       setError("ID Dinas tidak ditemukan");
       setLoading(false);
       return;
@@ -108,7 +108,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
       setLoading(true);
       setError(null);
 
-      const response = await apiRequest(`/dashboard/document/count/${idDinas}`, "GET");
+      const response = await apiRequest(`/dashboard/document-dinas/count/${dinas}`, "GET");
       
       if (!response.ok) {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
@@ -132,13 +132,13 @@ const DataStatsOne: React.FC<dataStats> = () => {
 
   // Fetch document list berdasarkan status
   const fetchDocumentsByStatus = async (statusCode: string) => {
-    if (!idDinas) {
+    if (!dinas) {
       setError("ID Dinas tidak ditemukan");
       return [];
     }
 
     try {
-      const response = await apiRequest(`/dashboard/document/list-status/${idDinas}/${statusCode}`, "GET");
+      const response = await apiRequest(`/dashboard/document-dinas/list-status/${dinas}/${statusCode}`, "GET");
       
       if (!response.ok) {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
@@ -161,7 +161,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
   // Load data saat component mount
   useEffect(() => {
     fetchCountData();
-  }, [idDinas]);
+  }, [dinas]);
 
   // Fungsi untuk menampilkan modal dan fetch dokumen berdasarkan status
   const handleCardClick = async (statusCode: string, title: string) => {

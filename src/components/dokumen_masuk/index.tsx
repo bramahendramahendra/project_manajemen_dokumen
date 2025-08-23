@@ -34,7 +34,7 @@ const MainPage = () => {
         // console.log(user);
         
         
-        const response = await apiRequest(`/kotak_masuk/all/${user.department_id}`, "GET");
+        const response = await apiRequest(`/kotak_masuk/all/${user.dinas}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Data dinas tidak ditemukan");

@@ -70,7 +70,7 @@ const TablePage = () => {
   // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
     const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-    const idDinas = user.department_id;
+    const idDinas = user.dinas;
 
     setLoading(true);
     setError(null);
@@ -88,7 +88,7 @@ const TablePage = () => {
         if (!value) queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/dashboard/document/list/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/dashboard/document-dinas/list/${idDinas}?${queryParams.toString()}`, "GET");
       
       if (!response.ok) {
         if (response.status === 404) {

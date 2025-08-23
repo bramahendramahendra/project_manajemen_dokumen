@@ -219,7 +219,7 @@ const FormPengirimanLangsung = () => {
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
 
-        const response = await apiRequest(`/direct-shipping/${user.department_id}`, "GET");
+        const response = await apiRequest(`/direct-shipping/${user.dinas}`, "GET");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -441,7 +441,7 @@ const FormPengirimanLangsung = () => {
       const user = JSON.parse(Cookies.get("user") || "{}");
       // console.log("User cookie:", user);
 
-      if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
+      if (!user.userid || !user.name || user.dinas == '' || !user.nama_dinas) {
         console.error("User tidak ditemukan di cookie.");
         return;
       }
@@ -458,8 +458,8 @@ const FormPengirimanLangsung = () => {
         file_path: tempFilePath, // Bisa array kosong []
         pengirim_userid: user.userid,
         pengirim_name: user.name,
-        pengirim_department_id: user.department_id,
-        pengirim_department_name: user.department_name
+        pengirim_department_id: user.dinas,
+        pengirim_department_name: user.nama_dinas
       };
       
       // console.log("Starting actual API call with payload:", payload);

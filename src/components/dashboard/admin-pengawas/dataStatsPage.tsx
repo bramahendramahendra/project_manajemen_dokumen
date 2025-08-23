@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import DocumentModal from "../../modals/documentModal";
-import { dataStats } from "@/types/dataStats";
 import { apiRequest } from "@/helpers/apiClient";
 import Cookies from "js-cookie";
 import { 
@@ -19,6 +18,7 @@ interface DocumentItem {
   maker_date: string;
   status_code: string;
   status_doc: string;
+  dinas_name?: string;
 }
 
 // Definisikan tipe untuk count response
@@ -50,7 +50,7 @@ interface DocumentListResponse {
   };
 }
 
-const DataStatsOne: React.FC<dataStats> = () => {
+const AdminPengawasDataStats: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filteredDocuments, setFilteredDocuments] = useState<DocumentItem[]>([]);
   const [modalTitle, setModalTitle] = useState("");
@@ -58,14 +58,13 @@ const DataStatsOne: React.FC<dataStats> = () => {
   const [error, setError] = useState<string | null>(null);
   const [countData, setCountData] = useState<CountItem[]>([]);
 
-  // Get user data untuk mendapatkan id_dinas
   const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-  const idDinas = user.department_id;
+  const userLevelId = user.level_id || ""; // ADM atau PGW
 
   // Mapping status code ke display name dan warna
   const statusMapping = {
     "001": { 
-      title: "Dokumen Diproses", 
+      title: "Total Diproses", 
       color: "#3FD97F",
       icon: (
         <div className="flex items-center justify-center relative">
@@ -75,7 +74,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
       )
     },
     "002": { 
-      title: "Dokumen Ditolak", 
+      title: "Total Ditolak", 
       color: "#8155FF",
       icon: (
         <div className="flex items-center justify-center relative">
@@ -85,7 +84,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
       )
     },
     "003": { 
-      title: "Dokumen Diterima", 
+      title: "Total Diterima", 
       color: "#FF9C55",
       icon: (
         <div className="flex items-center justify-center relative">
@@ -96,19 +95,14 @@ const DataStatsOne: React.FC<dataStats> = () => {
     }
   };
 
-  // Fetch count data dari API
+  // Fetch count data dari API khusus admin/pengawas
   const fetchCountData = async () => {
-    if (!idDinas) {
-      setError("ID Dinas tidak ditemukan");
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      const response = await apiRequest(`/dashboard/document/count/${idDinas}`, "GET");
+      // API baru untuk admin/pengawas - API sama, role akan terdeteksi di backend
+      const response = await apiRequest(`/dashboard/document-monitoring/count`, "GET");
       
       if (!response.ok) {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
@@ -132,13 +126,9 @@ const DataStatsOne: React.FC<dataStats> = () => {
 
   // Fetch document list berdasarkan status
   const fetchDocumentsByStatus = async (statusCode: string) => {
-    if (!idDinas) {
-      setError("ID Dinas tidak ditemukan");
-      return [];
-    }
-
     try {
-      const response = await apiRequest(`/dashboard/document/list-status/${idDinas}/${statusCode}`, "GET");
+      // API baru untuk admin/pengawas - API sama, role akan terdeteksi di backend
+      const response = await apiRequest(`/dashboard/document-monitoring/list-status/${statusCode}`, "GET");
       
       if (!response.ok) {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
@@ -161,7 +151,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
   // Load data saat component mount
   useEffect(() => {
     fetchCountData();
-  }, [idDinas]);
+  }, []);
 
   // Fungsi untuk menampilkan modal dan fetch dokumen berdasarkan status
   const handleCardClick = async (statusCode: string, title: string) => {
@@ -272,4 +262,4 @@ const DataStatsOne: React.FC<dataStats> = () => {
   );
 };
 
-export default DataStatsOne;
+export default AdminPengawasDataStats;

@@ -7,6 +7,24 @@ import { HiOutlineDocumentText } from "react-icons/hi";
 import { Document, DocumentResponse } from "@/types/dashboard";
 import Pagination from "@/components/pagination/Pagination";
 
+// Extend interface Document untuk admin/pengawas
+interface AdminPengawasDocument extends Document {
+  dinas?: string; // Tambahan field untuk nama dinas
+}
+
+interface AdminPengawasDocumentResponse {
+  responseCode: number;
+  responseDesc: string;
+  responseData: {
+    items: AdminPengawasDocument[];
+  };
+  responseMeta: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_records: number;
+  };
+}
 
 // Fungsi untuk mendapatkan warna status berdasarkan status_code
 const getStatusColor = (statusCode: string) => {
@@ -51,11 +69,11 @@ const formatDate = (dateString: string): string => {
   }
 };
 
-const TablePage = () => {
+const AdminPengawasTable = () => {
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [dataList, setDataList] = useState<Document[]>([]);
+  const [dataList, setDataList] = useState<AdminPengawasDocument[]>([]);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
@@ -67,11 +85,11 @@ const TablePage = () => {
     sort_dir: 'DESC'
   });
 
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+  const userLevelId = user.level_id || ""; // ADM atau PGW
+
   // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
-    const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-    const idDinas = user.department_id;
-
     setLoading(true);
     setError(null);
 
@@ -88,7 +106,7 @@ const TablePage = () => {
         if (!value) queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/dashboard/document/list/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/dashboard/document-monitoring/list?${queryParams.toString()}`, "GET");
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -97,7 +115,7 @@ const TablePage = () => {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
 
-      const result: DocumentResponse = await response.json();
+      const result: AdminPengawasDocumentResponse = await response.json();
 
       // Validasi struktur response
       if (!result.responseData || !result.responseData.items) {
@@ -108,8 +126,9 @@ const TablePage = () => {
         throw new Error("Format meta tidak valid");
       }
 
-      const res: Document[] = result.responseData.items.map((item: any) => ({
+      const res: AdminPengawasDocument[] = result.responseData.items.map((item: any) => ({
           id: item.id,
+          dinas: item.dinas || '',
           subjenis: item.subjenis,
           maker_date: item.maker_date,
           status_code: item.status_code,
@@ -182,6 +201,9 @@ const TablePage = () => {
           <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600 mx-auto"></div>
         </td>
         <td className="px-4 py-5 text-center">
+          <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600 mx-auto"></div>
+        </td>
+        <td className="px-4 py-5 text-center">
           <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600 mx-auto"></div>
         </td>
       </tr>
@@ -191,7 +213,7 @@ const TablePage = () => {
   // Render empty state
   const renderEmptyState = () => (
     <tr>
-      <td colSpan={3} className="px-4 py-20 text-center">
+      <td colSpan={4} className="px-4 py-20 text-center">
         <div className="flex flex-col items-center justify-center">
           <HiOutlineDocumentText className="h-16 w-16 text-gray-400 mb-4" />
           <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
@@ -208,7 +230,7 @@ const TablePage = () => {
   // Render error state
   const renderErrorState = () => (
     <tr>
-      <td colSpan={3} className="px-4 py-20 text-center">
+      <td colSpan={4} className="px-4 py-20 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
           <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
@@ -227,7 +249,7 @@ const TablePage = () => {
     <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark">
       <div className="flex justify-between items-center mb-5.5">
         <h4 className="text-body-2xlg font-bold text-dark dark:text-white">
-          Document Information
+          All Documents - {userLevelId === 'ADM' ? 'Admin' : 'Pengawas'} View
         </h4>
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {!loading && totalRecords > 0 && (
@@ -250,6 +272,9 @@ const TablePage = () => {
             <tr className="bg-[#F7F9FC] dark:bg-gray-dark">
               <th className="px-4 py-4 pb-3.5 text-left font-medium text-dark dark:text-gray-300">
                 Uraian
+              </th>
+              <th className="px-4 py-4 pb-3.5 text-center font-medium text-dark dark:text-gray-300">
+                Dinas
               </th>
               <th className="px-4 py-4 pb-3.5 text-center font-medium text-dark dark:text-gray-300">
                 Tanggal Dibuat
@@ -286,6 +311,9 @@ const TablePage = () => {
                   </div>
                 </td>
                 <td className="px-4 py-5 text-center text-sm text-dark dark:text-white">
+                  {item.dinas || '-'}
+                </td>
+                <td className="px-4 py-5 text-center text-sm text-dark dark:text-white">
                   {formatDate(item.maker_date)}
                 </td>
                 <td className="px-4 py-5 text-center">
@@ -315,4 +343,4 @@ const TablePage = () => {
   );
 };
 
-export default TablePage;
+export default AdminPengawasTable;

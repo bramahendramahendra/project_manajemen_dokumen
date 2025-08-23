@@ -405,7 +405,7 @@ const UploadDokumen = () => {
     }
 
     const payload = {
-      dinas: userData.department_id || dinas,
+      dinas: userData.dinas || dinas,
       jenis: jenis,
       subjenis: subjenis,
       tahun: tahun,
@@ -587,8 +587,8 @@ const UploadDokumen = () => {
                             const userCookie = Cookies.get("user");
                             if (userCookie) {
                               const userData = JSON.parse(userCookie);
-                              if (userData.department_name) {
-                                return userData.department_name;
+                              if (userData.nama_dinas) {
+                                return userData.nama_dinas;
                               }
                             }
                           } catch (e) {

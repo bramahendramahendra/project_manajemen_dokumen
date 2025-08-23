@@ -20,7 +20,7 @@ const PengelolaanDokumen = () => {
         const user = JSON.parse(Cookies.get("user") || "{}");
         // console.log(user);
         
-        const response = await apiRequest(`/document_managements/all-data/verif-done/type/${user.department_id}`, "GET");
+        const response = await apiRequest(`/document_managements/all-data/verif-done/type/${user.dinas}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Document management data not found");
