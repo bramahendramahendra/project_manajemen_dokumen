@@ -1,18 +1,24 @@
 "use client";
-import DataStatsPage from "@/components/dashboard/dataStatsPage";
-import TablePage from "@/components/dashboard/tablePage";
 import { useState, useEffect } from "react";
-import ModalPopup from "@/components/popup"; // Import komponen popup
+import ModalPopup from "@/components/popup";
 import Cookies from "js-cookie";
+
+// Import components untuk masing-masing role
+import DinasDataStats from "@/components/dashboard/dinas/dataStatsPage";
+import DinasTable from "@/components/dashboard/dinas/tablePage";
+import AdminPengawasDataStats from "@/components/dashboard/admin-pengawas/dataStatsPage";
+import AdminPengawasTable from "@/components/dashboard/admin-pengawas/tablePage";
 
 const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [userLevelId, setUserLevelId] = useState<string>("");
 
   const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-  console.log(user);
   
-
   useEffect(() => {
+    // Set user level_id dari cookies
+    setUserLevelId(user.level_id || "");
+    
     const hasVisited = localStorage.getItem("hasVisited");
     if (hasVisited === "true") {
       setIsModalOpen(true);
@@ -22,7 +28,45 @@ const Dashboard = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     localStorage.setItem("hasVisited", "false");
-    // console.log("🛑 hasVisited set to false on modal close:", localStorage.getItem("hasVisited"));
+  };
+
+  // Function untuk render component berdasarkan level_id
+  const renderDashboardContent = () => {
+    // Admin (ADM) dan Pengawas (PGW) menggunakan component yang sama
+    if (userLevelId === 'ADM' || userLevelId === 'PGW') {
+      return (
+        <>
+          <AdminPengawasDataStats />
+          <div className="mt-6 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
+            <div className="col-span-12 xl:col-span-12">
+              <AdminPengawasTable />
+            </div>
+          </div>
+        </>
+      );
+    }
+    
+    // Default untuk level_id dinas (DNS)
+    return (
+      <>
+        <DinasDataStats />
+        <div className="mt-6 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
+          <div className="col-span-12 xl:col-span-12">
+            <DinasTable />
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  // Function untuk mendapatkan greeting berdasarkan level_id
+  const getGreetingMessage = () => {
+    if (userLevelId === 'ADM' || userLevelId === 'PGW') {
+      return userLevelId === 'ADM' 
+        ? "Kelola sistem dan monitor seluruh aktivitas"
+        : "Monitor dan awasi proses dokumen";
+    }
+    return "Perform activities to organize documents";
   };
 
   return (
@@ -34,18 +78,12 @@ const Dashboard = () => {
           <h2 className="text-[26px] font-bold leading-[30px] text-dark dark:text-white">
             Welcome, {user.name || "User Andalanku"}
           </h2>
-          <span>Perform activities to organize documents</span>
+          <span>{getGreetingMessage()}</span>
         </div>
       </div>
 
-      {/* DataStatsOne digunakan sebagai pengganti DataStatsPage */}
-      <DataStatsPage />
-
-      <div className="mt-6 grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
-        <div className="col-span-12 xl:col-span-12">
-          <TablePage />
-        </div>
-      </div>
+      {/* Render content berdasarkan role */}
+      {renderDashboardContent()}
     </>
   );
 };

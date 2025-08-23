@@ -1,8 +1,7 @@
-// DataStatsPage.tsx - Updated dengan API
 "use client";
 
 import React, { useState, useEffect } from "react";
-import DocumentModal from "../modals/documentModal";
+import DocumentModal from "../../modals/documentModal";
 import { dataStats } from "@/types/dataStats";
 import { apiRequest } from "@/helpers/apiClient";
 import Cookies from "js-cookie";

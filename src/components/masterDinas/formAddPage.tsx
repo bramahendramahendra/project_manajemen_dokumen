@@ -1,12 +1,28 @@
 import { useState } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModal from '@/components/modals/successModal';
+import { useRouter } from "next/navigation";
+
 
 const FormAddPage = () => {
+  const Router = useRouter();
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
-  const [official, setOfficial] = useState('');
+  const [dinas, setDinas] = useState('');
+
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
+  const handleSuccessButtonClick = () => {
+    setIsSuccessModalOpen(false);
+    // Opsional: Navigasi ke halaman lain jika diperlukan
+    Router.push('/master_dinas');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -15,7 +31,7 @@ const FormAddPage = () => {
     setSuccess(false);
 
     const payload = {
-      dinas: official,
+      dinas: dinas,
     };    
 
     try {
@@ -23,7 +39,10 @@ const FormAddPage = () => {
 
       if (response.ok) {
         setSuccess(true);
-        setOfficial('');
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+
+        setDinas('');
       } else {
         const result = await response.json();
         setError(result.message || 'Terjadi kesalahan saat menambahkan dinas');
@@ -50,8 +69,8 @@ const FormAddPage = () => {
               </label>
               <input
                 type="text"
-                value={official}
-                onChange={(e) => setOfficial(e.target.value)}
+                value={dinas}
+                onChange={(e) => setDinas(e.target.value)}
                 placeholder="Enter your dinas"
                 className="w-full rounded-[7px]  bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
@@ -72,6 +91,16 @@ const FormAddPage = () => {
           </div>
         </form>
       </div>
+
+      {/* Success Modal Component */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Dinas baru telah berhasil ditambahkan ke dalam sistem."
+        buttonText="Kembali ke Halaman Utama"
+        onButtonClick={handleSuccessButtonClick}
+      />
     </div>
   );
 };
