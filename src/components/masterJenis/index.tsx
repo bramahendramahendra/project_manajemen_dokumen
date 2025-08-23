@@ -372,7 +372,7 @@ const MainPage = () => {
                   </td>
                   <td className="px-4 py-4 xl:pr-7.5">
                     <div className="flex items-center justify-end space-x-2">
-                      <button
+                      {/* <button
                         onClick={() => handleDetailsClick(item.jenis)}
                         className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
                         title={`Lihat detail ${item.nama_jenis}`}
@@ -383,7 +383,7 @@ const MainPage = () => {
                         <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
                           Detail
                         </span>
-                      </button>
+                      </button> */}
                       
                       <button
                         onClick={() => handleEdit(item.jenis, item.nama_jenis)}

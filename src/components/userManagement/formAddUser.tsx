@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import SuccessModal from '../modals/successModal';
+import SuccessModalLink from '../modals/successModalLink';
 
 const FormAddUser = () => {
   const [loading, setLoading] = useState(false);
@@ -438,13 +439,23 @@ const FormAddUser = () => {
       </div>
       
       {/* SuccessModal Component */}
-      <SuccessModal
+      {/* <SuccessModal
         isOpen={isSuccessModalOpen}
         onClose={handleCloseModal}
         title="Berhasil!"
         message="User baru telah berhasil ditambahkan ke dalam sistem."
         buttonText="Kembali ke Halaman Utama"
         onButtonClick={handleSuccessButtonClick}
+      /> */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="User baru telah berhasil ditambahkan ke dalam sistem."
+        showTwoButtons={true}  // ← TAMBAHKAN INI
+        primaryButtonText="Ke User Management"
+        secondaryButtonText="Tambah User Lagi"  // ← TAMBAHKAN INI
+        redirectPath="/user_management"  // ← UBAH DARI /dashboard
       />
     </div>
   );

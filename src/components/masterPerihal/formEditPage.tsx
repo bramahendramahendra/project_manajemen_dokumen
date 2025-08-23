@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [perihal, setPerihal] = useState('');
   // console.log(dataEdit);
@@ -15,6 +17,10 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
       setPerihal(dataEdit.nama_perihal || '');
     }
   }, [dataEdit]);
+
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,13 +37,12 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
       
       if (response.ok) {
         setSuccess(true);
-        setPerihal('');
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
       } else {
         const result = await response.json();
         throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan perihal');
       }
-
-      setSuccess(true);
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
@@ -73,8 +78,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Update User */}
-              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
+              {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
 
             {/* Error and Success Messages */}
@@ -83,6 +87,18 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
           </div>
         </form>
       </div>
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Data perihal berhasil diperbarui dan disimpan ke dalam sistem."
+        showTwoButtons={true}
+        primaryButtonText="Kembali ke Halaman Perihal"
+        secondaryButtonText="Edit Perihal Lagi"
+        redirectPath="/master_perihal" // Sesuaikan dengan path halaman perihal Anda
+      />
     </div>
   );
 };
