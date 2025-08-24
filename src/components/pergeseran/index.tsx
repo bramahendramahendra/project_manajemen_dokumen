@@ -308,7 +308,6 @@ const MainPage = () => {
     }
   };
 
-
   // template downloadnya disini
   const handleDownloadTemplate = () => {
 
@@ -533,6 +532,11 @@ const MainPage = () => {
     }
   };
 
+  // Fungsi untuk mengecek apakah tombol cetak harus diblock
+  const isCetakDisabled = () => {
+    return !subKategoriId || !subKategori || tableData.length === 0 || isLoadingFile;
+  };
+
   return (
     <div className="col-span-12 xl:col-span-12">
       <div className="overflow-hidden rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
@@ -714,81 +718,78 @@ const MainPage = () => {
               className="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
-            {/* Tombol untuk Upload dan Simpan */}
-            <div className="flex items-center justify-between">
-              {/* Tombol di sisi kiri */}
-              <div className="flex space-x-4">
-                <label
-                  className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-6 py-2 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
-                >
-                  {isLoadingFile ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
-                      Memproses...
-                    </>
+            {/* Tombol untuk Upload, Simpan, Download Template, dan Cetak */}
+            <div className="flex items-center space-x-4">
+              <label
+                className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-3.5 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+              >
+                {isLoadingFile ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+                    Memproses...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="mr-2 h-5 w-5 text-blue-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    Upload Excel
+                  </>
+                )}
+                <input
+                  type="file"
+                  id="file-upload"
+                  accept=".xlsx, .xls"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  disabled={isLoadingFile}
+                />
+              </label>
+              
+              <button
+                onClick={handleSimpan}
+                disabled={loading || isLoadingFile}
+                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white hover:from-[#0C479F] hover:to-[#0C479F] ${loading || isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+              >
+                <div className="flex items-center justify-center">
+                  {loading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                   ) : (
-                    <>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="mr-2 h-5 w-5 text-blue-500"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-                        />
-                      </svg>
-                      Upload Excel
-                    </>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
                   )}
-                  <input
-                    type="file"
-                    id="file-upload"
-                    accept=".xlsx, .xls"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={isLoadingFile}
-                  />
-                </label>
-                <button
-                  onClick={handleSimpan}
-                  disabled={loading || isLoadingFile}
-                  className={`group relative flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:px-6 ${loading || isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
-                >
-                  <div className="flex items-center justify-center">
-                    {loading ? (
-                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-5 w-5"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                  <span className="ml-0 w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                    {loading ? "Menyimpan..." : "Simpan"}
-                  </span>
-                </button>
-              </div>
+                </div>
+                <span className="group-hover:opacity-100">
+                  {loading ? "Menyimpan..." : "Simpan"}
+                </span>
+              </button>
 
-              {/* Tombol di sisi kanan dengan efek hover yang sama */}
               <button
                 onClick={handleDownloadTemplate}
-                className="group relative flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0F6838] to-[#22C55E] px-3.5 py-3 font-medium text-white transition-all duration-300 ease-in-out hover:from-[#0F6838] hover:to-[#0F6838] hover:px-6 dark:bg-white/10 dark:text-white"
+                className="group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0F6838] to-[#22C55E] px-3.5 py-3 font-medium text-white hover:from-[#0F6838] hover:to-[#0F6838] dark:bg-white/10 dark:text-white"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -804,9 +805,36 @@ const MainPage = () => {
                     d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
-                <span className="ml-0 w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                <span className="group-hover:opacity-100">
                   Download Template
                 </span>
+              </button>
+
+              {/* Tombol Cetak dengan kondisi disabled */}
+              <button
+                onClick={handleCetak}
+                disabled={isCetakDisabled()}
+                className={`flex items-center rounded-md px-3.5 py-3 font-medium shadow-sm transition-colors ${
+                  isCetakDisabled()
+                    ? "cursor-not-allowed bg-gray-300 text-gray-500"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="mr-2 h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
+                  />
+                </svg>
+                Cetak
               </button>
             </div>
 
@@ -903,32 +931,6 @@ const MainPage = () => {
                 )}
               </div>
             </div>
-
-            {/* Tombol Cetak */}
-            {tableData.length > 0 && subKategori && !isLoadingFile && (
-              <div className="mt-4 flex justify-end">
-                <button
-                  onClick={handleCetak}
-                  className="flex items-center rounded-md bg-blue-600 px-6 py-2 font-medium text-white shadow-sm transition-colors hover:bg-blue-700"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="mr-2 h-5 w-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
-                    />
-                  </svg>
-                  Cetak
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

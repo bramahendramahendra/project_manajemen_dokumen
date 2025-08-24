@@ -1,12 +1,18 @@
 import { useState } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 const FormAddPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [perihal, setPerihal] = useState('');
+
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +29,10 @@ const FormAddPage = () => {
 
       if (response.ok) {
         setSuccess(true);
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+        
+        // Reset form field
         setPerihal('');
       } else {
         const result = await response.json();
@@ -63,7 +73,7 @@ const FormAddPage = () => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {loading ? 'Menambahkan...' : 'Tambah Jenis Baru'}
+              {loading ? 'Menambahkan...' : 'Tambah Perihal Baru'}
             </button>
 
             {/* Error and Success Messages */}
@@ -72,6 +82,18 @@ const FormAddPage = () => {
           </div>
         </form>
       </div>
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Master perihal baru telah berhasil ditambahkan ke dalam sistem."
+        showTwoButtons={true}
+        primaryButtonText="Ke Halaman Perihal"
+        secondaryButtonText="Tambah Perihal Lagi"
+        redirectPath="/master_perihal" // Sesuaikan dengan path halaman perihal Anda
+      />
     </div>
   );
 };
