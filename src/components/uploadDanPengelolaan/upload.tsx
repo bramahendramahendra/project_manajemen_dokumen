@@ -416,7 +416,7 @@ const UploadDokumen = () => {
     };
 
     try {
-      const response = await apiRequest("/document_managements","POST", payload);
+      const response = await apiRequest("/document_managements/","POST", payload);
 
       if (response.ok) {
         setSuccess(true);

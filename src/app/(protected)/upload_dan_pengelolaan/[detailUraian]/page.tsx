@@ -64,6 +64,9 @@ const DetailUraian = () => {
         if (!result) throw new Error("Gagal dekripsi atau data rusak.");
 
         const { typeID, uraian } = result;
+        console.log(typeID);
+        console.log(uraian);
+        
         setSelectedUraian(uraian);
 
         // Fetch filter

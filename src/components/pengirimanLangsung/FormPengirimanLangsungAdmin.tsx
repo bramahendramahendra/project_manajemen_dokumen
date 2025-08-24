@@ -246,7 +246,7 @@ const FormPengirimanLangsungAdmin = () => {
     const fetchOptinDinas = async () => {
       setIsLoadingOfficials(true);
       try {
-        const response = await apiRequest("/master_dinas/opt-dinas?level_id", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Dinas data not found");

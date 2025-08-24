@@ -14,6 +14,8 @@ const Dashboard = () => {
   const [userLevelId, setUserLevelId] = useState<string>("");
 
   const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+  console.log(user);
+  
   
   useEffect(() => {
     // Set user level_id dari cookies

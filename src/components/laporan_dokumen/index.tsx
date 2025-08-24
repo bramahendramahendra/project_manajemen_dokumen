@@ -85,6 +85,9 @@ const MainPage = () => {
 
   // Handler untuk tombol detail
   const handleDetailsClick = (id: number, nama: string) => {
+    // console.log(id);
+    // console.log(nama);
+    
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
     

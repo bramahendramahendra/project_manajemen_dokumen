@@ -163,7 +163,7 @@ const UploadDokumen = () => {
     setIsDinasEmpty(false);
     
     try {
-      const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS", "GET");
+      const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Dinas data not found");
@@ -445,7 +445,7 @@ const UploadDokumen = () => {
     };
 
     try {
-      const response = await apiRequest("/document_managements","POST", payload);
+      const response = await apiRequest("/document_managements/","POST", payload);
 
       if (response.ok) {
         setSuccess(true);
