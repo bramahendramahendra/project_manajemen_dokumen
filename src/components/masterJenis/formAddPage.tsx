@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 const FormAddPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [type, setType] = useState('');
   const [accessUsers, setAccessUsers] = useState<string[]>(['']);
@@ -63,6 +65,10 @@ const FormAddPage = () => {
     setAccessUsers(updatedUsers);
   };
 
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -88,6 +94,10 @@ const FormAddPage = () => {
 
       if (response.ok) {
         setSuccess(true);
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+        
+        // Reset form fields
         setType('');
         setAccessUsers(['']);
       } else {
@@ -180,6 +190,18 @@ const FormAddPage = () => {
           </div>
         </form>
       </div>
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Master jenis baru telah berhasil ditambahkan ke dalam sistem."
+        showTwoButtons={true}
+        primaryButtonText="Ke Halaman Jenis"
+        secondaryButtonText="Tambah Jenis Lagi"
+        redirectPath="/master_jenis" // Sesuaikan dengan path halaman jenis Anda
+      />
     </div>
   );
 };

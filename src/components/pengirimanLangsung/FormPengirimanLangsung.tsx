@@ -112,6 +112,9 @@ const FormPengirimanLangsung = () => {
   const [dinas, setDinas] = useState<number>(0);
   const [lampiran, setLampiran] = useState<string>(""); // Lampiran
   
+  // State baru untuk checkbox admin
+  const [isAdminChecked, setIsAdminChecked] = useState<boolean>(false);
+  
   // State untuk data
   const [documents, setDocuments] = useState<Document[]>([]); // Semua dokumen
   
@@ -459,7 +462,8 @@ const FormPengirimanLangsung = () => {
         pengirim_userid: user.userid,
         pengirim_name: user.name,
         pengirim_department_id: user.dinas,
-        pengirim_department_name: user.nama_dinas
+        pengirim_department_name: user.nama_dinas,
+        is_admin_request: isAdminChecked,
       };
       
       // console.log("Starting actual API call with payload:", payload);
@@ -506,6 +510,7 @@ const FormPengirimanLangsung = () => {
     setSelectedDocuments([]);
     setSearchTerm("");
     setShowAll(false);
+    setIsAdminChecked(false);
     
     // Reset file upload
     if (tempFilePath) {
@@ -529,14 +534,36 @@ const FormPengirimanLangsung = () => {
               <div className="grid grid-cols-12 gap-6 p-6.5">
                 {/* Kolom Kiri */}
                 <div className="col-span-12 lg:col-span-6">
-                 {/* Kepada Dinas */}
-                  <ElementComboboxAutocomplete
-                    label="Kepada Dinas"
-                    placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
-                    options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
-                    onChange={(value) => setDinas(Number(value))}
-                    resetKey={resetKey}
-                  />
+                 {/* Kepada Dinas with checkbox */}
+                  <div className="mb-0">
+                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                      Kepada Dinas
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <ElementComboboxAutocomplete
+                          label=""
+                          placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
+                          options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
+                          onChange={(value) => setDinas(Number(value))}
+                          resetKey={resetKey}
+                        />
+                      </div>
+                      <div className="flex items-center">
+                        <label 
+                          className="flex items-center cursor-pointer"
+                          title="Admin"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isAdminChecked}
+                            onChange={(e) => setIsAdminChecked(e.target.checked)}
+                            className="h-4 w-4 mt-[-10px] rounded border-[#1D92F9] text-[#1D92F9] focus:ring-[#1D92F9] focus:ring-2"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Judul */}
                   <div className="mb-4.5">

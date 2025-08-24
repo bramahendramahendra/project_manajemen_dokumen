@@ -1,3 +1,4 @@
+// pages/FormAddPage.tsx
 import { useState } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
 import SuccessModal from '@/components/modals/successModal';
@@ -14,10 +15,6 @@ const FormAddPage = () => {
 
   const [dinas, setDinas] = useState('');
 
-  const handleCloseModal = () => {
-    setIsSuccessModalOpen(false);
-  };
-
   const handleSuccessButtonClick = () => {
     setIsSuccessModalOpen(false);
     // Opsional: Navigasi ke halaman lain jika diperlukan
@@ -28,7 +25,6 @@ const FormAddPage = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(false);
 
     const payload = {
       dinas: dinas,
@@ -52,6 +48,11 @@ const FormAddPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handler untuk menutup modal
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
   };
 
   return (

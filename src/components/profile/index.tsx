@@ -35,18 +35,23 @@ const MainPage = () => {
   // const [level, setLevel] = useState('');
   const [profileAkses, setProfileAkses] = useState<ProfileAkses[]>([]); // Langsung gunakan data hardcode
   
+  // State untuk form nomor telepon
+  const [newPhoneNumber, setNewPhoneNumber] = useState('');
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [roles, setRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   
   // State untuk modal
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isPhoneConfirmModalOpen, setIsPhoneConfirmModalOpen] = useState(false);
+  const [isPhoneSuccessModalOpen, setIsPhoneSuccessModalOpen] = useState(false);
 
   const fetchAksesData = useCallback(async (level : string) => {
     // Simulasi data pengguna untuk demo
@@ -121,6 +126,72 @@ const MainPage = () => {
     // if(level) fetchAksesData(level);
   }, [fetchUserData]);
 
+  // Handler untuk form nomor telepon
+  const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Hanya izinkan angka dan tanda +
+    const phoneRegex = /^[+]?[0-9]*$/;
+    if (phoneRegex.test(value)) {
+      setNewPhoneNumber(value);
+      setPhoneError(null);
+    }
+  };
+
+  const handlePhoneSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validasi nomor telepon
+    if (!newPhoneNumber.trim()) {
+      setPhoneError('Nomor telepon tidak boleh kosong');
+      return;
+    }
+    
+    if (newPhoneNumber.length < 8) {
+      setPhoneError('Nomor telepon minimal 8 digit');
+      return;
+    }
+
+    if (newPhoneNumber === phoneNumber) {
+      setPhoneError('Nomor telepon baru sama dengan nomor telepon saat ini');
+      return;
+    }
+
+    // Jika valid, tampilkan modal konfirmasi
+    setIsPhoneConfirmModalOpen(true);
+  };
+
+  // Fungsi untuk mengkonfirmasi perubahan nomor telepon
+  const confirmPhoneChange = async() => {
+    setIsPhoneConfirmModalOpen(false);
+    
+    const payload = {
+      phone_number: newPhoneNumber,
+    };
+
+    try {
+      const response = await apiRequest(`/profile/phone/${userid}`, 'PUT', payload);
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan nomor telepon');
+      }
+
+      // Update state nomor telepon
+      setPhoneNumber(newPhoneNumber);
+      
+      // Reset form dan error
+      setNewPhoneNumber('');
+      setPhoneError(null);
+      
+      // Tampilkan modal sukses
+      setIsPhoneSuccessModalOpen(true);
+    } catch (error: any) {
+      setPhoneError(error.message || 'Terjadi kesalahan saat mengirim data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
   };
@@ -156,19 +227,6 @@ const MainPage = () => {
     // Tutup modal konfirmasi
     setIsConfirmModalOpen(false);
     
-    // Implementasi pengiriman data ke API
-    // console.log('Data siap dikirim:', {
-    //   // firstName,
-    //   // lastName,
-    //   // username,
-    //   // email,
-    //   // dinas,
-    //   // responsiblePerson,
-    //   // role,
-    //   password,
-    //   confirmPassword
-    // });
-
     const payload = {
       password,
     };
@@ -194,8 +252,6 @@ const MainPage = () => {
     } finally {
       setLoading(false);
     }
-    
- 
   };
   
   // Fungsi untuk menutup modal konfirmasi
@@ -203,9 +259,17 @@ const MainPage = () => {
     setIsConfirmModalOpen(false);
   };
   
+  const closePhoneConfirmModal = () => {
+    setIsPhoneConfirmModalOpen(false);
+  };
+  
   // Fungsi untuk menutup modal sukses
   const closeSuccessModal = () => {
     setIsSuccessModalOpen(false);
+  };
+
+  const closePhoneSuccessModal = () => {
+    setIsPhoneSuccessModalOpen(false);
   };
 
   return (
@@ -314,6 +378,61 @@ const MainPage = () => {
           </div>
         </div>
         
+        {/* Phone Number Form */}
+        <div className="p-6 border-t border-gray-100">
+          <h4 className="text-lg font-medium mb-4 text-gray-700">Ubah Nomor Telepon</h4>
+          
+          <form onSubmit={handlePhoneSubmit} className="space-y-6 max-w-xl mx-auto">
+            {phoneError && (
+              <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
+                {phoneError}
+              </div>
+            )}
+            
+            <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+              <div className="flex items-center mb-2">
+                <div className="bg-[#1D92F9]/10 p-2 rounded-lg mr-3">
+                  <FaPhone className="text-[#1D92F9]" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">Nomor Telepon Saat Ini</p>
+                  <p className="text-gray-800 font-medium">{phoneNumber}</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
+              <div className="flex items-center mb-2">
+                <div className="bg-[#0C479F]/10 p-2 rounded-lg mr-3">
+                  <FaPhone className="text-[#0C479F]" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 font-medium">Nomor Telepon Baru</p>
+                </div>
+              </div>
+              
+              <input
+                type="tel"
+                value={newPhoneNumber}
+                onChange={handlePhoneNumberChange}
+                className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1D92F9] focus:border-transparent"
+                placeholder="Masukkan nomor telepon baru (contoh: +6281234567890)"
+                required
+              />
+              <p className="text-xs text-gray-500 mt-1">Format: +62 atau 08 diikuti dengan 8-12 digit angka</p>
+            </div>
+            
+            <div className="flex justify-end">
+              <button 
+                type="submit"
+                className="bg-gradient-to-r from-[#1D92F9] to-[#0C479F] text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+              >
+                Ubah Nomor Telepon
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* Password Form */}
         <div className="p-6 border-t border-gray-100">
           <h4 className="text-lg font-medium mb-4 text-gray-700">Ubah Password</h4>
@@ -411,7 +530,28 @@ const MainPage = () => {
         </div>
       </div>
       
-      {/* Modal Konfirmasi */}
+      {/* Modal Konfirmasi Phone */}
+      <ConfirmationModal
+        isOpen={isPhoneConfirmModalOpen}
+        onClose={closePhoneConfirmModal}
+        onConfirm={confirmPhoneChange}
+        title="Konfirmasi Perubahan"
+        message={`Apakah Anda yakin ingin mengubah nomor telepon dari ${phoneNumber} menjadi ${newPhoneNumber}?`}
+        confirmText="Ya, Ubah"
+        cancelText="Batal"
+      />
+      
+      {/* Modal Success Phone */}
+      <SuccessModal
+        isOpen={isPhoneSuccessModalOpen}
+        onClose={closePhoneSuccessModal}
+        title="Berhasil!"
+        message="Nomor telepon berhasil diubah"
+        buttonText="OK"
+        onButtonClick={closePhoneSuccessModal}
+      />
+      
+      {/* Modal Konfirmasi Password */}
       <ConfirmationModal
         isOpen={isConfirmModalOpen}
         onClose={closeConfirmModal}
@@ -422,7 +562,7 @@ const MainPage = () => {
         cancelText="Batal"
       />
       
-      {/* Modal Success */}
+      {/* Modal Success Password */}
       <SuccessModal
         isOpen={isSuccessModalOpen}
         onClose={closeSuccessModal}

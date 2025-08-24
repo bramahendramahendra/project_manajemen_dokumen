@@ -34,6 +34,9 @@ const UploadDokumen = () => {
   const [tahun, setTahun] = useState<string | number>('');
   const [keterangan, setKeterangan] = useState('');
   const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
+  
+  // State baru untuk checkbox admin
+  const [isAdminChecked, setIsAdminChecked] = useState<boolean>(false);
 
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
@@ -442,6 +445,7 @@ const UploadDokumen = () => {
       file_paths: tempFilePaths,
       maker: userData.userid || "",
       maker_role: userData.level_id || "",
+      is_admin_request: isAdminChecked,
     };
 
     try {
