@@ -451,7 +451,7 @@ const MainPage = () => {
                               <span className="text-[18px]">
                                 <HiOutlineKey />
                               </span>
-                              <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                              <span className="max-w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:max-w-[100px] group-hover:opacity-100 whitespace-nowrap overflow-hidden">
                                 Reset Pass
                               </span>
                             </button>
@@ -509,7 +509,7 @@ const MainPage = () => {
                           {/* Button Delete */}
                           <button
                             onClick={() => handleDeleteClick(item.userid)}
-                            className="bg-gradient-to-r from-[#B91C1C] to-[#EF4444] hover:from-[#B91C1C] hover:to-[#B91C1C] transition-all duration-300 text-white dark:bg-white/10 dark:text-white group relative flex items-center justify-center rounded-[7px] px-3 py-3 font-medium duration-300 ease-in-out overflow-hidden hover:px-5"
+                            className="bg-gradient-to-r from-[#B91C1C] to-[#EF4444] hover:from-[#B91C1C] hover:to-[#B91C1C] transition-all duration-300 text-white dark:bg-white/10 dark:text-white group relative flex items-center justify-center rounded-[7px] px-3 py-[10px] duration-300 ease-in-out overflow-hidden hover:px-5"
                           >
                             <span className="text-[18px]">
                               <HiOutlineTrash />
