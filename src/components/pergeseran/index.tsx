@@ -556,7 +556,7 @@ const MainPage = () => {
           {success && (
             <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-4">
               <p className="text-sm text-green-700">
-                Data pergeseran berhasil disimpan!
+                Data pergeseran berhasil dikirim!
               </p>
             </div>
           )}
@@ -642,7 +642,7 @@ const MainPage = () => {
                   >
                     {loadingSubperihal
                       ? "Memuat data subperihal..."
-                      : subKategoriOptions.length === 0
+                      : (subKategoriOptions?.length === 0 || !subKategoriOptions)
                         ? "Tidak ada subperihal tersedia"
                         : subKategori || "Pilih Sub Perihal"}
                   </span>
@@ -720,6 +720,30 @@ const MainPage = () => {
 
             {/* Tombol untuk Upload, Simpan, Download Template, dan Cetak */}
             <div className="flex items-center space-x-4">
+
+              <button
+                onClick={handleDownloadTemplate}
+                className="group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0F6838] to-[#22C55E] px-3.5 py-3 font-medium text-white hover:from-[#0F6838] hover:to-[#0F6838] dark:bg-white/10 dark:text-white"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+                <span className="group-hover:opacity-100">
+                  Download Template
+                </span>
+              </button>
+              
               <label
                 className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-3.5 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
               >
@@ -756,59 +780,6 @@ const MainPage = () => {
                   disabled={isLoadingFile}
                 />
               </label>
-              
-              <button
-                onClick={handleSimpan}
-                disabled={loading || isLoadingFile}
-                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white hover:from-[#0C479F] hover:to-[#0C479F] ${loading || isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
-              >
-                <div className="flex items-center justify-center">
-                  {loading ? (
-                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
-                      />
-                    </svg>
-                  )}
-                </div>
-                <span className="group-hover:opacity-100">
-                  {loading ? "Menyimpan..." : "Simpan"}
-                </span>
-              </button>
-
-              <button
-                onClick={handleDownloadTemplate}
-                className="group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0F6838] to-[#22C55E] px-3.5 py-3 font-medium text-white hover:from-[#0F6838] hover:to-[#0F6838] dark:bg-white/10 dark:text-white"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <span className="group-hover:opacity-100">
-                  Download Template
-                </span>
-              </button>
 
               {/* Tombol Cetak dengan kondisi disabled */}
               <button
@@ -836,6 +807,40 @@ const MainPage = () => {
                 </svg>
                 Cetak
               </button>
+              
+              <button
+                onClick={handleSimpan}
+                disabled={loading || isLoadingFile}
+                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white hover:from-[#0C479F] hover:to-[#0C479F] ${loading || isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+              >
+                <div className="flex items-center justify-center">
+                  {loading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                  )}
+                </div>
+                <span className="group-hover:opacity-100">
+                  {loading ? "Mengirim..." : "Kirim"}
+                </span>
+              </button>
+
+              
+
+              
             </div>
 
             {/* Tabel Data */}
