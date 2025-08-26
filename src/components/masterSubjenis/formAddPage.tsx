@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 const FormAddPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [type, setType] = useState('');
   const [subtype, setSubtype] = useState('');
@@ -97,6 +99,10 @@ const FormAddPage = () => {
     setAccessUsers(updatedUsers);
   };
 
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -123,9 +129,14 @@ const FormAddPage = () => {
 
       if (response.ok) {
         setSuccess(true);
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+        
+        // Reset form fields
         setType('');
         setSubtype('');
         setAccessUsers(['']);
+        setOptionRoles([]); // Reset roles ketika type direset
       } else {
         const result = await response.json();
         setError(result.message || 'Terjadi kesalahan saat menambahkan subjenis');
@@ -241,6 +252,18 @@ const FormAddPage = () => {
           </div>
         </form>
       </div>
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Master subjenis baru telah berhasil ditambahkan ke dalam sistem."
+        showTwoButtons={true}
+        primaryButtonText="Ke Halaman Subjenis"
+        secondaryButtonText="Tambah Subjenis Lagi"
+        redirectPath="/master_subjenis" // Sesuaikan dengan path halaman subjenis Anda
+      />
     </div>
   );
 };

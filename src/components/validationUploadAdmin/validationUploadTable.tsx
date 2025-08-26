@@ -484,7 +484,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                     <td
                       className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
                     >
-                      {item.id}
+                      {/* {item.id} */}
                       <p className="text-dark dark:text-white">{item.uraian}</p>
                     </td>
                     <td

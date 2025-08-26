@@ -88,7 +88,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       setUsername(dataEdit.username);
       setEmail(dataEdit.email || '');
       setPhoneNumber(dataEdit.phone_number || '');
-      setDepartment(dataEdit.department_id || '');
+      setDepartment(dataEdit.dinas || '');
       setResponsiblePerson(dataEdit.responsible_person || '');
       setAccessUser(dataEdit.level_id || '');
     }

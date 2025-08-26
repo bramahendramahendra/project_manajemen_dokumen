@@ -131,8 +131,8 @@ const MainPage = () => {
       formData.append('file', selectedFile);
       formData.append('pembuat_userid', user.userid);
       formData.append('pembuat_nama', user.name);
-      formData.append('pembuat_id_dinas', user.department_id);
-      formData.append('pembuat_dinas', user.department_name);
+      formData.append('pembuat_id_dinas', user.dinas);
+      formData.append('pembuat_dinas', user.nama_dinas);
       
       // console.log("Starting API call with FormData");
 

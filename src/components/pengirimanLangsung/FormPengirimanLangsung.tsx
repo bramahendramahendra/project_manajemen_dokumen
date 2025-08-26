@@ -112,6 +112,9 @@ const FormPengirimanLangsung = () => {
   const [dinas, setDinas] = useState<number>(0);
   const [lampiran, setLampiran] = useState<string>(""); // Lampiran
   
+  // State baru untuk checkbox admin
+  const [isAdminChecked, setIsAdminChecked] = useState<boolean>(false);
+  
   // State untuk data
   const [documents, setDocuments] = useState<Document[]>([]); // Semua dokumen
   
@@ -219,7 +222,7 @@ const FormPengirimanLangsung = () => {
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
 
-        const response = await apiRequest(`/direct-shipping/${user.department_id}`, "GET");
+        const response = await apiRequest(`/direct-shipping/${user.dinas}`, "GET");
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -247,7 +250,7 @@ const FormPengirimanLangsung = () => {
     const fetchOptinDinas= async () => {
       setIsLoadingOfficials(true);
       try {
-        const response = await apiRequest("/master_dinas/opt-dinas/DNS", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Dinas data not found");
@@ -441,7 +444,7 @@ const FormPengirimanLangsung = () => {
       const user = JSON.parse(Cookies.get("user") || "{}");
       // console.log("User cookie:", user);
 
-      if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
+      if (!user.userid || !user.name || user.dinas == '' || !user.nama_dinas) {
         console.error("User tidak ditemukan di cookie.");
         return;
       }
@@ -458,8 +461,9 @@ const FormPengirimanLangsung = () => {
         file_path: tempFilePath, // Bisa array kosong []
         pengirim_userid: user.userid,
         pengirim_name: user.name,
-        pengirim_department_id: user.department_id,
-        pengirim_department_name: user.department_name
+        pengirim_department_id: user.dinas,
+        pengirim_department_name: user.nama_dinas,
+        is_admin_request: isAdminChecked,
       };
       
       // console.log("Starting actual API call with payload:", payload);
@@ -506,6 +510,7 @@ const FormPengirimanLangsung = () => {
     setSelectedDocuments([]);
     setSearchTerm("");
     setShowAll(false);
+    setIsAdminChecked(false);
     
     // Reset file upload
     if (tempFilePath) {
@@ -529,14 +534,36 @@ const FormPengirimanLangsung = () => {
               <div className="grid grid-cols-12 gap-6 p-6.5">
                 {/* Kolom Kiri */}
                 <div className="col-span-12 lg:col-span-6">
-                 {/* Kepada Dinas */}
-                  <ElementComboboxAutocomplete
-                    label="Kepada Dinas"
-                    placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
-                    options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
-                    onChange={(value) => setDinas(Number(value))}
-                    resetKey={resetKey}
-                  />
+                 {/* Kepada Dinas with checkbox */}
+                  <div className="mb-0">
+                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                      Kepada Dinas
+                    </label>
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <ElementComboboxAutocomplete
+                          label=""
+                          placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
+                          options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
+                          onChange={(value) => setDinas(Number(value))}
+                          resetKey={resetKey}
+                        />
+                      </div>
+                      <div className="flex items-center">
+                        <label 
+                          className="flex items-center cursor-pointer"
+                          title="Admin"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isAdminChecked}
+                            onChange={(e) => setIsAdminChecked(e.target.checked)}
+                            className="h-4 w-4 mt-[-10px] rounded border-[#1D92F9] text-[#1D92F9] focus:ring-[#1D92F9] focus:ring-2"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Judul */}
                   <div className="mb-4.5">

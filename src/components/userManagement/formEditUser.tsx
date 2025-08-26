@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false); // Tambahan untuk modal
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -45,7 +47,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
         setError(null);
         try {
           // Fetch dinas berdasarkan level_id
-          const response = await apiRequest(`/master_dinas/opt-dinas/${accessUser}`, "GET");
+          const response = await apiRequest(`/master_dinas/opt-dinas?level_id=${accessUser}`, "GET");
           if (!response.ok) {
             throw new Error("Data dinas tidak tersedia");
           }
@@ -118,7 +120,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
   // Function untuk mendapatkan dinas berdasarkan level_id
   const getDinasByLevelId = async (levelId: string) => {
     try {
-      const response = await apiRequest(`/master_dinas/opt-dinas/${levelId}`, "GET");
+      const response = await apiRequest(`/master_dinas/opt-dinas?level_id=${levelId}`, "GET");
       if (!response.ok) {
         throw new Error("Data dinas tidak tersedia");
       }
@@ -152,6 +154,11 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       setDepartment(0);
       setOptionOfficials([]); // Clear data dinas jika bukan DNS/PGW
     }
+  };
+
+  // Tambahan handler untuk modal
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -208,6 +215,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
       
       if (response.ok) {
         setSuccess(true);
+        // Tampilkan modal sukses alih-alih hanya set success message
+        setIsSuccessModalOpen(true);
       } else {
         const result = await response.json();
         const errorMessage = result.responseDesc || result.message || 'Terjadi kesalahan saat menyimpan perubahan';
@@ -448,6 +457,18 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
           </div>
         </form>
       </div>
+      
+      {/* SuccessModal Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Data user telah berhasil diupdate."
+        showTwoButtons={true}
+        primaryButtonText="Ke User Management"
+        secondaryButtonText="Edit User Lagi"
+        redirectPath="/user_management"
+      />
     </div>
   );
 };

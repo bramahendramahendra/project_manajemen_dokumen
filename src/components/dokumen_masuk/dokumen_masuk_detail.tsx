@@ -149,7 +149,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         setLoading(true);
         const user = JSON.parse(Cookies.get("user") || "{}");
 
-        const response = await apiRequest(`/kotak_masuk/all/detail/${user.department_id}/${dinas}`, "GET");
+        const response = await apiRequest(`/kotak_masuk/all/detail/${user.dinas}/${dinas}`, "GET");
         
         if (!response.ok) {
           if (response.status === 404) {

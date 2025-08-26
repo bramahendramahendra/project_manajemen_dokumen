@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 // Import ReactQuill secara dynamic untuk menghindari SSR issues
 const ReactQuill = dynamic(() => import('react-quill'), { 
@@ -15,6 +16,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [perihal, setPerihal] = useState('');
   const [subperihal, setSubperihal] = useState('');
@@ -87,6 +89,10 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     }
   }, [dataEdit]);
 
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -103,14 +109,13 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
       const response = await apiRequest(`/master_subperihal/update/${dataEdit.subperihal}`, 'POST', payload);
       const result = await response.json();
 
-       if (response.ok) {
-        setSuccess(true);
-        // Tidak perlu clear form untuk edit
-      } else {
+      if (!response.ok) {
         throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan subperihal');
       }
 
       setSuccess(true);
+      // Tampilkan modal sukses
+      setIsSuccessModalOpen(true);
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
@@ -148,7 +153,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
                 type="text"
                 value={subperihal}
                 onChange={(e) => setSubperihal(e.target.value)}
-                placeholder="Enter your subjenis"
+                placeholder="Enter your subperihal"
                 className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               />
@@ -191,6 +196,18 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
           </div>
         </form>
       </div>
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Data subperihal berhasil diperbarui dan disimpan ke dalam sistem."
+        showTwoButtons={true}
+        primaryButtonText="Kembali ke Halaman Subperihal"
+        secondaryButtonText="Edit Subperihal Lagi"
+        redirectPath="/master_subperihal" // Sesuaikan dengan path halaman subperihal Anda
+      />
 
       {/* Custom CSS untuk styling editor */}
       <style jsx global>{`

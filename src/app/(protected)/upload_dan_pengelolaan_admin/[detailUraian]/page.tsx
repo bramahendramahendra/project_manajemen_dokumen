@@ -204,7 +204,7 @@ const DetailUraian = () => {
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Upload & Pengelolaan", href: "/upload_dan_pengelolaan" },
+    { name: "Upload & Pengelolaan", href: "/upload_dan_pengelolaan_admin" },
     { name: `Dokumen Terupload` },
   ];
 

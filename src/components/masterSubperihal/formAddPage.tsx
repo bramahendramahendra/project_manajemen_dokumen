@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 // Import ReactQuill secara dynamic untuk menghindari SSR issues
 const ReactQuill = dynamic(() => import('react-quill'), { 
@@ -15,6 +16,7 @@ const FormAddPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [perihal, setPerihal] = useState('');
   const [subperihal, setSubperihal] = useState('');
@@ -76,6 +78,10 @@ const FormAddPage = () => {
     fetchOptionTypes();
   }, []);
 
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -93,6 +99,10 @@ const FormAddPage = () => {
 
       if (response.ok) {
         setSuccess(true);
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+        
+        // Reset form fields
         setPerihal('');
         setSubperihal('');
         setDeskripsi('');
@@ -148,7 +158,7 @@ const FormAddPage = () => {
                 type="text"
                 value={subperihal}
                 onChange={(e) => setSubperihal(e.target.value)}
-                placeholder="Enter your subjenis"
+                placeholder="Enter your subperihal"
                 className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark transition ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                 required
               />
@@ -182,7 +192,7 @@ const FormAddPage = () => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {loading ? 'Menambahkan...' : 'Tambah Subjenis Baru'}
+              {loading ? 'Menambahkan...' : 'Tambah Subperihal Baru'}
             </button>
 
             {/* Error and Success Messages */}
@@ -191,6 +201,18 @@ const FormAddPage = () => {
           </div>
         </form>
       </div>
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Master subperihal baru telah berhasil ditambahkan ke dalam sistem."
+        showTwoButtons={true}
+        primaryButtonText="Ke Halaman Subperihal"
+        secondaryButtonText="Tambah Subperihal Lagi"
+        redirectPath="/master_subperihal" // Sesuaikan dengan path halaman subperihal Anda
+      />
 
       {/* Custom CSS untuk styling editor */}
       <style jsx global>{`

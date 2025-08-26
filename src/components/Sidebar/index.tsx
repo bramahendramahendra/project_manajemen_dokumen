@@ -19,6 +19,7 @@ import DokumenMasukIcon from "@/components/Icons/DokumenMasukIcon";
 import UserIcon from "@/components/Icons/UserIcon";
 import MenuIcon from "@/components/Icons/MenuIcon";
 import SettingIcon from "@/components/Icons/SettingIcon";
+import { DEBUG_MODE } from "@/utils/config";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -98,7 +99,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       if (data.status === 'connected') {
         setError(null);
       } else if (data.status === 'disconnected') {
-        setError('Koneksi notifikasi terputus');
+        if (DEBUG_MODE) setError('Koneksi notifikasi terputus');
       }
     });
 

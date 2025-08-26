@@ -11,14 +11,11 @@ interface FilterDokumenPerTahun {
   typeID: number;
   uraian: string;
 }
-
 interface DokumenPerTahun {
   id: number;
   uraian: string;
   tahun: number;
   data: string;
-  tanggal?: Date;
-  status?: 'Proses' | 'Ditolak' | 'Diterima';
 }
 
 const Index = () => {
@@ -59,7 +56,7 @@ const Index = () => {
         
         const allFilter = [{ typeID: 0, uraian: "Semua" }, ...filters];
         setFilterList(allFilter);
-        setSelectedUraian("Semua");
+        setSelectedUraian("Semua"); // <--- tambahkan ini
         await fetchData(dinasID, 0);
         // await fetchAllData(dinasID);
       } catch (err: any) {
@@ -80,21 +77,20 @@ const Index = () => {
         ? `/reports/document/subtype-by-dinas/${dinasID}` 
         : `/reports/document/subtype-by-jenis/${dinasID}/${typeID}`;
 
+
       const dataResponse = await apiRequest(query, "GET");
       if (!dataResponse.ok) throw new Error("Gagal fetch dokumen data");
       const dataResult = await dataResponse.json();
 
       const datas: DokumenPerTahun[] = dataResult.responseData.items.map((item: any) => ({
         id: item.id,
+        // uraian: item.jenis,
         uraian: item.uraian,
         tahun: item.tahun,
         data: item.subjenis,
-        // Menambahkan default values untuk field yang mungkin tidak ada dari API
-        tanggal: item.tanggal ? new Date(item.tanggal) : new Date(), // Default ke tanggal sekarang jika tidak ada
-        status: item.status || 'Proses' as 'Proses' | 'Ditolak' | 'Diterima', // Default ke 'Proses'
       }));
 
-      console.log(datas);
+      // console.log(datas);
       
       setDataList(datas);
     } catch (err: any) {
@@ -122,29 +118,6 @@ const Index = () => {
     ? decodeURIComponent(detailUraian[0])
     : decodeURIComponent(detailUraian || "");
 
-  if (loading) {
-    return (
-      <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
-        <div className="col-span-12 xl:col-span-12">
-          <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-            <p className="text-center">Loading...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
-        <div className="col-span-12 xl:col-span-12">
-          <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-            <p className="text-center text-red-500">Error: {error}</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
@@ -159,5 +132,6 @@ const Index = () => {
     </div>
   );
 };
+
 
 export default Index;

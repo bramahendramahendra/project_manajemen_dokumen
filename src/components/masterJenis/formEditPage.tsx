@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { apiRequest } from "@/helpers/apiClient";
+import SuccessModalLink from '../modals/successModalLink';
 
 const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   const [type, setType] = useState('');
   const [accessUsers, setAccessUsers] = useState<string[]>([]);
@@ -73,6 +75,10 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
     setAccessUsers(updatedUsers);
   };
 
+  const handleCloseModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -102,6 +108,8 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
       }
 
       setSuccess(true);
+      // Tampilkan modal sukses
+      setIsSuccessModalOpen(true);
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
@@ -179,8 +187,7 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
               className="flex w-full justify-center rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:from-[#0C479F] hover:to-[#0C479F] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 p-[13px] font-medium text-white hover:bg-opacity-90"
               disabled={loading}
             >
-              {/* Update User */}
-              {loading ? 'Menambahkan...' : 'Simpan Perubahan'}
+              {loading ? 'Menyimpan...' : 'Simpan Perubahan'}
             </button>
 
             {/* Error and Success Messages */}
@@ -189,6 +196,18 @@ const FormEditPage = ({ dataEdit }: { dataEdit?: any }) => {
           </div>
         </form>
       </div>
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseModal}
+        title="Berhasil!"
+        message="Data jenis berhasil diperbarui dan disimpan ke dalam sistem."
+        showTwoButtons={true}
+        primaryButtonText="Kembali ke Halaman Jenis"
+        secondaryButtonText="Edit Jenis Lagi"
+        redirectPath="/master_jenis" // Sesuaikan dengan path halaman jenis Anda
+      />
     </div>
   );
 };
