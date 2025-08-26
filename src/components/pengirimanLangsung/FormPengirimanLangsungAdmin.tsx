@@ -249,7 +249,7 @@ const FormPengirimanLangsungAdmin = () => {
     const fetchOptinDinas = async () => {
       setIsLoadingOfficials(true);
       try {
-        const response = await apiRequest("/master_dinas/opt-dinas/DNS", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Dinas data not found");
@@ -424,7 +424,7 @@ const FormPengirimanLangsungAdmin = () => {
       const user = JSON.parse(Cookies.get("user") || "{}");
       // console.log("User cookie:", user);
 
-      if (!user.userid || !user.name || user.department_id == '' || !user.department_name) {
+      if (!user.userid || !user.name || user.dinas == '' || !user.nama_dinas) {
         console.error("User tidak ditemukan di cookie.");
         return;
       }
@@ -443,9 +443,8 @@ const FormPengirimanLangsungAdmin = () => {
         file_path: tempFilePath, // Bisa string kosong ""
         pengirim_userid: user.userid,
         pengirim_name: user.name,
-        pengirim_department_id: user.department_id,
-        pengirim_department_name: user.department_name,
-        // Tambahkan flag untuk admin jika checkbox dicentang
+        pengirim_department_id: user.dinas,
+        pengirim_department_name: user.nama_dinas,
         is_admin_request: isAdminChecked,
       };
       

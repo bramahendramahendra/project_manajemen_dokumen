@@ -244,8 +244,8 @@ const MainPage = () => {
       formData.append("file", selectedFile);
       formData.append("pembuat_userid", user.userid);
       formData.append("pembuat_nama", user.name);
-      formData.append("pembuat_id_dinas", user.department_id);
-      formData.append("pembuat_dinas", user.department_name);
+      formData.append("pembuat_id_dinas", user.dinas);
+      formData.append("pembuat_dinas", user.nama_dinas);
 
       console.log("Sending data:", {
         perihal: kategoriUtamaId,
@@ -254,8 +254,8 @@ const MainPage = () => {
         file: selectedFile.name,
         pembuat_userid: user.userid,
         pembuat_nama: user.name,
-        pembuat_id_dinas: user.department_id,
-        pembuat_dinas: user.department_name,
+        pembuat_id_dinas: user.dinas,
+        pembuat_dinas: user.nama_dinas,
       });
 
       // Gunakan apiRequest yang sudah ada (sudah support FormData)

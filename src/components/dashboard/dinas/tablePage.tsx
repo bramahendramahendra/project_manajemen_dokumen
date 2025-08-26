@@ -7,7 +7,6 @@ import { HiOutlineDocumentText } from "react-icons/hi";
 import { Document, DocumentResponse } from "@/types/dashboard";
 import Pagination from "@/components/pagination/Pagination";
 
-
 // Fungsi untuk mendapatkan warna status berdasarkan status_code
 const getStatusColor = (statusCode: string) => {
   switch (statusCode) {
@@ -58,7 +57,7 @@ const TablePage = () => {
   const [dataList, setDataList] = useState<Document[]>([]);
   
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
 
@@ -70,7 +69,7 @@ const TablePage = () => {
   // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
     const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-    const idDinas = user.department_id;
+    const idDinas = user.dinas;
 
     setLoading(true);
     setError(null);
@@ -88,7 +87,7 @@ const TablePage = () => {
         if (!value) queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/dashboard/document/list/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/dashboard/document-dinas/list/${idDinas}?${queryParams.toString()}`, "GET");
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -170,7 +169,7 @@ const TablePage = () => {
   const renderLoadingSkeleton = () => (
     Array.from({ length: itemsPerPage }).map((_, index) => (
       <tr key={index} className="border-b border-stroke dark:border-dark-3">
-        <td className="px-4 py-5">
+        <td className="px-4 py-4 xl:pl-7.5">
           <div className="flex items-center">
             <div className="mr-3">
               <div className="h-5 w-5 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
@@ -178,11 +177,11 @@ const TablePage = () => {
             <div className="h-4 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
           </div>
         </td>
-        <td className="px-4 py-5 text-center">
-          <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600 mx-auto"></div>
+        <td className="px-4 py-4">
+          <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
         </td>
-        <td className="px-4 py-5 text-center">
-          <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600 mx-auto"></div>
+        <td className="px-4 py-4 xl:pr-7.5">
+          <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600"></div>
         </td>
       </tr>
     ))
@@ -193,7 +192,7 @@ const TablePage = () => {
     <tr>
       <td colSpan={3} className="px-4 py-20 text-center">
         <div className="flex flex-col items-center justify-center">
-          <HiOutlineDocumentText className="h-16 w-16 text-gray-400 mb-4" />
+          <div className="text-gray-400 text-6xl mb-4">📄</div>
           <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
             Belum ada dokumen
           </p>
@@ -224,94 +223,98 @@ const TablePage = () => {
   );
 
   return (
-    <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark">
-      <div className="flex justify-between items-center mb-5.5">
-        <h4 className="text-body-2xlg font-bold text-dark dark:text-white">
-          Document Information
-        </h4>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          {!loading && totalRecords > 0 && (
-            <>Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data</>
-          )}
-          {!loading && totalRecords === 0 && "Tidak ada data"}
-        </div>
-      </div>
-
-      {/* Alert untuk error */}
+    <>
+      {/* Alert Messages */}
       {error && !loading && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 font-medium">{error}</p>
         </div>
       )}
+      
+      {success && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-600 font-medium">{success}</p>
+        </div>
+      )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-full table-auto">
-          <thead>
-            <tr className="bg-[#F7F9FC] dark:bg-gray-dark">
-              <th className="px-4 py-4 pb-3.5 text-left font-medium text-dark dark:text-gray-300">
-                Uraian
-              </th>
-              <th className="px-4 py-4 pb-3.5 text-center font-medium text-dark dark:text-gray-300">
-                Tanggal Dibuat
-              </th>
-              <th className="px-4 py-4 pb-3.5 text-center font-medium text-dark dark:text-gray-300">
-                Status
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading && renderLoadingSkeleton()}
-            {!loading && error && renderErrorState()}
-            {!loading && !error && dataList.length === 0 && renderEmptyState()}
-            {!loading && !error && dataList.length > 0 && dataList.map((item, index) => (
-              <tr
-                key={item.id}
-                className={`hover:bg-gray-2 ${
-                  index === dataList.length - 1
-                    ? ""
-                    : "border-b border-stroke dark:border-dark-3"
-                }`}
-              >
-                <td className="px-4 py-5 text-sm font-medium text-dark dark:text-white">
-                  <div className="flex items-center">
-                    <div className="mr-3">
-                      <HiOutlineDocumentText className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <div>
-                      <div className="font-medium">{item.subjenis}</div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400">
-                        ID: {item.id}
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-dark dark:text-white">
+            Document Information
+          </h2>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {!loading && totalRecords > 0 && (
+              <>Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data</>
+            )}
+            {!loading && totalRecords === 0 && "Tidak ada data"}
+          </div>
+        </div>
+
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full table-auto">
+            <thead>
+              <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
+                <th className="min-w-[300px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
+                  Uraian
+                </th>
+                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                  Tanggal Dibuat
+                </th>
+                <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white xl:pr-7.5">
+                  Status
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading && renderLoadingSkeleton()}
+              {!loading && error && renderErrorState()}
+              {!loading && !error && dataList.length === 0 && renderEmptyState()}
+              {!loading && !error && dataList.length > 0 && dataList.map((item, index) => (
+                <tr
+                  key={item.id}
+                  className="border-b border-stroke dark:border-dark-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <td className="px-4 py-4 xl:pl-7.5">
+                    <div className="flex items-center">
+                      <div className="mr-3">
+                        <HiOutlineDocumentText className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-dark dark:text-white">{item.subjenis}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          ID: {item.id}
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </td>
-                <td className="px-4 py-5 text-center text-sm text-dark dark:text-white">
-                  {formatDate(item.maker_date)}
-                </td>
-                <td className="px-4 py-5 text-center">
-                  <div className="flex items-center justify-center">
-                    <div className={`${getStatusColor(item.status_code)} flex items-center px-3 py-1 rounded-full text-xs`}>
+                  </td>
+                  <td className="px-4 py-4">
+                    <p className="text-dark dark:text-white">
+                      {formatDate(item.maker_date)}
+                    </p>
+                  </td>
+                  <td className="px-4 py-4 xl:pr-7.5">
+                    <div className={`${getStatusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}>
                       <span>{getDisplayStatusName(item.status_code, item.status_doc)}</span>
                     </div>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          
+          {/* Pagination - hanya tampil jika ada data dan tidak loading */}
+          {!loading && !error && totalPages > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          )}
+        </div>
       </div>
-
-      {/* Pagination - hanya tampil jika ada data dan tidak loading */}
-      {!loading && !error && totalPages > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-          itemsPerPage={itemsPerPage}
-          onItemsPerPageChange={handleItemsPerPageChange}
-        />
-      )}
-    </div>
+    </>
   );
 };
 

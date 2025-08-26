@@ -12,6 +12,7 @@ interface ElementComboboxAutocompleteProps {
   options: Option[];
   onChange: (value: string | number) => void;
   resetKey?: number;
+  disabled?: boolean; // Tambahkan prop disabled
 }
 
 const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = ({
@@ -20,6 +21,7 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
   options,
   onChange,
   resetKey = 0,
+  disabled = false, // Default value false
 }) => {
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -41,6 +43,13 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
 
   // Filter options based on search term
   useEffect(() => {
+    // Jangan filter jika disabled
+    if (disabled) {
+      setFilteredOptions([]);
+      setIsDropdownOpen(false);
+      return;
+    }
+
     if (searchTerm.length >= 3) {
       const filtered = options.filter((option) =>
         String(option.name).toLowerCase().includes(searchTerm.toLowerCase())
@@ -55,7 +64,7 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
       setFilteredOptions([]);
       setIsDropdownOpen(false);
     }
-  }, [searchTerm, options, isFocused]);
+  }, [searchTerm, options, isFocused, disabled]);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -79,6 +88,9 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
    * Handle selecting an option from dropdown
    */
   const handleSelectOption = (option: Option) => {
+    // Jangan allow selection jika disabled
+    if (disabled) return;
+    
     setSelectedOption(option);
     setSearchTerm(String(option.name));
     setIsDropdownOpen(false);
@@ -95,6 +107,9 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
    * Handle input change
    */
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    // Jangan allow change jika disabled
+    if (disabled) return;
+    
     const value = e.target.value;
     setSearchTerm(value);
     
@@ -109,6 +124,9 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
    * Handle input focus
    */
   const handleFocus = () => {
+    // Jangan allow focus jika disabled
+    if (disabled) return;
+    
     setIsFocused(true);
     if (searchTerm.length >= 3) {
       const filtered = options.filter((option) =>
@@ -132,30 +150,38 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
 
   return (
     <div className="mb-4.5" ref={containerRef}>
-      <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-        {label}
-      </label>
+      {label && (
+        <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+          {label}
+        </label>
+      )}
       <div className="relative">
         <input
           ref={inputRef}
           type="text"
-          className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+          className={`w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset dark:border-dark-3 dark:bg-dark-2 dark:text-white ${
+            disabled
+              ? "ring-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:ring-gray-600 dark:bg-gray-800 dark:text-gray-400"
+              : "ring-[#1D92F9] focus:ring-indigo-600 dark:focus:border-primary"
+          }`}
           placeholder={placeholder}
           value={searchTerm}
           onChange={handleInputChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
+          disabled={disabled}
+          readOnly={disabled}
         />
 
-        {/* Status indicator for min 3 chars */}
-        {isFocused && searchTerm.length > 0 && searchTerm.length < 3 && (
+        {/* Status indicator for min 3 chars - hanya tampil jika tidak disabled */}
+        {!disabled && isFocused && searchTerm.length > 0 && searchTerm.length < 3 && (
           <div className="text-xs text-[#1D92F9] mt-1">
             Ketik minimal 3 karakter untuk mencari
           </div>
         )}
 
-        {/* Dropdown with z-index to ensure it's on top */}
-        {isDropdownOpen && isFocused && (
+        {/* Dropdown with z-index to ensure it's on top - hanya tampil jika tidak disabled */}
+        {!disabled && isDropdownOpen && isFocused && (
           <div 
             ref={dropdownRef}
             className="absolute z-50 mt-1 w-full origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none dark:bg-dark-2"

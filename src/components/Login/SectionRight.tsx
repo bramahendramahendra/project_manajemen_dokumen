@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import Cookies from "js-cookie";
-import { loginRequest, apiRequest } from "@/helpers/apiClient"; // Import apiRequest
-import { FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
+import { loginRequest, apiRequest, downloadFileRequest } from "@/helpers/apiClient"; // Import apiRequest
+import { FaEye, FaEyeSlash, FaTimes, FaDownload } from "react-icons/fa";
 import { useMenu } from "@/contexts/MenuContext";
 
 const SectionRight = () => {
@@ -23,6 +23,7 @@ const SectionRight = () => {
   
   // State untuk floating guide button
   const [showGuidePopup, setShowGuidePopup] = useState<boolean>(false);
+  const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
   // Gunakan menu context
   const { fetchMenuData } = useMenu();
@@ -114,6 +115,99 @@ const SectionRight = () => {
       fetchCaptcha();
     } finally {
       setIsLoggingIn(false);
+    }
+  };
+
+  // Function untuk download manual book - KONSISTEN DENGAN REFERENSI
+  const downloadManualBook = async () => {
+    setIsDownloading(true);
+    try {
+      // console.log('Downloading manual book from API: /auths/manual-book');
+      
+      // Menggunakan downloadFileRequest helper untuk konsistensi dengan referensi
+      const response = await downloadFileRequest("/auths/manual-book");
+      
+      // console.log('Download response status:', response.status);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Coba ambil detail error dari response
+          try {
+            const errorData = await response.json();
+            console.error('Manual book not found details:', errorData);
+            throw new Error('Manual book tidak ditemukan di server');
+          } catch (parseError) {
+            console.error('Error parsing error response:', parseError);
+            throw new Error('Manual book tidak ditemukan di server');
+          }
+        } else if (response.status === 400) {
+          try {
+            const errorData = await response.json();
+            console.error('Bad request details:', errorData);
+            throw new Error(errorData.ResponseDesc || 'Format permintaan tidak valid');
+          } catch (parseError) {
+            throw new Error('Format permintaan tidak valid');
+          }
+        } else {
+          throw new Error(`Error ${response.status}: Gagal mengunduh manual book`);
+        }
+      }
+
+      // Membuat blob dari response
+      const blob = await response.blob();
+      
+      if (blob.size === 0) {
+        throw new Error('File manual book kosong atau tidak dapat dibaca');
+      }
+      
+      // console.log('Blob size:', blob.size, 'bytes');
+      
+      // Membuat URL object untuk blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Tentukan nama file untuk download
+      let downloadFileName = 'Manual_Book.pdf';
+      
+      // Coba dapatkan nama file dari header Content-Disposition
+      const contentDisposition = response.headers.get('Content-Disposition');
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (fileNameMatch) {
+          downloadFileName = fileNameMatch[1].replace(/['"]/g, '');
+        }
+      }
+      
+      // console.log('Download filename:', downloadFileName);
+      
+      // Membuat link download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = downloadFileName;
+      link.style.display = 'none'; // Sembunyikan link
+      
+      // Tambahkan ke DOM, klik, lalu hapus
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      
+      // console.log('Manual book download completed successfully');
+      
+      // Tutup popup setelah berhasil download
+      setShowGuidePopup(false);
+      
+      // Tampilkan notifikasi sukses (opsional)
+      // alert(`Manual book "${downloadFileName}" berhasil diunduh!`);
+      
+    } catch (error) {
+      console.error('Error downloading manual book:', error);
+      
+      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengunduh manual book';
+      alert(`Gagal mengunduh manual book: ${errorMessage}`);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -308,7 +402,7 @@ const SectionRight = () => {
           </button>
         </div>
 
-        {/* Guide Popup */}
+        {/* Guide Popup - UPDATED */}
         {showGuidePopup && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <motion.div
@@ -318,30 +412,59 @@ const SectionRight = () => {
               transition={{ duration: 0.3 }}
               className="relative max-w-sm w-full mx-4 rounded-lg bg-white p-6 text-center shadow-lg"
             >
-              {/* Tombol silang (X) */}
-              {/* <button
-                onClick={() => setShowGuidePopup(false)}
-                className="absolute right-3 top-3 text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              {/* Gambar Manual Book - sekarang button untuk download */}
+              <button
+                onClick={downloadManualBook}
+                disabled={isDownloading}
+                className="relative w-full group disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <FaTimes size={20} />
-              </button> */}
-
-              <Link href="/guide_book" onClick={() => setShowGuidePopup(false)}>
                 <Image
                   src="https://storage.googleapis.com/fastwork-static/d4d162c2-2ab3-4414-9827-4663627c807e.jpg"
-                  alt="Guide Book"
+                  alt="Manual Book"
                   width={150}
                   height={150}
-                  className="mx-auto h-auto w-full cursor-pointer transition-opacity duration-200 hover:opacity-80 rounded-lg"
+                  className="mx-auto h-auto w-full cursor-pointer transition-all duration-200 group-hover:opacity-80 rounded-lg group-hover:scale-105"
                 />
-              </Link>
+                {/* Overlay download icon */}
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg">
+                  {isDownloading ? (
+                    <svg
+                      className="animate-spin h-8 w-8 text-white opacity-0 group-hover:opacity-100"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                  ) : (
+                    <FaDownload className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  )}
+                </div>
+              </button>
+
               <p className="mb-4 mt-4 text-center text-sm font-medium text-gray-700">
-                Panduan Lengkap Penggunaan Sipaduke
+                {isDownloading 
+                  ? "Sedang mendownload manual book..." 
+                  : "Klik gambar untuk mendownload Manual Book"
+                }
               </p>
               
               <button
                 onClick={() => setShowGuidePopup(false)}
-                className="mt-2 w-full rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 transition-colors duration-200"
+                disabled={isDownloading}
+                className="mt-2 w-full rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Tutup
               </button>

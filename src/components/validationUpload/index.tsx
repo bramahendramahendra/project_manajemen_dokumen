@@ -60,7 +60,7 @@ const MainPage = () => {
       try {
         const user = JSON.parse(Cookies.get("user") || "{}");
         
-        const response = await apiRequest(`/document_managements/all-data/dinas/${user.department_id}`, "GET");
+        const response = await apiRequest(`/document_managements/all-data/dinas/${user.dinas}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Document data not found");

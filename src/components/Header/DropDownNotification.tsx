@@ -4,6 +4,7 @@ import ClickOutside from "@/components/ClickOutside";
 import Image from "next/image";
 import { apiRequest } from "@/helpers/apiClient";
 import notificationClient from "@/helpers/notificationClient";
+import { DEBUG_MODE } from "@/utils/config";
 
 type NotificationItem = {
   url: string;
@@ -92,13 +93,13 @@ const DropdownNotification = () => {
       if (data.status === 'connected') {
         setError(null);
       } else if (data.status === 'disconnected') {
-        setError('Koneksi notifikasi terputus');
+        if (DEBUG_MODE) setError('Koneksi notifikasi terputus');
       } else if (data.status === 'reconnecting') {
-        setError(`Menyambung kembali... (${data.attempt || 0})`);
+        if (DEBUG_MODE) setError(`Menyambung kembali... (${data.attempt || 0})`);
       } else if (data.status === 'authentication_failed') {
-        setError('Sesi berakhir, silakan login ulang');
+        if (DEBUG_MODE) setError('Sesi berakhir, silakan login ulang');
       } else if (data.status === 'failed') {
-        setError('Gagal terhubung ke server notifikasi');
+        if (DEBUG_MODE) setError('Gagal terhubung ke server notifikasi');
       }
     });
 

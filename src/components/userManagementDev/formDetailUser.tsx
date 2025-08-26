@@ -50,7 +50,7 @@ const FormDetailUser = ({ user }: { user?: any }) => {
       setLastName(user.lastname || user.name?.split(' ')[1] || '');
       setUsername(user.username);
       setEmail(user.email || '');
-      setDepartmentName(user.department_name || '');
+      setDepartmentName(user.nama_dinas || '');
       setResponsiblePerson(user.responsible_person || '');
       setAccessUser(user.level_id || '');
     }
