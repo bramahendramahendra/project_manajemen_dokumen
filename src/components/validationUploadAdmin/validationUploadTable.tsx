@@ -17,6 +17,8 @@ interface Props {
   id: number | null;
 }
 
+type BulkAction = 'validate' | 'reject' | 'delete';
+
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("id-ID", {
     day: "numeric",
@@ -34,15 +36,27 @@ const ValidationUploadTable = ({ id }: Props) => {
   const [checkedItems, setCheckedItems] = useState<boolean[]>([]);
   const [isAllChecked, setIsAllChecked] = useState(false);
   const isAnyChecked = checkedItems.some((checked) => checked);
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
 
+  // Modal states untuk individual actions
+  const [showValidateModal, setShowValidateModal] = useState(false);
+  const [itemToValidate, setItemToValidate] = useState<number | null>(null);
+  
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
+
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [itemToReject, setItemToReject] = useState<number | null>(null);
+  const [rejectNote, setRejectNote] = useState<string>("");
+
+  // Modal states untuk bulk actions
+  const [showBulkModal, setShowBulkModal] = useState(false);
+  const [bulkAction, setBulkAction] = useState<BulkAction>('validate');
+  const [bulkNote, setBulkNote] = useState<string>("");
 
   // State untuk modal review files
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -51,18 +65,12 @@ const ValidationUploadTable = ({ id }: Props) => {
   const [downloadingFile, setDownloadingFile] = useState<number | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
 
-  // State untuk modal tolak
-  const [showRejectModal, setShowRejectModal] = useState(false);
-  const [itemToReject, setItemToReject] = useState<number | null>(null);
-  const [rejectNote, setRejectNote] = useState<string>("");
-
   // Filters state
   const [filters, setFilters] = useState({
     sort_by: 'id',
     sort_dir: 'DESC'
   });
 
- 
   const fetchData = async (page = 1, perPage = 5, filterParams = {}) => {
     if (!id) {
       setError("ID tidak ditemukan");
@@ -74,14 +82,12 @@ const ValidationUploadTable = ({ id }: Props) => {
     setError(null);
 
     try {
-      // Buat query parameters - PERSIS seperti master dinas
       const queryParams = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
         ...filterParams
       });
 
-      // Hapus parameter kosong - PERSIS seperti master dinas
       Array.from(queryParams.entries()).forEach(([key, value]) => {
         if (!value) queryParams.delete(key);
       });
@@ -132,14 +138,12 @@ const ValidationUploadTable = ({ id }: Props) => {
     }
   };
 
-  // useEffect untuk fetch data
   useEffect(() => {
     if (id) {
       fetchData(currentPage, itemsPerPage, filters);
     }
   }, [id, currentPage, itemsPerPage, filters]);
 
-  // Auto hide success message after 5 seconds
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -149,23 +153,19 @@ const ValidationUploadTable = ({ id }: Props) => {
     }
   }, [success]);
 
-  // Handler untuk perubahan halaman
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
 
-  // Handler untuk perubahan items per page
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset ke halaman pertama
+    setCurrentPage(1);
   };
 
-  // Handler untuk retry ketika error
   const handleRetry = () => {
     fetchData(currentPage, itemsPerPage, filters);
   };
 
-  // Client-side pagination - menghitung data untuk halaman saat ini
   const getCurrentPageData = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -174,18 +174,15 @@ const ValidationUploadTable = ({ id }: Props) => {
 
   const currentItems = getCurrentPageData();
 
-  // checked 
   useEffect(() => {
     setCheckedItems(new Array(dataDetail.length).fill(false));
   }, [dataDetail]);
-  
 
   useEffect(() => {
     const allCheckedInPage = currentItems.every((_, index) => checkedItems[(currentPage - 1) * itemsPerPage + index]);
     setIsAllChecked(allCheckedInPage);
   }, [currentPage, checkedItems, currentItems, itemsPerPage]);
 
-  // Fungsi untuk memilih semua item
   const handleSelectAll = () => {
     const newChecked = checkedItems.map((_, idx) =>
       idx >= (currentPage - 1) * itemsPerPage && idx < currentPage * itemsPerPage ? !isAllChecked : checkedItems[idx]
@@ -195,7 +192,6 @@ const ValidationUploadTable = ({ id }: Props) => {
     setIsAllChecked(!isAllChecked);
   };
 
-  // Fungsi untuk memilih item individual
   const handleItemCheck = (index: number) => {
     const globalIndex = (currentPage - 1) * itemsPerPage + index;
     const newCheckedItems = [...checkedItems];
@@ -204,25 +200,18 @@ const ValidationUploadTable = ({ id }: Props) => {
     setIsAllChecked(currentItems.every((_, idx) => newCheckedItems[(currentPage - 1) * itemsPerPage + idx]));
   };
 
-  // Fungsi untuk membuka dan menutup modal validasi
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
-
-  // Fungsi untuk membuka modal review
-  const handleOpenReviewModal = (files: FileItem[], uraian: string) => {
-    setSelectedFiles(files);
-    setSelectedUraian(uraian);
-    setShowReviewModal(true);
+  // Individual modal handlers
+  const handleOpenValidateModal = (index: number) => {
+    const globalIndex = (currentPage - 1) * itemsPerPage + index;
+    setItemToValidate(globalIndex);
+    setShowValidateModal(true);
   };
 
-  // Fungsi untuk menutup modal review
-  const handleCloseReviewModal = () => {
-    setShowReviewModal(false);
-    setSelectedFiles([]);
-    setSelectedUraian("");
+  const handleCloseValidateModal = () => {
+    setShowValidateModal(false);
+    setItemToValidate(null);
   };
 
-  // Fungsi untuk membuka modal tolak
   const handleOpenRejectModal = (index: number) => {
     const globalIndex = (currentPage - 1) * itemsPerPage + index;
     setItemToReject(globalIndex);
@@ -230,14 +219,98 @@ const ValidationUploadTable = ({ id }: Props) => {
     setShowRejectModal(true);
   };
 
-  // Fungsi untuk menutup modal tolak
   const handleCloseRejectModal = () => {
     setShowRejectModal(false);
     setItemToReject(null);
     setRejectNote("");
   };
 
-  // Fungsi untuk konfirmasi tolak dengan catatan
+  const handleDeleteClick = (index: number) => {
+    const globalIndex = (currentPage - 1) * itemsPerPage + index;
+    setItemToDelete(globalIndex);
+    setShowDeleteModal(true);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setItemToDelete(null);
+  };
+
+  // Bulk action modal handlers
+  const handleOpenBulkModal = (action: BulkAction) => {
+    setBulkAction(action);
+    setBulkNote("");
+    setShowBulkModal(true);
+  };
+
+  const handleCloseBulkModal = () => {
+    setShowBulkModal(false);
+    setBulkAction('validate');
+    setBulkNote("");
+  };
+
+  // Review modal handlers
+  const handleOpenReviewModal = (files: FileItem[], uraian: string) => {
+    setSelectedFiles(files);
+    setSelectedUraian(uraian);
+    setShowReviewModal(true);
+  };
+
+  const handleCloseReviewModal = () => {
+    setShowReviewModal(false);
+    setSelectedFiles([]);
+    setSelectedUraian("");
+  };
+
+  // API call functions
+  const handleConfirmValidate = async () => {
+    if (itemToValidate === null) return;
+
+    const user = JSON.parse(Cookies.get("user") || "{}");
+    if (!user.userid || !user.role) {
+      console.error("User tidak ditemukan di cookie.");
+      return;
+    }
+
+    const itemId = dataDetail[itemToValidate]?.id;
+    if (!itemId) {
+      console.error("ID item tidak ditemukan.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    const payload = {
+      id: itemId,
+      checker: user.userid,
+      checker_role: user.level_id,
+    };
+    
+    try {
+      const response = await apiRequest('/validation/document', 'POST', payload);
+      if (response.ok) {
+        setSuccess(true);
+        
+        const updatedData = dataDetail.filter((_, idx) => idx !== itemToValidate);
+        setDataDetail(updatedData);
+        
+        setCheckedItems(new Array(updatedData.length).fill(false));
+        setIsAllChecked(false);
+        
+      } else {
+        const result = await response.json();
+        setError(result.message || "Terjadi kesalahan saat validasi data");
+      }
+    } catch (error) {
+      setError("Terjadi kesalahan saat mengirim data validasi");
+    } finally {
+      setLoading(false);
+      handleCloseValidateModal();
+    }
+  };
+
   const handleConfirmReject = async () => {
     if (itemToReject === null) return;
 
@@ -247,7 +320,6 @@ const ValidationUploadTable = ({ id }: Props) => {
       return;
     }
 
-    // Dapatkan ID item yang akan di-reject
     const itemId = dataDetail[itemToReject]?.id;
     if (!itemId) {
       console.error("ID item tidak ditemukan.");
@@ -262,25 +334,20 @@ const ValidationUploadTable = ({ id }: Props) => {
       id: itemId,
       checker: user.userid,
       checker_role: user.level_id,
-      catatan: rejectNote || "", // Menambahkan catatan ke payload
+      catatan: rejectNote || "",
     };
-
-    console.log("Reject payload:", payload);
 
     try {
       const response = await apiRequest('/validation/document/reject', 'POST', payload);
       if (response.ok) {
         setSuccess(true);
         
-        // Update data dengan menghapus item yang di-reject
         const updatedData = dataDetail.filter((_, idx) => idx !== itemToReject);
         setDataDetail(updatedData);
         
-        // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
         
-        console.log(`Item dengan index ${itemToReject} telah di-reject dengan catatan: ${rejectNote}`);
       } else {
         const result = await response.json();
         setError(result.message || "Terjadi kesalahan saat menolak dokumen");
@@ -289,190 +356,10 @@ const ValidationUploadTable = ({ id }: Props) => {
       setError("Terjadi kesalahan saat mengirim data penolakan");
     } finally {
       setLoading(false);
-      // Reset modal state
       handleCloseRejectModal();
     }
   };
 
-  // Fungsi untuk download file
-  const handleDownloadFile = async (file: FileItem) => {
-    setDownloadingFile(file.id);
-    try {
-      const response = await downloadFileRequest(`/files/download/${file.file_name}`);
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        
-        // Ekstrak nama file dari path
-        const fileName = file.file_name.split('/').pop() || `file_${file.id}`;
-        link.download = fileName;
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        // console.log(`File ${fileName} berhasil didownload`);
-      } else {
-        console.error('Download gagal:', response.status);
-        setError('Gagal mendownload file');
-      }
-    } catch (error) {
-      console.error('Error downloading file:', error);
-      setError('Terjadi kesalahan saat mendownload file');
-    } finally {
-      setDownloadingFile(null);
-    }
-  };
-
-  // Fungsi untuk download semua file sebagai ZIP
-  const handleDownloadAllFiles = async () => {
-    if (!selectedFiles || selectedFiles.length <= 1) return;
-    
-    setDownloadingAll(true);
-    try {
-      // Buat request body dengan list filepath
-      const requestBody = {
-        files: selectedFiles.map(file => file.file_name),
-        zip_name: selectedUraian.replace(/[^a-zA-Z0-9]/g, '_') || 'document_files'
-      };
-
-      const response = await apiRequest('/files/download/multiple', 'POST', requestBody);
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        
-        // Nama file ZIP berdasarkan uraian
-        const fileName = `${selectedUraian.replace(/[^a-zA-Z0-9]/g, '_')}_all_files.zip`;
-        link.download = fileName;
-        
-        document.body.appendChild(link);
-        link.click();
-        
-        // Cleanup
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        // console.log(`Semua file berhasil didownload sebagai ${fileName}`);
-      } else {
-        console.error('Download semua file gagal:', response.status);
-        setError('Gagal mendownload semua file');
-      }
-    } catch (error) {
-      console.error('Error downloading all files:', error);
-      setError('Terjadi kesalahan saat mendownload semua file');
-    } finally {
-      setDownloadingAll(false);
-    }
-  };
-
-  const handleValidateItem = async (id: number) => {
-    const user = JSON.parse(Cookies.get("user") || "{}");
-    if (!user.userid || !user.role) {
-      console.error("User tidak ditemukan di cookie.");
-      return;
-    }
-
-    // console.log(user);
-
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    const payload = {
-      id,
-      checker: user.userid,
-      checker_role: user.level_id,
-    };
-
-    // console.log(payload);
-    
-    try {
-      const response = await apiRequest('/validation/document', 'POST', payload);
-      if (response.ok) {
-        setSuccess(true);
-        
-        // Update data dengan menghapus item yang sudah divalidasi
-        const updatedData = dataDetail.filter(item => item.id !== id);
-        setDataDetail(updatedData);
-        
-        // Reset checkbox states setelah update data
-        setCheckedItems(new Array(updatedData.length).fill(false));
-        setIsAllChecked(false);
-        
-      } else {
-        const result = await response.json();
-        setError(result.message || "Terjadi kesalahan saat validasi data");
-      }
-    } catch (error) {
-      setError("Terjadi kesalahan saat mengirim data validasi");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleValidateAll = async () => {
-    const user = JSON.parse(Cookies.get("user") || "{}");
-    if (!user.userid || !user.role) {
-      console.error("User tidak ditemukan di cookie.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setSuccess(false);
-
-    const selectedItems = dataDetail.filter((_, idx) => checkedItems[idx]);
-    const payload = selectedItems.map((item) => ({
-      id: item.id,
-      checker: user.userid,
-      checker_role: user.level_id,
-    }));
-
-    // console.log(payload);
-
-    try {
-      const response = await apiRequest('/validation/documents', 'POST', { items: payload });
-      if (response.ok) {
-        setSuccess(true);
-        
-        // Update data dengan menghapus semua item yang sudah divalidasi
-        const selectedIds = selectedItems.map(item => item.id);
-        const updatedData = dataDetail.filter(item => !selectedIds.includes(item.id));
-        setDataDetail(updatedData);
-        
-        // Reset checkbox states setelah update data
-        setCheckedItems(new Array(updatedData.length).fill(false));
-        setIsAllChecked(false);
-        
-      } else {
-        const result = await response.json();
-        setError(result.message || "Terjadi kesalahan saat validasi semua data");
-      }
-    } catch (error) {
-      setError("Terjadi kesalahan saat mengirim data validasi semua");
-    } finally {
-      setLoading(false);
-      setIsModalOpen(false);
-    }
-  };
-
-  // Fungsi untuk membuka modal hapus
-  const handleDeleteClick = (index: number) => {
-    const globalIndex = (currentPage - 1) * itemsPerPage + index;
-    setItemToDelete(globalIndex);
-    setShowDeleteModal(true);
-  };
-
-  // Fungsi untuk konfirmasi hapus
   const handleConfirmDelete = async () => {
     if (itemToDelete === null) return;
 
@@ -482,7 +369,6 @@ const ValidationUploadTable = ({ id }: Props) => {
       return;
     }
 
-    // Dapatkan ID item yang akan di-reject
     const itemId = dataDetail[itemToDelete]?.id;
     if (!itemId) {
       console.error("ID item tidak ditemukan.");
@@ -499,43 +385,173 @@ const ValidationUploadTable = ({ id }: Props) => {
       checker_role: user.level_id,
     };
 
-    // console.log("Reject payload:", payload);
-
     try {
-      const response = await apiRequest('/validation/document/reject', 'POST', payload);
+      const response = await apiRequest('/validation/document/delete', 'POST', payload);
       if (response.ok) {
         setSuccess(true);
         
-        // Update data dengan menghapus item yang di-reject
         const updatedData = dataDetail.filter((_, idx) => idx !== itemToDelete);
         setDataDetail(updatedData);
         
-        // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
         
-        // console.log(`Item dengan index ${itemToDelete} telah di-reject`);
       } else {
         const result = await response.json();
-        setError(result.message || "Terjadi kesalahan saat menolak dokumen");
+        setError(result.message || "Terjadi kesalahan saat menghapus dokumen");
       }
     } catch (error) {
-      setError("Terjadi kesalahan saat mengirim data penolakan");
+      setError("Terjadi kesalahan saat mengirim data penghapusan");
     } finally {
       setLoading(false);
-      // Reset modal state
       setShowDeleteModal(false);
       setItemToDelete(null);
     }
   };
 
-  // Fungsi untuk membatalkan hapus
-  const handleCancelDelete = () => {
-    setShowDeleteModal(false);
-    setItemToDelete(null);
+  const handleBulkAction = async () => {
+    const user = JSON.parse(Cookies.get("user") || "{}");
+    if (!user.userid || !user.role) {
+      console.error("User tidak ditemukan di cookie.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+
+    const selectedItems = dataDetail.filter((_, idx) => checkedItems[idx]);
+    
+    try {
+      let response;
+      
+      if (bulkAction === 'validate') {
+        const payload = selectedItems.map((item) => ({
+          id: item.id,
+          checker: user.userid,
+          checker_role: user.level_id,
+        }));
+        response = await apiRequest('/validation/documents', 'POST', { items: payload });
+      } else if (bulkAction === 'reject') {
+        // For bulk reject, we'll call individual reject for each item
+        const promises = selectedItems.map((item) => 
+          apiRequest('/validation/document/reject', 'POST', {
+            id: item.id,
+            checker: user.userid,
+            checker_role: user.level_id,
+            catatan: bulkNote || "",
+          })
+        );
+        const responses = await Promise.all(promises);
+        response = responses[0]; // Use first response for success check
+      } else if (bulkAction === 'delete') {
+        // For bulk delete, we'll call individual delete for each item
+        const promises = selectedItems.map((item) => 
+          apiRequest('/validation/document/reject', 'POST', {
+            id: item.id,
+            checker: user.userid,
+            checker_role: user.level_id,
+          })
+        );
+        const responses = await Promise.all(promises);
+        response = responses[0]; // Use first response for success check
+      }
+
+      if (response && response.ok) {
+        setSuccess(true);
+        
+        const selectedIds = selectedItems.map(item => item.id);
+        const updatedData = dataDetail.filter(item => !selectedIds.includes(item.id));
+        setDataDetail(updatedData);
+        
+        setCheckedItems(new Array(updatedData.length).fill(false));
+        setIsAllChecked(false);
+        
+      } else {
+        const result = response ? await response.json() : {};
+        setError(result.message || `Terjadi kesalahan saat ${bulkAction === 'validate' ? 'validasi' : bulkAction === 'reject' ? 'menolak' : 'menghapus'} data`);
+      }
+    } catch (error) {
+      setError(`Terjadi kesalahan saat mengirim data ${bulkAction === 'validate' ? 'validasi' : bulkAction === 'reject' ? 'penolakan' : 'penghapusan'}`);
+    } finally {
+      setLoading(false);
+      handleCloseBulkModal();
+    }
   };
 
-  // Render loading skeleton
+  // File download functions
+  const handleDownloadFile = async (file: FileItem) => {
+    setDownloadingFile(file.id);
+    try {
+      const response = await downloadFileRequest(`/files/download/${file.file_name}`);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        const fileName = file.file_name.split('/').pop() || `file_${file.id}`;
+        link.download = fileName;
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+      } else {
+        console.error('Download gagal:', response.status);
+        setError('Gagal mendownload file');
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      setError('Terjadi kesalahan saat mendownload file');
+    } finally {
+      setDownloadingFile(null);
+    }
+  };
+
+  const handleDownloadAllFiles = async () => {
+    if (!selectedFiles || selectedFiles.length <= 1) return;
+    
+    setDownloadingAll(true);
+    try {
+      const requestBody = {
+        files: selectedFiles.map(file => file.file_name),
+        zip_name: selectedUraian.replace(/[^a-zA-Z0-9]/g, '_') || 'document_files'
+      };
+
+      const response = await apiRequest('/files/download/multiple', 'POST', requestBody);
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        
+        const fileName = `${selectedUraian.replace(/[^a-zA-Z0-9]/g, '_')}_all_files.zip`;
+        link.download = fileName;
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+      } else {
+        console.error('Download semua file gagal:', response.status);
+        setError('Gagal mendownload semua file');
+      }
+    } catch (error) {
+      console.error('Error downloading all files:', error);
+      setError('Terjadi kesalahan saat mendownload semua file');
+    } finally {
+      setDownloadingAll(false);
+    }
+  };
+
+  // Render functions
   const renderLoadingSkeleton = () => (
     Array.from({ length: itemsPerPage }).map((_, index) => (
       <tr key={index} className="border-b border-stroke dark:border-dark-3">
@@ -559,7 +575,6 @@ const ValidationUploadTable = ({ id }: Props) => {
     ))
   );
 
-  // Render empty state
   const renderEmptyState = () => (
     <tr>
       <td colSpan={4} className="px-4 py-20 text-center">
@@ -576,7 +591,6 @@ const ValidationUploadTable = ({ id }: Props) => {
     </tr>
   );
 
-  // Render error state
   const renderErrorState = () => (
     <tr>
       <td colSpan={4} className="px-4 py-20 text-center">
@@ -594,6 +608,15 @@ const ValidationUploadTable = ({ id }: Props) => {
     </tr>
   );
 
+  const getBulkActionText = (action: BulkAction) => {
+    switch (action) {
+      case 'validate': return 'Validasi';
+      case 'reject': return 'Tolak';
+      case 'delete': return 'Hapus';
+      default: return '';
+    }
+  };
+
   return (
     <div className="col-span-12 xl:col-span-12">
       {/* Alert Messages */}
@@ -605,18 +628,33 @@ const ValidationUploadTable = ({ id }: Props) => {
       
       {success && (
         <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
-          <p className="text-green-600 font-medium">{success}</p>
+          <p className="text-green-600 font-medium">Operasi berhasil dilakukan</p>
         </div>
       )}
 
+      {/* Bulk Action Buttons */}
       {isAnyChecked && dataDetail.length > 0 && (
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end space-x-3">
           <button
             className="rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-2 text-white hover:from-[#0C479F] hover:to-[#0C479F]"
-            onClick={handleOpenModal}
+            onClick={() => handleOpenBulkModal('validate')}
             disabled={loading}
           >
-            {loading ? "Memvalidasi..." : "Validasi Semua"}
+            {loading ? "Memvalidasi..." : "Validasi Terpilih"}
+          </button>
+          <button
+            className="rounded-[7px] bg-gradient-to-r from-[#EA580C] to-[#F97316] px-4 py-2 text-white hover:from-[#EA580C] hover:to-[#EA580C]"
+            onClick={() => handleOpenBulkModal('reject')}
+            disabled={loading}
+          >
+            {loading ? "Menolak..." : "Tolak Terpilih"}
+          </button>
+          <button
+            className="rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-2 text-white hover:from-[#DC2626] hover:to-[#DC2626]"
+            onClick={() => handleOpenBulkModal('delete')}
+            disabled={loading}
+          >
+            {loading ? "Menghapus..." : "Hapus Terpilih"}
           </button>
         </div>
       )}
@@ -698,9 +736,10 @@ const ValidationUploadTable = ({ id }: Props) => {
                       {/* Button Validasi */}
                       <div className="pl-1 capitalize ">
                         <button 
-                          onClick={() => handleValidateItem(item.id)}
+                          onClick={() => handleOpenValidateModal(index)}
                           className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
                           title={`Validasi ${item.uraian}`}
+                          disabled={loading}
                         >
                           <span className="text-[20px]">
                             <HiOutlineClipboardDocumentCheck />
@@ -717,6 +756,7 @@ const ValidationUploadTable = ({ id }: Props) => {
                           onClick={() => handleOpenRejectModal(index)}
                           className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#EA580C] to-[#F97316] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#EA580C] hover:to-[#EA580C] hover:pr-6"
                           title={`Tolak ${item.uraian}`}
+                          disabled={loading}
                         >
                           <span className="text-[20px]">
                             <HiOutlineXCircle />
@@ -733,6 +773,7 @@ const ValidationUploadTable = ({ id }: Props) => {
                           onClick={() => handleDeleteClick(index)}
                           className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6"
                           title={`Hapus ${item.uraian}`}
+                          disabled={loading}
                         >
                           <span className="text-[20px]">
                             <HiOutlineTrash />
@@ -749,6 +790,7 @@ const ValidationUploadTable = ({ id }: Props) => {
                           onClick={() => handleOpenReviewModal(item.files, item.uraian)}
                           className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#059669] to-[#10B981] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#059669] hover:to-[#059669] hover:pr-6"
                           title={`Review ${item.uraian}`}
+                          disabled={loading}
                         >
                           <span className="text-[20px]">
                             <HiOutlineDocumentMagnifyingGlass />
@@ -777,114 +819,58 @@ const ValidationUploadTable = ({ id }: Props) => {
         </div>
       </div>
 
-      {/* Modal Validasi */}
-      {isModalOpen && (
-        <div
-          className="fixed inset-0 z-[1000]"
-          aria-labelledby="modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-          <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                {/* Tombol X untuk Close */}
-                <button
-                  type="button"
-                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                  onClick={handleCloseModal}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
+      {/* Modal Validasi Individual */}
+      {showValidateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Konfirmasi Validasi
+              </h3>
+              <button
+                onClick={handleCloseValidateModal}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <HiOutlineXMark className="h-6 w-6" />
+              </button>
+            </div>
 
-                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <svg
-                        className="h-6 w-6 text-red-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                      <h3
-                        className="text-base font-semibold leading-6 text-gray-900"
-                        id="modal-title"
-                      >
-                        {isAllChecked
-                          ? "Validasi Semua"
-                          : "Batal Validasi Semua"}
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">
-                          {isAllChecked
-                            ? "Apakah Anda yakin ingin memvalidasi semua item yang dicentang?"
-                            : "Apakah Anda yakin ingin membatalkan validasi semua item yang dicentang?"}
-                        </p>
-                      </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Apakah Anda yakin ingin memvalidasi dokumen ini?
+              </p>
+              {itemToValidate !== null && (
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <p className="font-medium text-gray-900">{dataDetail[itemToValidate]?.uraian}</p>
+                  <p className="text-xs text-gray-500">Jenis: {dataDetail[itemToValidate]?.jenis}</p>
+                </div>
+              )}
+            </div>
 
-                      {/* Form untuk Catatan / Keterangan */}
-                      <form className="mt-4">
-                        <label
-                          htmlFor="catatan"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Catatan / Keterangan (Opsional)
-                        </label>
-                        <textarea
-                          id="catatan"
-                          name="catatan"
-                          rows={3}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          placeholder="Tambahkan catatan atau keterangan..."
-                        ></textarea>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                  <button
-                    type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
-                    onClick={handleValidateAll}
-                  >
-                    {isAllChecked ? "Validasi Semua" : "Batal Validasi Semua"}
-                  </button>
-                </div>
-              </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCloseValidateModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
+                disabled={loading}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmValidate}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                disabled={loading}
+              >
+                {loading ? "Memvalidasi..." : "Ya, Validasi"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal Tolak dengan Form Catatan */}
+      {/* Modal Tolak Individual */}
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-lg">
-            {/* Header Modal */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Tolak Dokumen
@@ -897,11 +883,17 @@ const ValidationUploadTable = ({ id }: Props) => {
               </button>
             </div>
 
-            {/* Content */}
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-4">
                 Anda akan menolak dokumen ini. Silakan berikan alasan penolakan:
               </p>
+              
+              {itemToReject !== null && (
+                <div className="bg-gray-50 p-3 rounded-lg mb-4">
+                  <p className="font-medium text-gray-900">{dataDetail[itemToReject]?.uraian}</p>
+                  <p className="text-xs text-gray-500">Jenis: {dataDetail[itemToReject]?.jenis}</p>
+                </div>
+              )}
               
               <label htmlFor="rejectNote" className="block text-sm font-medium text-gray-700 mb-2">
                 Catatan Penolakan
@@ -916,7 +908,6 @@ const ValidationUploadTable = ({ id }: Props) => {
               />
             </div>
 
-            {/* Footer Buttons */}
             <div className="flex justify-end space-x-3">
               <button
                 onClick={handleCloseRejectModal}
@@ -937,6 +928,130 @@ const ValidationUploadTable = ({ id }: Props) => {
         </div>
       )}
 
+      {/* Modal Hapus Individual */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Konfirmasi Hapus
+              </h3>
+              <button
+                onClick={handleCancelDelete}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <HiOutlineXMark className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Apakah Anda yakin ingin menghapus dokumen ini? Tindakan ini tidak dapat dibatalkan.
+              </p>
+              
+              {itemToDelete !== null && (
+                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                  <p className="font-medium text-gray-900">{dataDetail[itemToDelete]?.uraian}</p>
+                  <p className="text-xs text-gray-500">Jenis: {dataDetail[itemToDelete]?.jenis}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
+                disabled={loading}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200"
+                disabled={loading}
+              >
+                {loading ? "Menghapus..." : "Ya, Hapus"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Bulk Actions */}
+      {showBulkModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="relative w-full max-w-lg mx-4 rounded-lg bg-white p-6 shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {getBulkActionText(bulkAction)} Dokumen Terpilih
+              </h3>
+              <button
+                onClick={handleCloseBulkModal}
+                className="text-gray-400 hover:text-gray-600 focus:outline-none"
+              >
+                <HiOutlineXMark className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                Apakah Anda yakin ingin {getBulkActionText(bulkAction).toLowerCase()} {checkedItems.filter(Boolean).length} dokumen terpilih?
+              </p>
+              
+              {/* Show selected items preview */}
+              <div className="bg-gray-50 p-3 rounded-lg mb-4 max-h-32 overflow-y-auto">
+                <p className="text-sm font-medium text-gray-700 mb-2">Dokumen yang akan di{getBulkActionText(bulkAction).toLowerCase()}:</p>
+                <ul className="text-xs text-gray-600 space-y-1">
+                  {dataDetail.filter((_, idx) => checkedItems[idx]).map((item) => (
+                    <li key={item.id} className="truncate">• {item.uraian}</li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Note field for reject action */}
+              {bulkAction === 'reject' && (
+                <div>
+                  <label htmlFor="bulkNote" className="block text-sm font-medium text-gray-700 mb-2">
+                    Catatan Penolakan
+                  </label>
+                  <textarea
+                    id="bulkNote"
+                    value={bulkNote}
+                    onChange={(e) => setBulkNote(e.target.value)}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 resize-none"
+                    placeholder="Masukkan alasan penolakan untuk semua dokumen..."
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={handleCloseBulkModal}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200"
+                disabled={loading}
+              >
+                Batal
+              </button>
+              <button
+                onClick={handleBulkAction}
+                className={`px-4 py-2 text-sm font-medium text-white rounded-md focus:outline-none focus:ring-2 transition-colors duration-200 ${
+                  bulkAction === 'validate' 
+                    ? 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500' 
+                    : bulkAction === 'reject'
+                    ? 'bg-orange-500 hover:bg-orange-600 focus:ring-orange-500'
+                    : 'bg-red-600 hover:bg-red-700 focus:ring-red-500'
+                }`}
+                disabled={loading}
+              >
+                {loading ? `${getBulkActionText(bulkAction)}...` : `Ya, ${getBulkActionText(bulkAction)}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Review Files */}
       {showReviewModal && (
         <div
@@ -949,7 +1064,6 @@ const ValidationUploadTable = ({ id }: Props) => {
           <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
               <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
-                {/* Header Modal */}
                 <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center">
@@ -977,13 +1091,11 @@ const ValidationUploadTable = ({ id }: Props) => {
                     </button>
                   </div>
 
-                  {/* Daftar Files */}
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-medium text-gray-900">
                         Daftar File ({selectedFiles.length} file)
                       </h4>
-                      {/* Button Download Semua - Tampil jika lebih dari 1 file */}
                       {selectedFiles.length > 1 && (
                         <button
                           onClick={handleDownloadAllFiles}
@@ -1055,7 +1167,6 @@ const ValidationUploadTable = ({ id }: Props) => {
                   </div>
                 </div>
 
-                {/* Footer Modal */}
                 <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                   <button
                     type="button"
@@ -1066,39 +1177,6 @@ const ValidationUploadTable = ({ id }: Props) => {
                   </button>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Konfirmasi Hapus */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="fixed inset-0 bg-black opacity-50"></div>
-          <div className="relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
-            <div className="mb-4 text-center">
-              <h3 className="text-lg font-medium text-gray-900">
-                Konfirmasi Tolak Dokumen
-              </h3>
-              <p className="mt-2 text-sm text-gray-500">
-                Apakah anda yakin ingin menolak dokumen ini?
-              </p>
-            </div>
-            <div className="mt-6 flex justify-center space-x-4">
-              <button
-                onClick={handleCancelDelete}
-                className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300"
-                disabled={loading}
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                disabled={loading}
-              >
-                {loading ? "Menolak..." : "Ya, Tolak"}
-              </button>
             </div>
           </div>
         </div>
