@@ -19,3 +19,17 @@ export type ValidationUploadAdmin = {
     skpd: string;
     validasiPending: number;
 };
+
+export type ValidationUploadAdminResponse = {
+  responseCode: number;
+  responseDesc: string;
+  responseData: {
+    items: ValidationUploadAdmin[];
+  };
+  responseMeta: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_records: number;
+  };
+};

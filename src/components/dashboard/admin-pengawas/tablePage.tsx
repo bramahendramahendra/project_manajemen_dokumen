@@ -8,23 +8,23 @@ import { Document, DocumentResponse } from "@/types/dashboard";
 import Pagination from "@/components/pagination/Pagination";
 
 // Extend interface Document untuk admin/pengawas
-interface AdminPengawasDocument extends Document {
-  dinas?: string; // Tambahan field untuk nama dinas
-}
+// interface AdminPengawasDocument extends Document {
+//   dinas?: string; // Tambahan field untuk nama dinas
+// }
 
-interface AdminPengawasDocumentResponse {
-  responseCode: number;
-  responseDesc: string;
-  responseData: {
-    items: AdminPengawasDocument[];
-  };
-  responseMeta: {
-    page: number;
-    per_page: number;
-    total_pages: number;
-    total_records: number;
-  };
-}
+// interface AdminPengawasDocumentResponse {
+//   responseCode: number;
+//   responseDesc: string;
+//   responseData: {
+//     items: AdminPengawasDocument[];
+//   };
+//   responseMeta: {
+//     page: number;
+//     per_page: number;
+//     total_pages: number;
+//     total_records: number;
+//   };
+// }
 
 // Fungsi untuk mendapatkan warna status berdasarkan status_code
 const getStatusColor = (statusCode: string) => {
@@ -69,11 +69,11 @@ const formatDate = (dateString: string): string => {
   }
 };
 
-const AdminPengawasTable = () => {
+const TablePage = () => {
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [dataList, setDataList] = useState<AdminPengawasDocument[]>([]);
+  const [dataList, setDataList] = useState<Document[]>([]);
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -115,7 +115,7 @@ const AdminPengawasTable = () => {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
 
-      const result: AdminPengawasDocumentResponse = await response.json();
+      const result: DocumentResponse = await response.json();
 
       // Validasi struktur response
       if (!result.responseData || !result.responseData.items) {
@@ -126,7 +126,7 @@ const AdminPengawasTable = () => {
         throw new Error("Format meta tidak valid");
       }
 
-      const res: AdminPengawasDocument[] = result.responseData.items.map((item: any) => ({
+      const res: Document[] = result.responseData.items.map((item: any) => ({
           id: item.id,
           dinas: item.dinas || '',
           subjenis: item.subjenis,
@@ -349,4 +349,4 @@ const AdminPengawasTable = () => {
   );
 };
 
-export default AdminPengawasTable;
+export default TablePage;

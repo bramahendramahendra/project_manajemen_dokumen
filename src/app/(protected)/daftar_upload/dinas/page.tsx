@@ -1,10 +1,10 @@
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/validationUploadAdmin";
+import MainPage from "@/components/daftarUpload";
 
-const ValidationUpload = () => {
+const DaftarUpload = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Validation Upload"},
+    { name: "Daftar Upload"},
   ];
 
   return (
@@ -17,4 +17,4 @@ const ValidationUpload = () => {
   );
 };
 
-export default ValidationUpload;
+export default DaftarUpload;

@@ -1,16 +1,6 @@
 "use client"
-import { Metadata } from "next";
-import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import MainPage from "@/components/pengirimanLangsung/FormPengirimanLangsungPengawas";
-
 import Breadcrumb from "@/components/breadcrumbs";
-// import MainPage from "@/components/settingSubjenis";
-
-// export const metadata: Metadata = {
-//     title: "Titel Tab",
-//     description: "This is Next.js Home page for NextAdmin Dashboard Kit",
-// };
-
 const PengirimanLangsungPengawas = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },

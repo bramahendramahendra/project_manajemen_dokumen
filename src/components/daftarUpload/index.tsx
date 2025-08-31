@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect } from "react";
-import { DaftarUpload, FileItem } from "@/types/daftarUpload";
-import Pagination from "../pagination/Pagination";
-import { HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray, HiOutlineExclamationTriangle } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray, HiOutlineExclamationTriangle, HiOutlineDocumentText } from "react-icons/hi2";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
+import { DaftarUpload, FileItem, DaftarUploadResponse } from "@/types/daftarUpload";
+import Pagination from "../pagination/Pagination";
 
 const formatDate = (date: Date): string => {
   return date.toLocaleDateString("id-ID", {
@@ -30,74 +30,139 @@ const getStatusColor = (status: string) => {
 
 const MainPage = () => {
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [dataList, setDataList] = useState<DaftarUpload[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
 
-  // State untuk modal review files
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<FileItem[]>([]);
   const [selectedUraian, setSelectedUraian] = useState<string>("");
   const [downloadingFile, setDownloadingFile] = useState<number | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
 
-  // State untuk modal status tolak
   const [showRejectStatusModal, setShowRejectStatusModal] = useState(false);
   const [rejectedItem, setRejectedItem] = useState<DaftarUpload | null>(null);
   const [rejectionNote, setRejectionNote] = useState<string>("");
 
-  const totalPages = Math.ceil(dataList.length / itemsPerPage);
-  const currentItems = dataList.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
+  // Filters state
+  const [filters, setFilters] = useState({
+    sort_by: 'id',
+    sort_dir: 'DESC'
+  });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const user = JSON.parse(Cookies.get("user") || "{}");
-        
-        const response = await apiRequest(`/document_managements/all-data/dinas/${user.dinas}`, "GET");
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Document data not found");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
+  const fetchData = async (page = 1, perPage = 5, filterParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
+      
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        ...filterParams
+      });
+
+      // Hapus parameter kosong
+      Array.from(queryParams.entries()).forEach(([key, value]) => {
+        if (!value) queryParams.delete(key);
+      });
+
+      const response = await apiRequest(`/daftar_upload/${user.dinas}?${queryParams.toString()}`, "GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Document data not found");
         }
-        const result = await response.json();
-        
-        const res: DaftarUpload[] = result.responseData.items.map((item: any) => ({
-          id: item.id,
-          uraian: item.subjenis,
-          tanggal: new Date(item.maker_date),
-          status_code: item.status_code,
-          status_doc: item.status_doc,
-          total_files: item.total_files || 0,
-          files: item.files || [],
-          catatan: item.catatan || "" // Tambahkan catatan dari API
-        }));
-    
-        setDataList(res);
-      } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-      } finally {
-        setLoading(false);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
 
-    fetchData();
-  }, []);
+      const result : DaftarUploadResponse = await response.json();
+      
+      if (!result.responseData || !result.responseData.items) {
+        throw new Error("Format data tidak valid");
+      }
 
-  const formatSkpdForUrl = (document_name: string) =>
-    document_name.toLowerCase().replace(/\s+/g, "-");
+      if (!result.responseMeta) {
+        throw new Error("Format meta tidak valid");
+      }
+      
+      const res: DaftarUpload[] = result.responseData.items.map((item: any) => ({
+        id: item.id,
+        jenis: item.jenis,
+        uraian: item.subjenis,
+        tanggal: new Date(item.maker_date),
+        status_code: item.status_code,
+        status_doc: item.status_doc,
+        total_files: item.total_files || 0,
+        files: item.files || [],
+        catatan: item.catatan || ""
+      }));
 
-  const handleDetailsClick = (document: number, document_name: string) => {
-    const formattedUrl = formatSkpdForUrl(document_name);
-    router.push(`/validation_upload/${formattedUrl}`);
+      setDataList(res);
+      setTotalRecords(res.length);
+      setTotalPages(Math.ceil(res.length / perPage));
+    } catch (err: any) {
+      setError(
+        err.message === "Failed to fetch" 
+          ? "Tidak dapat terhubung ke server"
+          : err.message === "Document data not found"
+          ? "Data tidak ditemukan"
+          : err.message
+      );
+      setDataList([]);
+      setTotalPages(0);
+      setTotalRecords(0);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  // useEffect untuk fetch data
+  useEffect(() => {
+    fetchData(currentPage, itemsPerPage, filters);
+  }, [currentPage, itemsPerPage, filters]);
+
+  // Auto hide success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Handler untuk perubahan halaman
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Handler untuk perubahan items per page
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset ke halaman pertama
+  };
+
+  // Handler untuk retry ketika error
+  const handleRetry = () => {
+    fetchData(currentPage, itemsPerPage, filters);
+  };
+
+  // Client-side pagination - menghitung data untuk halaman saat ini
+  const getCurrentPageData = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return dataList.slice(startIndex, endIndex);
+  };
+
+  const currentItems = getCurrentPageData();
 
   // Fungsi untuk menangani klik status tolak
   const handleRejectStatusClick = async (item: DaftarUpload) => {
@@ -110,11 +175,10 @@ const MainPage = () => {
         const result = await response.json();
         setRejectionNote(result.responseData?.catatan || "Tidak ada catatan penolakan.");
       } else {
-        // setRejectionNote(item.catatan || "Tidak ada catatan penolakan.");
+        setRejectionNote(item.catatan || "Tidak ada catatan penolakan.");
       }
     } catch (error) {
-      // Fallback ke catatan yang sudah ada
-      // setRejectionNote(item.catatan || "Tidak ada catatan penolakan.");
+      setRejectionNote(item.catatan || "Tidak ada catatan penolakan.");
     }
     
     setShowRejectStatusModal(true);
@@ -216,141 +280,215 @@ const MainPage = () => {
     }
   };
 
+  // Render loading skeleton
+  const renderLoadingSkeleton = () => (
+    Array.from({ length: itemsPerPage }).map((_, index) => (
+      <tr key={index} className="border-b border-stroke dark:border-dark-3">
+        <td className="px-4 py-4">
+          <div className="h-4 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="h-4 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="h-8 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+      </tr>
+    ))
+  );
+
+  // Render empty state
+  const renderEmptyState = () => (
+    <tr>
+      <td colSpan={6} className="px-4 py-20 text-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-gray-400 text-6xl mb-4">📄</div>
+          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+            Data belum tersedia
+          </p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+            Belum ada dokumen yang diupload
+          </p>
+        </div>
+      </td>
+    </tr>
+  );
+
+  // Render error state
+  const renderErrorState = () => (
+    <tr>
+      <td colSpan={6} className="px-4 py-20 text-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
+          <button 
+            onClick={handleRetry}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="col-span-12 xl:col-span-12">
-      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-          Monitoring validasi dokumen
-        </h4>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-max table-auto">
+      {/* Alert Messages - sinkron dengan master_dinas */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 font-medium">{error}</p>
+        </div>
+      )}
+      
+      {success && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-600 font-medium">{success}</p>
+        </div>
+      )}
+
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-dark dark:text-white">
+            Daftar dokumen
+          </h2>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {!loading && totalRecords > 0 && (
+              <>Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data</>
+            )}
+            {!loading && totalRecords === 0 && "Tidak ada data"}
+          </div>
+        </div>
+
+        <div className="max-w-full overflow-x-auto">
+          <table className="w-full table-auto">
             <thead>
-              <tr className="bg-[#F7F9FC]">
-                <th className="px-2 py-4 text-left font-medium text-dark dark:bg-gray-dark xl:pl-7.5">
+              <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
+                <th className="px-2 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
                   No
                 </th>
-                <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
+                <th className="min-w-[200px] px-4 py-4 font-medium text-dark dark:text-white">
                   Uraian
                 </th>
-                <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
+                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
                   Tanggal Upload
                 </th>
                 <th className="min-w-[100px] px-4 py-4 font-medium text-dark dark:text-white">
                   Total Files
                 </th>
-                <th className="px-4 py-4 pb-3.5 font-medium text-dark text-center">
+                <th className="min-w-[100px] px-4 py-4 font-medium text-dark dark:text-white">
                   Status
                 </th>
-                <th className="px-4 py-4 pb-3.5 text-right font-medium text-dark xl:pr-7.5">
+                <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Actions
                 </th>
               </tr>
             </thead>
-
             <tbody>
-              {dataList.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
-                    Data belum tersedia
+              {loading && renderLoadingSkeleton()}
+              {!loading && error && renderErrorState()}
+              {!loading && !error && dataList.length === 0 && renderEmptyState()}
+              {!loading && !error && dataList.length > 0 && currentItems.map((item, index) => (
+                <tr key={item.id}
+                  className="border-b border-stroke dark:border-dark-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <td className="px-4 py-4 xl:pl-7.5">
+                    <p className="font-medium text-dark dark:text-white">
+                      {(currentPage - 1) * itemsPerPage + index + 1}
+                    </p>
+                  </td>
+
+                  <td className="px-4 py-4 xl:pl-7.5">
+                    <div className="flex items-center">
+                      <div className="mr-3">
+                        <HiOutlineDocumentText className="h-5 w-5 text-gray-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-dark dark:text-white">{item.uraian}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Jenis: {item.jenis}</p>
+                      </div>
+                    </div>
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <p className="text-dark dark:text-white">
+                      {formatDate(new Date(item.tanggal))}
+                    </p>
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <p className="text-dark dark:text-white">
+                      {item.total_files} file(s)
+                    </p>
+                  </td>
+
+                  <td className="px-4 py-4">
+                    <button
+                      onClick={() => item.status_code === '002' ? handleRejectStatusClick(item) : undefined}
+                      className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status_code)} ${
+                        item.status_code === '002' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
+                      }`}
+                      disabled={item.status_code !== '002'}
+                    >
+                      {item.status_doc}
+                    </button>
+                  </td>
+
+                  <td className="px-4 py-4 xl:pr-7.5">
+                    <div className="flex items-center justify-end">
+                      <button
+                        onClick={() => handleOpenReviewModal(item.files, item.uraian)}
+                        className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#059669] to-[#10B981] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#059669] hover:to-[#059669] hover:pr-6"
+                        title={`Review ${item.uraian}`}
+                      >
+                        <span className="text-[20px]">
+                          <HiOutlineDocumentMagnifyingGlass />
+                        </span>
+                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                          Review
+                        </span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              ) : (
-                currentItems.map((item, index) => (
-                  <tr key={index}
-                    className={`hover:bg-gray-2 ${
-                      index === currentItems.length - 1
-                        ? ""
-                        : "border-b border-stroke dark:border-dark-3"
-                    }`}
-                  >
-                    <td className="border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5">
-                      <div className="flex items-center gap-3.5">
-                        <p className="font-medium text-dark dark:text-white">
-                          {index+1}
-                        </p>
-                      </div>
-                    </td>
-
-                    <td className="px-2 py-4 dark:bg-gray-dark 2xsm:w-7 sm:w-60 md:w-90 xl:pl-7.5">
-                      <div className="flex items-center gap-3.5">
-                        <p className="font-medium text-dark dark:text-white">
-                          {item.uraian}
-                        </p>
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-4">
-                      <div className="flex items-center justify-center">
-                        <div className="pl-1 capitalize text-dark dark:text-white">
-                          {formatDate(new Date(item.tanggal))}
-                        </div>
-                      </div>
-                    </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                    >
-                      <p className="text-dark dark:text-white">
-                        {item.total_files} file(s)
-                      </p>
-                    </td>
-                    <td className="px-3 py-4">
-                      <div className="flex items-center justify-center">
-                        <button
-                          onClick={() => item.status_code === '002' ? handleRejectStatusClick(item) : undefined}
-                          className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status_code)} ${
-                            item.status_code === '002' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
-                          }`}
-                          disabled={item.status_code !== '002'}
-                        >
-                          {item.status_doc}
-                        </button>
-                      </div>
-                    </td>
-
-                    <td className="px-3 py-4 xl:pr-7.5">
-                      <div className="flex items-center justify-end">
-                        <div className="pl-4 capitalize text-dark dark:text-white">
-                          <button
-                            onClick={() => handleOpenReviewModal(item.files, item.uraian)}
-                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] border border-black px-4 py-[10px] text-[16px] text-dark transition-all duration-300 ease-in-out hover:pr-6"
-                          >
-                            <span className="text-[20px]">
-                              <HiOutlineDocumentMagnifyingGlass />
-                            </span>
-                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                              Review
-                            </span>
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+              ))}
             </tbody>
           </table>
 
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={setItemsPerPage}
-          />
+          {/* Pagination - hanya tampil jika ada data dan tidak loading */}
+          {!loading && !error && totalPages > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+              itemsPerPage={itemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+            />
+          )}
         </div>
       </div>
 
       {/* Modal Status Tolak */}
       {showRejectStatusModal && rejectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="relative w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-lg">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+          <div className="relative z-10 w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-xl dark:bg-gray-dark">
             {/* Header Modal */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-100 mr-3">
                   <HiOutlineExclamationTriangle className="h-6 w-6 text-red-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   Dokumen Ditolak
                 </h3>
               </div>
@@ -364,19 +502,19 @@ const MainPage = () => {
 
             {/* Content */}
             <div className="mb-6">
-              <p className="text-sm text-gray-600 mb-4">
+              <p className="text-sm text-gray-600 mb-4 dark:text-gray-400">
                 <strong>Pengelolaan Dokumen ditolak</strong>
               </p>
               
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm font-medium text-gray-700 mb-2">Catatan Penolakan:</p>
-                <div className="text-sm text-gray-600 whitespace-pre-wrap">
+              <div className="bg-gray-50 p-4 rounded-lg dark:bg-gray-700">
+                <p className="text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">Catatan Penolakan:</p>
+                <div className="text-sm text-gray-600 whitespace-pre-wrap dark:text-gray-400">
                   {rejectionNote || "Tidak ada catatan penolakan."}
                 </div>
               </div>
               
               {rejectedItem && (
-                <div className="mt-4 text-xs text-gray-500">
+                <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
                   <p><strong>Dokumen:</strong> {rejectedItem.uraian}</p>
                   <p><strong>Tanggal Upload:</strong> {formatDate(new Date(rejectedItem.tanggal))}</p>
                 </div>
@@ -407,9 +545,9 @@ const MainPage = () => {
           <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
           <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl dark:bg-gray-dark">
                 {/* Header Modal */}
-                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4 dark:bg-gray-dark">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center">
                       <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -417,19 +555,19 @@ const MainPage = () => {
                       </div>
                       <div className="ml-4">
                         <h3
-                          className="text-lg font-semibold leading-6 text-gray-900"
+                          className="text-lg font-semibold leading-6 text-gray-900 dark:text-white"
                           id="review-modal-title"
                         >
                           Review Dokumen
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">
+                        <p className="text-sm text-gray-500 mt-1 dark:text-gray-400">
                           {selectedUraian}
                         </p>
                       </div>
                     </div>
                     <button
                       type="button"
-                      className="rounded-md text-gray-400 hover:text-gray-600 focus:outline-none"
+                      className="rounded-md text-gray-400 hover:text-gray-600 focus:outline-none dark:hover:text-gray-300"
                       onClick={handleCloseReviewModal}
                     >
                       <HiOutlineXMark className="h-6 w-6" />
@@ -439,7 +577,7 @@ const MainPage = () => {
                   {/* Daftar Files */}
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-medium text-gray-900">
+                      <h4 className="text-sm font-medium text-gray-900 dark:text-white">
                         Daftar File ({selectedFiles.length} file)
                       </h4>
                       {/* Button Download Semua - Tampil jika lebih dari 1 file */}
@@ -468,7 +606,7 @@ const MainPage = () => {
                     </div>
                     <div className="max-h-96 overflow-y-auto">
                       {selectedFiles.length === 0 ? (
-                        <p className="text-gray-500 text-center py-4">
+                        <p className="text-gray-500 text-center py-4 dark:text-gray-400">
                           Tidak ada file tersedia
                         </p>
                       ) : (
@@ -476,13 +614,13 @@ const MainPage = () => {
                           {selectedFiles.map((file, idx) => (
                             <div
                               key={file.id}
-                              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+                              className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 dark:border-gray-600 dark:hover:bg-gray-700"
                             >
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-gray-900 truncate">
+                                <p className="text-sm font-medium text-gray-900 truncate dark:text-white">
                                   {file.file_name.split('/').pop() || `File ${idx + 1}`}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">
                                   ID: {file.id} | Document ID: {file.id_document}
                                 </p>
                               </div>
@@ -515,7 +653,7 @@ const MainPage = () => {
                 </div>
 
                 {/* Footer Modal */}
-                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 dark:bg-gray-800">
                   <button
                     type="button"
                     className="inline-flex w-full justify-center rounded-md bg-gray-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-gray-500 sm:ml-3 sm:w-auto"

@@ -8,13 +8,13 @@ import {
   HiOutlineArrowDownTray,
   HiOutlineXMark,
   HiOutlineXCircle,
+  HiOutlineDocumentText
 } from "react-icons/hi2";
-import { ValidationUploadUraianAdmin, FileItem } from "@/types/validationUploadUraian";
+import { ValidationUploadUraianAdmin, FileItem, ValidationUploadUraianAdminResponse } from "@/types/validationUploadUraian";
 import Pagination from "@/components/pagination/Pagination";
 
 interface Props {
-  dataDetail: ValidationUploadUraianAdmin[];
-  onDataUpdate: (updatedData: ValidationUploadUraianAdmin[]) => void;
+  id: number | null;
 }
 
 const formatDate = (date: Date): string => {
@@ -25,10 +25,11 @@ const formatDate = (date: Date): string => {
   });
 };
 
-const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
-  const [loading, setLoading] = useState(false);
+const ValidationUploadTable = ({ id }: Props) => {
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
+  const [dataDetail, setDataDetail] = useState<ValidationUploadUraianAdmin[]>([]);
 
   const [checkedItems, setCheckedItems] = useState<boolean[]>([]);
   const [isAllChecked, setIsAllChecked] = useState(false);
@@ -36,8 +37,10 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
-  
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
 
@@ -53,9 +56,125 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   const [itemToReject, setItemToReject] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState<string>("");
 
-  const totalPages = Math.ceil(dataDetail.length / itemsPerPage);
-  const currentItems = dataDetail.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  // Filters state
+  const [filters, setFilters] = useState({
+    sort_by: 'id',
+    sort_dir: 'DESC'
+  });
 
+ 
+  const fetchData = async (page = 1, perPage = 5, filterParams = {}) => {
+    if (!id) {
+      setError("ID tidak ditemukan");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Buat query parameters - PERSIS seperti master dinas
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        ...filterParams
+      });
+
+      // Hapus parameter kosong - PERSIS seperti master dinas
+      Array.from(queryParams.entries()).forEach(([key, value]) => {
+        if (!value) queryParams.delete(key);
+      });
+
+      const response = await apiRequest(`/validation/detail/${id}?${queryParams.toString()}`, "GET");
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Validation Document data not found");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const result : ValidationUploadUraianAdminResponse = await response.json();
+
+      if (!result.responseData || !result.responseData.items) {
+        throw new Error("Format data tidak valid");
+      }
+
+      if (!result.responseMeta) {
+        throw new Error("Format meta tidak valid");
+      }
+      
+      const res: ValidationUploadUraianAdmin[] = result.responseData.items.map((item: any) => ({
+        id: item.id,
+        jenis: item.jenis,
+        uraian: item.subjenis,
+        tanggal: new Date(item.maker_date),
+        total_files: item.total_files || 0,
+        files: item.files || []
+      }));
+  
+      setDataDetail(res);
+      setTotalRecords(res.length);
+      setTotalPages(Math.ceil(res.length / perPage));
+    } catch (err: any) {
+      setError(
+        err.message === "Failed to fetch" 
+          ? "Tidak dapat terhubung ke server"
+          : err.message === "Document data not found"
+          ? "Data tidak ditemukan"
+          : err.message
+      );
+      setDataDetail([]);
+      setTotalPages(0);
+      setTotalRecords(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // useEffect untuk fetch data
+  useEffect(() => {
+    if (id) {
+      fetchData(currentPage, itemsPerPage, filters);
+    }
+  }, [id, currentPage, itemsPerPage, filters]);
+
+  // Auto hide success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Handler untuk perubahan halaman
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Handler untuk perubahan items per page
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset ke halaman pertama
+  };
+
+  // Handler untuk retry ketika error
+  const handleRetry = () => {
+    fetchData(currentPage, itemsPerPage, filters);
+  };
+
+  // Client-side pagination - menghitung data untuk halaman saat ini
+  const getCurrentPageData = () => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return dataDetail.slice(startIndex, endIndex);
+  };
+
+  const currentItems = getCurrentPageData();
+
+  // checked 
   useEffect(() => {
     setCheckedItems(new Array(dataDetail.length).fill(false));
   }, [dataDetail]);
@@ -155,7 +274,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         
         // Update data dengan menghapus item yang di-reject
         const updatedData = dataDetail.filter((_, idx) => idx !== itemToReject);
-        onDataUpdate(updatedData);
+        setDataDetail(updatedData);
         
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
@@ -283,7 +402,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         
         // Update data dengan menghapus item yang sudah divalidasi
         const updatedData = dataDetail.filter(item => item.id !== id);
-        onDataUpdate(updatedData);
+        setDataDetail(updatedData);
         
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
@@ -328,7 +447,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         // Update data dengan menghapus semua item yang sudah divalidasi
         const selectedIds = selectedItems.map(item => item.id);
         const updatedData = dataDetail.filter(item => !selectedIds.includes(item.id));
-        onDataUpdate(updatedData);
+        setDataDetail(updatedData);
         
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
@@ -389,7 +508,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         
         // Update data dengan menghapus item yang di-reject
         const updatedData = dataDetail.filter((_, idx) => idx !== itemToDelete);
-        onDataUpdate(updatedData);
+        setDataDetail(updatedData);
         
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
@@ -416,9 +535,80 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
     setItemToDelete(null);
   };
 
+  // Render loading skeleton
+  const renderLoadingSkeleton = () => (
+    Array.from({ length: itemsPerPage }).map((_, index) => (
+      <tr key={index} className="border-b border-stroke dark:border-dark-3">
+        <td className="px-4 py-4 xl:pl-7.5">
+          <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="h-4 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+        </td>
+        <td className="px-4 py-4">
+          <div className="flex space-x-2">
+            <div className="h-8 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+            <div className="h-8 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+            <div className="h-8 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+          </div>
+        </td>
+      </tr>
+    ))
+  );
+
+  // Render empty state
+  const renderEmptyState = () => (
+    <tr>
+      <td colSpan={4} className="px-4 py-20 text-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-gray-400 text-6xl mb-4">📄</div>
+          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+            Data belum tersedia
+          </p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+            Belum ada dokumen yang perlu divalidasi
+          </p>
+        </div>
+      </td>
+    </tr>
+  );
+
+  // Render error state
+  const renderErrorState = () => (
+    <tr>
+      <td colSpan={4} className="px-4 py-20 text-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
+          <button 
+            onClick={handleRetry}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
-    <div>
-      {/* Tombol Validasi Semua */}
+    <div className="col-span-12 xl:col-span-12">
+      {/* Alert Messages */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 font-medium">{error}</p>
+        </div>
+      )}
+      
+      {success && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-600 font-medium">{success}</p>
+        </div>
+      )}
+
       {isAnyChecked && dataDetail.length > 0 && (
         <div className="mt-4 flex justify-end">
           <button
@@ -431,26 +621,35 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         </div>
       )}
 
-      {/* Error and Success Message */}
-      {error && <p className="text-red-500 mt-2">{error}</p>}
-      {success && <p className="text-green-500 mt-2">Validasi berhasil!</p>}
-
       <div className="mt-4 rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-semibold text-dark dark:text-white">
+            Validasi Dokumen
+          </h2>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {!loading && totalRecords > 0 && (
+              <>Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data</>
+            )}
+            {!loading && totalRecords === 0 && "Tidak ada data"}
+          </div>
+        </div> 
+       
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-[#F7F9FC] text-left dark:bg-dark-2 ">
-                <th className="px-4 py-4 xl:pl-7.5">
+              <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800 ">
+                <th className="px-2 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
                   <input
                     type="checkbox"
                     checked={isAllChecked}
                     onChange={handleSelectAll}
+                    disabled={loading || dataDetail.length === 0}
                   />
                 </th>
-                <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white ">
+                <th className="min-w-[200px] px-4 py-4 font-medium text-dark dark:text-white">
                   Uraian
                 </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                <th className="min-w-[200px] px-4 py-4 font-medium text-dark dark:text-white">
                   Tanggal Upload
                 </th>
                 <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
@@ -459,122 +658,227 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
               </tr>
             </thead>
             <tbody>
-              {dataDetail.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="text-center text-gray-500 font-medium py-6 dark:text-gray-400">
-                    Data belum tersedia
+              {loading && renderLoadingSkeleton()}
+              {!loading && error && renderErrorState()}
+              {!loading && !error && dataDetail.length === 0 && renderEmptyState()}
+              {!loading && !error && dataDetail.length > 0 && currentItems.map((item, index) => (
+                <tr key={item.id}
+                  className="border-b border-stroke dark:border-dark-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <td className="px-4 py-4 xl:pl-7.5">
+                    <input
+                      type="checkbox"
+                      checked={
+                        checkedItems[
+                          (currentPage - 1) * itemsPerPage + index
+                        ] || false
+                      }
+                      onChange={() => handleItemCheck(index)}
+                    />
                   </td>
-                </tr>
-              ) : (
-                currentItems.map((item, index) => (
-                  <tr key={index}>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pl-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={
-                          checkedItems[
-                            (currentPage - 1) * itemsPerPage + index
-                          ] || false
-                        }
-                        onChange={() => handleItemCheck(index)}
-                      />
-                    </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                    >
-                      {/* {item.id} */}
-                      <p className="text-dark dark:text-white">{item.uraian}</p>
-                    </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                    >
-                      <p className="text-dark dark:text-white">
-                        {formatDate(new Date(item.tanggal))}
-                      </p>
-                    </td>
-                    <td
-                      className={`border-[#eee] px-4 py-4 dark:border-dark-3 xl:pr-7.5 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
-                    >
-                      <div className="flex items-center justify-end">
-                        {/* Button Validasi */}
-                        <div className="pl-1 capitalize text-dark dark:text-white">
-                          <button 
-                            onClick={() => handleValidateItem(item.id)}
-                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
-                          >
-                            <span className="text-[20px]">
-                              <HiOutlineClipboardDocumentCheck />
-                            </span>
-                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                              Validasi
-                            </span>
-                          </button>
+                  <td className="px-4 py-4 xl:pl-7.5">
+                     <div className="flex items-center">
+                       <div className="mr-3">
+                          <HiOutlineDocumentText className="h-5 w-5 text-gray-400" />
                         </div>
-
-                        {/* Button Tolak */}
-                        <div className="pl-4 capitalize text-dark dark:text-white">
-                          <button 
-                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-orange-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-orange-600 hover:pr-6"
-                            onClick={() => handleOpenRejectModal(index)}
-                          >
-                            <span className="text-[20px]">
-                              <HiOutlineXCircle />
-                            </span>
-                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                              Tolak
-                            </span>
-                          </button>
-                        </div>
-
-                        {/* Button Hapus */}
-                        <div className="pl-4 capitalize text-dark dark:text-white">
-                          <button 
-                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-red-500 px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:bg-red-600 hover:pr-6"
-                            onClick={() => handleDeleteClick(index)}
-                          >
-                            <span className="text-[20px]">
-                              <HiOutlineTrash />
-                            </span>
-                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                              Hapus
-                            </span>
-                          </button>
-                        </div>
-
-                        {/* Button Review Document */}
-                        <div className="pl-4 capitalize text-dark dark:text-white">
-                          <button
-                            onClick={() => handleOpenReviewModal(item.files, item.uraian)}
-                            className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] border border-black px-4 py-[10px] text-[16px] text-dark transition-all duration-300 ease-in-out hover:pr-6"
-                          >
-                            <span className="text-[20px]">
-                              <HiOutlineDocumentMagnifyingGlass />
-                            </span>
-                            <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                              Reviews
-                            </span>
-                          </button>
+                        <div>
+                          <p className="font-medium text-dark dark:text-white">{item.uraian}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Jenis: {item.jenis}</p>
                         </div>
                       </div>
-                    </td>
-                  </tr>
-                ))
-              )}
+                  </td>
+                  <td className="px-4 py-4">
+                    <p className="text-dark dark:text-white">
+                      {formatDate(new Date(item.tanggal))}
+                    </p>
+                  </td>
+                  <td className="px-4 py-4 xl:pr-7.5">
+                    <div className="flex items-center justify-end">
+
+                      {/* Button Validasi */}
+                      <div className="pl-1 capitalize ">
+                        <button 
+                          onClick={() => handleValidateItem(item.id)}
+                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6"
+                          title={`Validasi ${item.uraian}`}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineClipboardDocumentCheck />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Validasi
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Button Tolak */}
+                      <div className="pl-4 capitalize ">
+                        <button 
+                          onClick={() => handleOpenRejectModal(index)}
+                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#EA580C] to-[#F97316] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#EA580C] hover:to-[#EA580C] hover:pr-6"
+                          title={`Tolak ${item.uraian}`}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineXCircle />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Tolak
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Button Hapus */}
+                      <div className="pl-4 capitalize ">
+                        <button 
+                          onClick={() => handleDeleteClick(index)}
+                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6"
+                          title={`Hapus ${item.uraian}`}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineTrash />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Hapus
+                          </span>
+                        </button>
+                      </div>
+
+                      {/* Button Review Document */}
+                      <div className="pl-4 capitalize ">
+                        <button
+                          onClick={() => handleOpenReviewModal(item.files, item.uraian)}
+                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#059669] to-[#10B981] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#059669] hover:to-[#059669] hover:pr-6"
+                          title={`Review ${item.uraian}`}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineDocumentMagnifyingGlass />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Reviews
+                          </span>
+                        </button>
+                      </div>
+
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
-          {dataDetail.length > 0 && (
+          {!loading && !error && totalPages > 0 && (
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               itemsPerPage={itemsPerPage}
-              onItemsPerPageChange={setItemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
             />
           )}
         </div>
       </div>
+
+      {/* Modal Validasi */}
+      {isModalOpen && (
+        <div
+          className="fixed inset-0 z-[1000]"
+          aria-labelledby="modal-title"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
+          <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                {/* Tombol X untuk Close */}
+                <button
+                  type="button"
+                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  onClick={handleCloseModal}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+
+                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                  <div className="sm:flex sm:items-start">
+                    <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                      <svg
+                        className="h-6 w-6 text-red-600"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.5"
+                        stroke="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                        />
+                      </svg>
+                    </div>
+                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                      <h3
+                        className="text-base font-semibold leading-6 text-gray-900"
+                        id="modal-title"
+                      >
+                        {isAllChecked
+                          ? "Validasi Semua"
+                          : "Batal Validasi Semua"}
+                      </h3>
+                      <div className="mt-2">
+                        <p className="text-sm text-gray-500">
+                          {isAllChecked
+                            ? "Apakah Anda yakin ingin memvalidasi semua item yang dicentang?"
+                            : "Apakah Anda yakin ingin membatalkan validasi semua item yang dicentang?"}
+                        </p>
+                      </div>
+
+                      {/* Form untuk Catatan / Keterangan */}
+                      <form className="mt-4">
+                        <label
+                          htmlFor="catatan"
+                          className="block text-sm font-medium text-gray-700"
+                        >
+                          Catatan / Keterangan (Opsional)
+                        </label>
+                        <textarea
+                          id="catatan"
+                          name="catatan"
+                          rows={3}
+                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                          placeholder="Tambahkan catatan atau keterangan..."
+                        ></textarea>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                  <button
+                    type="button"
+                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
+                    onClick={handleValidateAll}
+                  >
+                    {isAllChecked ? "Validasi Semua" : "Batal Validasi Semua"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal Tolak dengan Form Catatan */}
       {showRejectModal && (
@@ -759,109 +1063,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                     onClick={handleCloseReviewModal}
                   >
                     Tutup
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Validasi */}
-      {isModalOpen && (
-        <div
-          className="fixed inset-0 z-[1000]"
-          aria-labelledby="modal-title"
-          role="dialog"
-          aria-modal="true"
-        >
-          <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
-          <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
-            <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-              <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                {/* Tombol X untuk Close */}
-                <button
-                  type="button"
-                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
-                  onClick={handleCloseModal}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-
-                <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                      <svg
-                        className="h-6 w-6 text-red-600"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="1.5"
-                        stroke="currentColor"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
-                        />
-                      </svg>
-                    </div>
-                    <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                      <h3
-                        className="text-base font-semibold leading-6 text-gray-900"
-                        id="modal-title"
-                      >
-                        {isAllChecked
-                          ? "Validasi Semua"
-                          : "Batal Validasi Semua"}
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">
-                          {isAllChecked
-                            ? "Apakah Anda yakin ingin memvalidasi semua item yang dicentang?"
-                            : "Apakah Anda yakin ingin membatalkan validasi semua item yang dicentang?"}
-                        </p>
-                      </div>
-
-                      {/* Form untuk Catatan / Keterangan */}
-                      <form className="mt-4">
-                        <label
-                          htmlFor="catatan"
-                          className="block text-sm font-medium text-gray-700"
-                        >
-                          Catatan / Keterangan (Opsional)
-                        </label>
-                        <textarea
-                          id="catatan"
-                          name="catatan"
-                          rows={3}
-                          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                          placeholder="Tambahkan catatan atau keterangan..."
-                        ></textarea>
-                      </form>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                  <button
-                    type="button"
-                    className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
-                    onClick={handleValidateAll}
-                  >
-                    {isAllChecked ? "Validasi Semua" : "Batal Validasi Semua"}
                   </button>
                 </div>
               </div>
