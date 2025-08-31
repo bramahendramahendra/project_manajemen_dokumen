@@ -879,7 +879,8 @@ const UploadDokumen = () => {
         onClose={handleCloseModal}
         title="Berhasil!"
         message="Dokumen berhasil diupload ke dalam sistem."
-        buttonText="Kembali ke Daftar Dokumen"
+        // buttonText="Kembali ke Daftar Dokumen"
+        buttonText="Kembali"
         onButtonClick={handleSuccessButtonClick}
       />
     </div>

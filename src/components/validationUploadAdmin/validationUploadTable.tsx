@@ -11,6 +11,7 @@ import {
 } from "react-icons/hi2";
 import { ValidationUploadUraianAdmin, FileItem } from "@/types/validationUploadUraian";
 import Pagination from "@/components/pagination/Pagination";
+import SuccessModalLink from '../modals/successModalLink';
 
 interface Props {
   dataDetail: ValidationUploadUraianAdmin[];
@@ -53,6 +54,10 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   const [itemToReject, setItemToReject] = useState<number | null>(null);
   const [rejectNote, setRejectNote] = useState<string>("");
 
+  // State untuk SuccessModalLink
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [validationType, setValidationType] = useState<'single' | 'multiple'>('single');
+
   const totalPages = Math.ceil(dataDetail.length / itemsPerPage);
   const currentItems = dataDetail.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
@@ -60,7 +65,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
     setCheckedItems(new Array(dataDetail.length).fill(false));
   }, [dataDetail]);
   
-
   useEffect(() => {
     const allCheckedInPage = currentItems.every((_, index) => checkedItems[(currentPage - 1) * itemsPerPage + index]);
     setIsAllChecked(allCheckedInPage);
@@ -88,6 +92,11 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   // Fungsi untuk membuka dan menutup modal validasi
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
+
+  // Handler untuk SuccessModalLink
+  const handleCloseSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+  };
 
   // Fungsi untuk membuka modal review
   const handleOpenReviewModal = (files: FileItem[], uraian: string) => {
@@ -143,7 +152,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       id: itemId,
       checker: user.userid,
       checker_role: user.level_id,
-      catatan: rejectNote || "", // Menambahkan catatan ke payload
+      catatan: rejectNote || "",
     };
 
     console.log("Reject payload:", payload);
@@ -170,7 +179,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       setError("Terjadi kesalahan saat mengirim data penolakan");
     } finally {
       setLoading(false);
-      // Reset modal state
       handleCloseRejectModal();
     }
   };
@@ -197,8 +205,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         // Cleanup
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
-        // console.log(`File ${fileName} berhasil didownload`);
       } else {
         console.error('Download gagal:', response.status);
         setError('Gagal mendownload file');
@@ -217,7 +223,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
     
     setDownloadingAll(true);
     try {
-      // Buat request body dengan list filepath
       const requestBody = {
         files: selectedFiles.map(file => file.file_name),
         zip_name: selectedUraian.replace(/[^a-zA-Z0-9]/g, '_') || 'document_files'
@@ -231,18 +236,14 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         const link = document.createElement('a');
         link.href = url;
         
-        // Nama file ZIP berdasarkan uraian
         const fileName = `${selectedUraian.replace(/[^a-zA-Z0-9]/g, '_')}_all_files.zip`;
         link.download = fileName;
         
         document.body.appendChild(link);
         link.click();
         
-        // Cleanup
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
-        
-        // console.log(`Semua file berhasil didownload sebagai ${fileName}`);
       } else {
         console.error('Download semua file gagal:', response.status);
         setError('Gagal mendownload semua file');
@@ -262,8 +263,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       return;
     }
 
-    // console.log(user);
-
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -273,8 +272,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       checker: user.userid,
       checker_role: user.level_id,
     };
-
-    // console.log(payload);
     
     try {
       const response = await apiRequest('/validation/document', 'POST', payload);
@@ -288,6 +285,10 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        // Tampilkan SuccessModalLink untuk validasi single
+        setValidationType('single');
+        setIsSuccessModalOpen(true);
         
       } else {
         const result = await response.json();
@@ -318,8 +319,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       checker_role: user.level_id,
     }));
 
-    // console.log(payload);
-
     try {
       const response = await apiRequest('/validation/documents', 'POST', { items: payload });
       if (response.ok) {
@@ -333,6 +332,10 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        // Tampilkan SuccessModalLink untuk validasi multiple
+        setValidationType('multiple');
+        setIsSuccessModalOpen(true);
         
       } else {
         const result = await response.json();
@@ -363,7 +366,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       return;
     }
 
-    // Dapatkan ID item yang akan di-reject
     const itemId = dataDetail[itemToDelete]?.id;
     if (!itemId) {
       console.error("ID item tidak ditemukan.");
@@ -380,8 +382,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       checker_role: user.level_id,
     };
 
-    // console.log("Reject payload:", payload);
-
     try {
       const response = await apiRequest('/validation/document/reject', 'POST', payload);
       if (response.ok) {
@@ -394,8 +394,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
-        
-        // console.log(`Item dengan index ${itemToDelete} telah di-reject`);
       } else {
         const result = await response.json();
         setError(result.message || "Terjadi kesalahan saat menolak dokumen");
@@ -404,7 +402,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
       setError("Terjadi kesalahan saat mengirim data penolakan");
     } finally {
       setLoading(false);
-      // Reset modal state
       setShowDeleteModal(false);
       setItemToDelete(null);
     }
@@ -484,7 +481,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                     <td
                       className={`border-[#eee] px-4 py-4 dark:border-dark-3 ${index === currentItems.length - 1 ? "border-b-0" : "border-b"}`}
                     >
-                      {/* {item.id} */}
                       <p className="text-dark dark:text-white">{item.uraian}</p>
                     </td>
                     <td
@@ -576,11 +572,25 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         </div>
       </div>
 
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseSuccessModal}
+        title="Validasi Berhasil!"
+        message={validationType === 'single' 
+          ? "Dokumen telah berhasil divalidasi dan disetujui." 
+          : "Semua dokumen yang dipilih telah berhasil divalidasi dan disetujui."
+        }
+        showTwoButtons={true}
+        primaryButtonText="Ke Dashboard"
+        secondaryButtonText="Lanjutkan Validasi"
+        redirectPath="/dashboard"
+      />
+
       {/* Modal Tolak dengan Form Catatan */}
       {showRejectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative w-full max-w-md mx-4 rounded-lg bg-white p-6 shadow-lg">
-            {/* Header Modal */}
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 Tolak Dokumen
@@ -593,7 +603,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
               </button>
             </div>
 
-            {/* Content */}
             <div className="mb-4">
               <p className="text-sm text-gray-600 mb-4">
                 Anda akan menolak dokumen ini. Silakan berikan alasan penolakan:
@@ -612,7 +621,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
               />
             </div>
 
-            {/* Footer Buttons */}
             <div className="flex justify-end space-x-3">
               <button
                 onClick={handleCloseRejectModal}
@@ -645,7 +653,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
           <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
               <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
-                {/* Header Modal */}
                 <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center">
@@ -673,13 +680,11 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                     </button>
                   </div>
 
-                  {/* Daftar Files */}
                   <div className="mt-6">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="text-sm font-medium text-gray-900">
                         Daftar File ({selectedFiles.length} file)
                       </h4>
-                      {/* Button Download Semua - Tampil jika lebih dari 1 file */}
                       {selectedFiles.length > 1 && (
                         <button
                           onClick={handleDownloadAllFiles}
@@ -751,7 +756,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                   </div>
                 </div>
 
-                {/* Footer Modal */}
                 <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
                   <button
                     type="button"
@@ -779,7 +783,6 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
           <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
             <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
               <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                {/* Tombol X untuk Close */}
                 <button
                   type="button"
                   className="absolute right-2 top-2 text-gray-400 hover:text-gray-600 focus:outline-none"
@@ -824,19 +827,14 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                         className="text-base font-semibold leading-6 text-gray-900"
                         id="modal-title"
                       >
-                        {isAllChecked
-                          ? "Validasi Semua"
-                          : "Batal Validasi Semua"}
+                        Validasi Semua
                       </h3>
                       <div className="mt-2">
                         <p className="text-sm text-gray-500">
-                          {isAllChecked
-                            ? "Apakah Anda yakin ingin memvalidasi semua item yang dicentang?"
-                            : "Apakah Anda yakin ingin membatalkan validasi semua item yang dicentang?"}
+                          Apakah Anda yakin ingin memvalidasi semua item yang dicentang?
                         </p>
                       </div>
 
-                      {/* Form untuk Catatan / Keterangan */}
                       <form className="mt-4">
                         <label
                           htmlFor="catatan"
@@ -861,7 +859,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
                     className="inline-flex w-full justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-500 sm:ml-3 sm:w-auto"
                     onClick={handleValidateAll}
                   >
-                    {isAllChecked ? "Validasi Semua" : "Batal Validasi Semua"}
+                    Validasi Semua
                   </button>
                 </div>
               </div>
