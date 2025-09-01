@@ -2,8 +2,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import { HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray, HiOutlineExclamationTriangle, HiOutlineDocumentText } from "react-icons/hi2";
+import { HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray, HiOutlineExclamationTriangle, HiOutlineDocumentText, HiOutlinePencilSquare } from "react-icons/hi2";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
+import { encryptObject } from "@/utils/crypto";
 import { DaftarUpload, FileItem, DaftarUploadResponse } from "@/types/daftarUpload";
 import Pagination from "../pagination/Pagination";
 
@@ -163,6 +164,33 @@ const MainPage = () => {
   };
 
   const currentItems = getCurrentPageData();
+
+  // Fungsi untuk menangani klik perbaikan dokumen
+  const handlePerbaikanClick = (id: number) => {
+    // console.log(item);
+    const key = process.env.NEXT_PUBLIC_APP_KEY;
+    const user = Cookies.get("user");
+    
+    if (!user) {
+      alert("Sesi Anda telah berakhir, silakan login kembali!");
+      return;
+    }
+
+    if (!key) {
+      alert("Konfigurasi aplikasi tidak valid!");
+      return;
+    }
+    
+    try {
+      const encrypted = encryptObject({ id }, user);
+      router.push(`/daftar_upload/admin/perbaikan?${key}=${encrypted}`);
+    } catch (error) {
+      console.error("Error encrypting data:", error);
+      alert("Terjadi kesalahan saat memproses data!");
+    }
+    
+    // router.push(`/daftar_upload/admin/${item.id}`);
+  };
 
   // Fungsi untuk menangani klik status tolak
   const handleRejectStatusClick = async (item: DaftarUpload) => {
@@ -444,7 +472,7 @@ const MainPage = () => {
                   </td>
 
                   <td className="px-4 py-4 xl:pr-7.5">
-                    <div className="flex items-center justify-end">
+                    <div className="flex items-center justify-end space-x-2">
                       <button
                         onClick={() => handleOpenReviewModal(item.files, item.uraian)}
                         className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#059669] to-[#10B981] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#059669] hover:to-[#059669] hover:pr-6"
@@ -457,6 +485,22 @@ const MainPage = () => {
                           Review
                         </span>
                       </button>
+
+                      {/* Button Perbaikan - hanya muncul jika status ditolak */}
+                      {item.status_code === '002' && (
+                        <button
+                          onClick={() => handlePerbaikanClick(item.id)}
+                          className="group active:scale-[.97] flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6"
+                          title={`Perbaikan ${item.uraian}`}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlinePencilSquare />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Perbaikan
+                          </span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -522,12 +566,21 @@ const MainPage = () => {
             </div>
 
             {/* Footer Button */}
-            <div className="flex justify-end">
+            <div className="flex justify-end space-x-3">
               <button
                 onClick={handleCloseRejectStatusModal}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500"
               >
                 Tutup
+              </button>
+              <button
+                onClick={() => {
+                  handleCloseRejectStatusModal();
+                  handlePerbaikanClick(rejectedItem.id);
+                }}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200"
+              >
+                Perbaikan Dokumen
               </button>
             </div>
           </div>

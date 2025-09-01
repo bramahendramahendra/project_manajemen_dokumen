@@ -426,6 +426,7 @@ const ValidationUploadTable = ({ id }: Props) => {
       let response;
       
       if (bulkAction === 'validate') {
+        // Bulk validation endpoint
         const payload = selectedItems.map((item) => ({
           id: item.id,
           checker: user.userid,
@@ -433,28 +434,22 @@ const ValidationUploadTable = ({ id }: Props) => {
         }));
         response = await apiRequest('/validation/documents', 'POST', { items: payload });
       } else if (bulkAction === 'reject') {
-        // For bulk reject, we'll call individual reject for each item
-        const promises = selectedItems.map((item) => 
-          apiRequest('/validation/document/reject', 'POST', {
-            id: item.id,
-            checker: user.userid,
-            checker_role: user.level_id,
-            catatan: bulkNote || "",
-          })
-        );
-        const responses = await Promise.all(promises);
-        response = responses[0]; // Use first response for success check
+        // Bulk reject endpoint
+        const payload = selectedItems.map((item) => ({
+          id: item.id,
+          checker: user.userid,
+          checker_role: user.level_id,
+          catatan: bulkNote || "",
+        }));
+        response = await apiRequest('/validation/documents/reject', 'POST', { items: payload });
       } else if (bulkAction === 'delete') {
-        // For bulk delete, we'll call individual delete for each item
-        const promises = selectedItems.map((item) => 
-          apiRequest('/validation/document/reject', 'POST', {
-            id: item.id,
-            checker: user.userid,
-            checker_role: user.level_id,
-          })
-        );
-        const responses = await Promise.all(promises);
-        response = responses[0]; // Use first response for success check
+        // Bulk delete endpoint
+        const payload = selectedItems.map((item) => ({
+          id: item.id,
+          checker: user.userid,
+          checker_role: user.level_id,
+        }));
+        response = await apiRequest('/validation/documents/delete', 'POST', { items: payload });
       }
 
       if (response && response.ok) {

@@ -7,7 +7,8 @@ interface ElementComboboxProps {
   options: { name: string | number; id?: string | number }[];
   onChange?: (value: string | number) => void;
   resetKey?: number;
-  disabled?: boolean; // Tambahkan prop disabled
+  disabled?: boolean;
+  defaultValue?: string | number; // Tambahkan prop defaultValue
 }
 
 const ElementCombobox: React.FC<ElementComboboxProps> = ({ 
@@ -16,16 +17,27 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
   options,
   onChange,
   resetKey,
-  disabled = false, // Default value false
+  disabled = false,
+  defaultValue = "", // Default value kosong
 }) => {
-  const [selectedOption, setSelectedOption] = useState<string | number>("");
-  const [isOptionSelected, setIsOptionSelected] = useState<boolean>(false);
+  const [selectedOption, setSelectedOption] = useState<string | number>(defaultValue);
+  const [isOptionSelected, setIsOptionSelected] = useState<boolean>(!!defaultValue);
 
   useEffect(() => {
     // Reset dropdown saat resetKey berubah
-    setSelectedOption("");
-    setIsOptionSelected(false);
+    if (resetKey !== undefined) {
+      setSelectedOption("");
+      setIsOptionSelected(false);
+    }
   }, [resetKey]);
+
+  useEffect(() => {
+    // Set default value saat component mount atau defaultValue berubah
+    if (defaultValue !== undefined && defaultValue !== "") {
+      setSelectedOption(defaultValue);
+      setIsOptionSelected(true);
+    }
+  }, [defaultValue]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     // Jangan allow change jika disabled

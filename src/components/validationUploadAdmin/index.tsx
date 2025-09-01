@@ -132,7 +132,17 @@ const MainPage = () => {
   const handleDetailClick = (id: number, skpd: string, total: number) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
-    if (!user) return alert("Token tidak ditemukan!");
+
+    if (!user) {
+      alert("Sesi Anda telah berakhir, silakan login kembali!");
+      return;
+    }
+
+    if (!key) {
+      alert("Konfigurasi aplikasi tidak valid!");
+      return;
+    }
+
     const encrypted = encryptObject({ id, skpd, total }, user);
 
     const formattedSkpd = formatSkpdForUrl(skpd);
