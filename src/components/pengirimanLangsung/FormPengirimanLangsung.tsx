@@ -549,7 +549,7 @@ const FormPengirimanLangsung = () => {
                           resetKey={resetKey}
                         />
                       </div>
-                      <div className="flex items-center">
+                      {/* <div className="flex items-center">
                         <label 
                           className="flex items-center cursor-pointer"
                           title="Admin"
@@ -561,7 +561,7 @@ const FormPengirimanLangsung = () => {
                             className="h-4 w-4 mt-[-10px] rounded border-[#1D92F9] text-[#1D92F9] focus:ring-[#1D92F9] focus:ring-2"
                           />
                         </label>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
 
