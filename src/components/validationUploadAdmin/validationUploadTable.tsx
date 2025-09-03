@@ -12,6 +12,7 @@ import {
 } from "react-icons/hi2";
 import { ValidationUploadUraianAdmin, FileItem, ValidationUploadUraianAdminResponse } from "@/types/validationUploadUraian";
 import Pagination from "@/components/pagination/Pagination";
+import SuccessModalLink from '../modals/successModalLink';
 
 interface Props {
   id: number | null;
@@ -395,6 +396,10 @@ const ValidationUploadTable = ({ id }: Props) => {
         
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        // Tampilkan SuccessModalLink untuk validasi single
+        setValidationType('single');
+        setIsSuccessModalOpen(true);
         
       } else {
         const result = await response.json();
@@ -461,6 +466,10 @@ const ValidationUploadTable = ({ id }: Props) => {
         
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        // Tampilkan SuccessModalLink untuk validasi multiple
+        setValidationType('multiple');
+        setIsSuccessModalOpen(true);
         
       } else {
         const result = response ? await response.json() : {};
