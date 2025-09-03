@@ -24,18 +24,32 @@ const generateYearOptions = () => {
 
 const dataTahun = generateYearOptions();
 
+// Interface untuk struktur response API
+interface ApiResponse<T> {
+  responseCode: number;
+  responseDesc: string;
+  responseData: T;
+}
+
+interface FileData {
+  id: number;
+  id_document: number;
+  file_name: string;
+}
+
 interface DocumentData {
   id: number;
   dinas: string;
+  nama_dinas: string;
   jenis: string;
+  nama_jenis: string;
   subjenis: string;
-  tahun: string;
+  nama_subjenis: string;
+  tahun: number;
   keterangan: string;
-  files: any[];
   catatan: string;
-  status_code: string;
-  status_doc: string;
-  maker_date: string;
+  total_files: number;
+  files: FileData[];
 }
 
 interface PerbaikanDokumenProps {
@@ -51,7 +65,6 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
   const [success, setSuccess] = useState<boolean>(false);
 
   const [documentData, setDocumentData] = useState<DocumentData | null>(null);
-  const [rejectionNote, setRejectionNote] = useState<string>("");
 
   // Form states - hanya untuk field yang bisa diedit
   const [tahun, setTahun] = useState<string | number>('');
@@ -123,65 +136,99 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Fungsi untuk fetch data dokumen
+  // Fungsi untuk fetch data dokumen - YANG DIRAPIKAN
   const fetchDocumentData = async () => {
+    if (!documentId) {
+      setError("ID dokumen tidak valid");
+      setLoadingDocument(false);
+      return;
+    }
+
     setLoadingDocument(true);
     setError(null);
 
     try {
       const response = await apiRequest(`/daftar_upload/detail/${documentId}`, "GET");
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Dokumen tidak ditemukan");
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
       
-      if (!result.responseData) {
-        throw new Error("Format data tidak valid");
+      // Periksa status response
+      if (!response.ok) {
+        let errorMessage = "Terjadi kesalahan saat mengambil data dokumen";
+        
+        switch (response.status) {
+          case 404:
+            errorMessage = "Dokumen tidak ditemukan";
+            break;
+          case 401:
+            errorMessage = "Anda tidak memiliki akses untuk melihat dokumen ini";
+            break;
+          case 403:
+            errorMessage = "Akses ditolak";
+            break;
+          case 500:
+            errorMessage = "Terjadi kesalahan server";
+            break;
+          default:
+            errorMessage = `Error ${response.status}: ${response.statusText}`;
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      const docData: DocumentData = result.responseData;
+      // Parse response JSON
+      const result: ApiResponse<DocumentData> = await response.json();
+      
+      // Validasi struktur response
+      if (!result || typeof result !== 'object') {
+        throw new Error("Format response tidak valid");
+      }
+
+      if (result.responseCode !== 200) {
+        throw new Error(result.responseDesc || "Request tidak berhasil");
+      }
+
+      if (!result.responseData) {
+        throw new Error("Data dokumen tidak ditemukan dalam response");
+      }
+
+      // Validasi data dokumen yang diperlukan
+      const docData = result.responseData;
+      if (!docData.id || !docData.nama_dinas || !docData.nama_jenis || !docData.nama_subjenis) {
+        throw new Error("Data dokumen tidak lengkap");
+      }
+
+      // Set data ke state
       setDocumentData(docData);
       
-      // Set initial form values
+      // Set initial form values dengan fallback ke string kosong
       setTahun(docData.tahun || '');
       setKeterangan(docData.keterangan || '');
-      
-      // Fetch catatan penolakan
-      await fetchRejectionNote();
-      
+
     } catch (err: any) {
-      setError(
-        err.message === "Failed to fetch" 
-          ? "Tidak dapat terhubung ke server"
-          : err.message
-      );
+      console.error("Error fetching document:", err);
+      
+      // Handle different error types
+      let errorMessage = "Terjadi kesalahan tidak terduga";
+      
+      if (err.message === "Failed to fetch") {
+        errorMessage = "Tidak dapat terhubung ke server. Periksa koneksi internet Anda.";
+      } else if (err.name === "TypeError" && err.message.includes("fetch")) {
+        errorMessage = "Terjadi kesalahan jaringan. Coba lagi dalam beberapa saat.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoadingDocument(false);
-    }
-  };
-
-  // Fungsi untuk fetch catatan penolakan
-  const fetchRejectionNote = async () => {
-    try {
-      const response = await apiRequest(`/document_managements/rejection-note/${documentId}`, "GET");
-      if (response.ok) {
-        const result = await response.json();
-        setRejectionNote(result.responseData?.catatan || "Tidak ada catatan penolakan.");
-      } else {
-        setRejectionNote("Tidak ada catatan penolakan.");
-      }
-    } catch (error) {
-      setRejectionNote("Tidak dapat memuat catatan penolakan.");
     }
   };
 
   useEffect(() => {
     if (documentId) {
       fetchDocumentData();
+    } else {
+      setError("ID dokumen tidak ditemukan");
+      setLoadingDocument(false);
     }
   }, [documentId]);
 
@@ -316,7 +363,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
     }
 
     const payload = {
-      tahun: tahun,
+      tahun: typeof tahun === 'string' ? parseInt(tahun, 10) : Number(tahun), // UBAH INI
       keterangan: keterangan,
       file_paths: tempFilePaths,
       maker: userData.userid || "",
@@ -324,7 +371,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
     };
 
     try {
-      const response = await apiRequest(`/document_managements/revision/${documentId}`, "PUT", payload);
+      const response = await apiRequest(`/document_managements/revision/${documentId}`, "POST", payload);
 
       if (response.ok) {
         setSuccess(true);
@@ -359,6 +406,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
     router.push('/daftar_upload/admin');
   };
 
+  // Loading state
   if (loadingDocument) {
     return (
       <div className="col-span-12">
@@ -372,6 +420,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
     );
   }
 
+  // Error state ketika tidak ada data
   if (error && !documentData) {
     return (
       <div className="col-span-12">
@@ -379,18 +428,27 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
           <div className="flex flex-col items-center justify-center py-20">
             <div className="text-red-500 text-4xl mb-4">⚠️</div>
             <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
-            <button 
-              onClick={handleBack}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Kembali ke Daftar
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Coba Lagi
+              </button>
+              <button 
+                onClick={handleBack}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Kembali ke Daftar
+              </button>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // Data tidak ditemukan state
   if (!documentData) {
     return (
       <div className="col-span-12">
@@ -410,7 +468,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
   }
 
   return (
-    <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
+    <>
       {/* Back Button */}
       <div className="col-span-12">
         <button
@@ -436,22 +494,39 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Dinas
                 </label>
-                <p className="text-gray-900 dark:text-white">{documentData.dinas}</p>
+                <p className="text-gray-900 dark:text-white">{documentData.nama_dinas}</p>
               </div>
               
               <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-800">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Jenis
                 </label>
-                <p className="text-gray-900 dark:text-white">{documentData.jenis}</p>
+                <p className="text-gray-900 dark:text-white">{documentData.nama_jenis}</p>
               </div>
               
               <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-800">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Sub Jenis
                 </label>
-                <p className="text-gray-900 dark:text-white">{documentData.subjenis}</p>
+                <p className="text-gray-900 dark:text-white">{documentData.nama_subjenis}</p>
               </div>
+
+              {/* Display existing files */}
+              {documentData.files && documentData.files.length > 0 && (
+                <div className="p-4 bg-gray-50 rounded-lg dark:bg-gray-800">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    File Saat Ini ({documentData.total_files} file)
+                  </label>
+                  <div className="space-y-2">
+                    {documentData.files.map((file) => (
+                      <div key={file.id} className="flex items-center text-sm text-gray-600 dark:text-gray-400">
+                        <span className="mr-2">📎</span>
+                        <span className="truncate">{file.file_name.split('/').pop()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Catatan Penolakan */}
@@ -460,7 +535,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
                 Catatan Penolakan:
               </label>
               <div className="text-sm text-red-800 dark:text-red-200 whitespace-pre-wrap">
-                {rejectionNote || "Tidak ada catatan penolakan."}
+                {documentData.catatan || "Tidak ada catatan penolakan."}
               </div>
             </div>
           </div>
@@ -688,7 +763,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
         buttonText="Kembali ke Daftar Dokumen"
         onButtonClick={handleSuccessModalClose}
       />
-    </div>
+    </>
   );
 };
 
