@@ -1,16 +1,10 @@
-import { Metadata } from "next";
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/laporan_pergeseran/";
+import MainPage from "@/components/daftarUpload";
 
-export const metadata: Metadata = {
-    title: "Laporan Dokumen",
-};
-
-
-const LaporanPergeseran = () => {
+const DaftarUpload = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Laporan Pergeseran"},
+    { name: "Daftar Upload"},
   ];
 
   return (
@@ -23,4 +17,4 @@ const LaporanPergeseran = () => {
   );
 };
 
-export default LaporanPergeseran;
+export default DaftarUpload;

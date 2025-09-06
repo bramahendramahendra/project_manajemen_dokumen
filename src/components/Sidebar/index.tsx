@@ -10,6 +10,7 @@ import { useMenu } from "@/contexts/MenuContext";
 import notificationClient from "@/helpers/notificationClient";
 import DashboardIcon from "@/components/Icons/DashboardIcon";
 import UploadIcon from "@/components/Icons/UploadIcon";
+import DaftarIcon from "@/components/Icons/DaftarIcon";
 import ValidationIcon from "@/components/Icons/ValidationIcon";
 import PengirimanIcon from "@/components/Icons/PengirimanIcon";
 import LaporanIcon from "@/components/Icons/LaporanIcon";
@@ -29,6 +30,7 @@ interface SidebarProps {
 const iconMap: Record<string, JSX.Element> = {
   DashboardIcon: <DashboardIcon />,
   UploadIcon: <UploadIcon />,
+  DaftarIcon: <DaftarIcon />,
   ValidationIcon: <ValidationIcon />,
   PengirimanIcon: <PengirimanIcon />,
   LaporanIcon: <LaporanIcon />,

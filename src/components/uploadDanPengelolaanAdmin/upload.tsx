@@ -29,14 +29,12 @@ const UploadDokumen = () => {
   const [success, setSuccess] = useState<boolean>(false);
 
   const [dinas, setDinas] = useState<number>(0);
+  const [levelId, setLevelId] = useState<string>('');
   const [jenis, setJenis] = useState<number>(0);
   const [subjenis, setSubjenis] = useState<number>(0);
   const [tahun, setTahun] = useState<string | number>('');
   const [keterangan, setKeterangan] = useState('');
   const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
-  
-  // State baru untuk checkbox admin
-  const [isAdminChecked, setIsAdminChecked] = useState<boolean>(false);
 
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
@@ -61,15 +59,40 @@ const UploadDokumen = () => {
   const [isJenisEmpty, setIsJenisEmpty] = useState(false);
   const [isSubjenisEmpty, setIsSubjenisEmpty] = useState(false);
 
-  // Fungsi untuk mengecek apakah form bisa digunakan
-  const isFormUsable = () => {
-    // Form bisa digunakan jika:
-    // 1. Data dinas dan jenis sudah tersedia (tidak kosong dan tidak loading)
-    // 2. User sudah memilih dinas dan jenis
-    const basicDataAvailable = !loadingDinas && !loadingJenis && !isDinasEmpty && !isJenisEmpty;
-    const basicSelectionMade = dinas !== 0 && jenis !== 0;
+  // Fungsi untuk mengecek apakah form jenis bisa digunakan
+  const isFormJenisUsable = () => {
+    const basicDataAvailable = !loadingDinas && !isDinasEmpty;
+    const basicSelectionMade = dinas !== 0 && levelId !== "";
     
     return basicDataAvailable && basicSelectionMade;
+  };
+
+  // Fungsi untuk mengecek apakah form subjenis bisa digunakan
+  const isFormSubjenisUsable = () => {
+    // const basicDataAvailable = !loadingDinas && !loadingJenis && !isDinasEmpty && !isJenisEmpty;
+    const basicDataAvailable = !loadingJenis && !isJenisEmpty;
+    // const basicSelectionMade = dinas !== 0 && levelId !== "" && jenis !== 0;
+    const basicSelectionMade = jenis !== 0;
+    
+    return basicDataAvailable && basicSelectionMade;
+  };
+
+  // Fungsi untuk mengecek apakah form bisa digunakan
+  const isFormUsable = () => {
+    const basicDataAvailable = !loadingSubjenis && !isSubjenisEmpty;
+    const basicSelectionMade = subjenis !== 0;
+    
+    return basicDataAvailable && basicSelectionMade;
+  };
+
+  // Fungsi untuk mengecek apakah subjenis wajib dan sudah dipilih
+  const isJenisRequiredAndSelected = () => {
+    // Jika ada data subjenis tersedia, maka subjenis wajib dipilih
+    if (dinas !== 0 && levelId !== "" && !loadingJenis && !isJenisEmpty && optionJenis.length > 0) {
+      return jenis !== 0;
+    }
+    // Jika tidak ada data subjenis atau sedang loading, tidak perlu dipilih
+    return true;
   };
 
   // Fungsi untuk mengecek apakah subjenis wajib dan sudah dipilih
@@ -84,7 +107,7 @@ const UploadDokumen = () => {
 
   // Fungsi untuk mengecek apakah semua data master sudah lengkap
   const isMasterDataComplete = () => {
-    return isFormUsable() && isSubjenisRequiredAndSelected();
+    return isFormJenisUsable() && isFormSubjenisUsable() && isFormUsable() && isJenisRequiredAndSelected() && isSubjenisRequiredAndSelected();
   };
 
   // Fungsi untuk mendapatkan icon berdasarkan tipe file
@@ -150,7 +173,9 @@ const UploadDokumen = () => {
   };
 
   const retryFetchJenis = () => {
-    fetchOptionJenis();
+    if (dinas && levelId) {
+      fetchOptionJenis();
+    }
   };
 
   const retryFetchSubjenis = () => {
@@ -183,6 +208,7 @@ const UploadDokumen = () => {
         const resDinas = result.responseData.items.map((item: any) => ({
           id: item.dinas,
           dinas: item.nama_dinas,
+          level_id: item.level_id,
         }));
         setOptionDinas(resDinas);
         setIsDinasEmpty(false);
@@ -202,8 +228,7 @@ const UploadDokumen = () => {
     setIsJenisEmpty(false);
     
     try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-      const response = await apiRequest(`/master_jenis/all-data/by-role/${user.level_id}`,"GET");
+      const response = await apiRequest(`/master_jenis/all-data/by-role/${levelId}`,"GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Jenis data not found");
@@ -239,8 +264,7 @@ const UploadDokumen = () => {
     setIsSubjenisEmpty(false);
     
     try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-      const response = await apiRequest(`/master_subjenis/all-data/by-role/${jenis}/${user.level_id}`,"GET");
+      const response = await apiRequest(`/master_subjenis/all-data/by-role/${jenis}/${levelId}`,"GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Subjenis data not found");
@@ -274,8 +298,15 @@ const UploadDokumen = () => {
   }, []);
 
   useEffect(() => {
+    if (!dinas && !levelId) {
+      setOptionJenis([]);
+      setIsJenisEmpty(false);
+      setJenis(0); // Reset subjenis ketika jenis berubah
+      return;
+    }
+    
     fetchOptionJenis();
-  }, []);
+  }, [dinas, levelId]);
 
   useEffect(() => {
     if (!jenis) {
@@ -445,7 +476,6 @@ const UploadDokumen = () => {
       file_paths: tempFilePaths,
       maker: userData.userid || "",
       maker_role: userData.level_id || "",
-      is_admin_request: isAdminChecked,
     };
 
     try {
@@ -524,7 +554,7 @@ const UploadDokumen = () => {
       return null; // EmptyDataMessage akan ditampilkan
     }
 
-    if (!isFormUsable()) {
+    if (!isFormJenisUsable()) {
       return (
         <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
           <div className="flex items-center">
@@ -532,14 +562,27 @@ const UploadDokumen = () => {
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
-              Pilih Dinas dan Jenis terlebih dahulu untuk melanjutkan.
+              Pilih Dinas terlebih dahulu untuk melanjutkan.
             </p>
           </div>
         </div>
       );
-    }
+    } else if(!isFormSubjenisUsable()) {
+      return (
+        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              Pilih Jenis terlebih dahulu untuk melanjutkan.
+            </p>
+          </div>
+        </div>
+      );
+    } else if(!isFormUsable()) {
 
-    if (jenis !== 0 && !loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0 && subjenis === 0) {
+    // if (jenis !== 0 && !loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0 && subjenis === 0) {
       return (
         <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
           <div className="flex items-center">
@@ -614,37 +657,55 @@ const UploadDokumen = () => {
                       : "Ketik minimal 3 huruf untuk mencari dinas..."
                   }
                   options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
-                  onChange={(value) => setDinas(Number(value))}
+                  onChange={(value) => {
+                    const selectedDinas = Number(value);
+                    setDinas(selectedDinas);
+                    
+                    // Cari data dinas yang dipilih untuk mendapatkan level_id
+                    const selectedDinasData = optionDinas.find(item => item.id === selectedDinas);
+                    if (selectedDinasData) {
+                      setLevelId(selectedDinasData.level_id);
+                    }
+                    
+                    // Reset jenis dan subjenis ketika dinas berubah
+                    setJenis(0);
+                    setSubjenis(0);
+                  }}
                   resetKey={resetKey}
                   disabled={loadingDinas || isDinasEmpty}
                 />
               </div>
 
               {/* Jenis Combobox */}
-              <div className="mb-4.5">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-body-sm font-medium text-dark dark:text-white">
-                    Jenis <span className="text-red-500">*</span>
-                  </label>
-                  {loadingJenis && (
-                    <span className="text-xs text-blue-500">Memuat data...</span>
-                  )}
+              {levelId != "" && (
+                <div className="mb-4.5">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-body-sm font-medium text-dark dark:text-white">
+                      Jenis 
+                      {!loadingJenis && !isJenisEmpty && optionJenis.length > 0 && (
+                        <span className="text-red-500">*</span>
+                      )}
+                    </label>
+                    {loadingJenis && (
+                      <span className="text-xs text-blue-500">Memuat data...</span>
+                    )}
+                  </div>
+                  <ElementCombobox
+                    label=""
+                    placeholder={
+                      loadingJenis 
+                        ? "Memuat data jenis..." 
+                        : isJenisEmpty 
+                        ? "Data jenis belum tersedia" 
+                        : "Pilih jenis"
+                    }
+                    options={optionJenis.map((t) => ({ name: t.jenis, id: t.id }))}
+                    onChange={(value) => setJenis(Number(value))}
+                    resetKey={resetKey}
+                    disabled={loadingJenis || isJenisEmpty || !isFormJenisUsable()}
+                  />
                 </div>
-                <ElementCombobox
-                  label=""
-                  placeholder={
-                    loadingJenis 
-                      ? "Memuat data jenis..." 
-                      : isJenisEmpty 
-                      ? "Data jenis belum tersedia" 
-                      : "Pilih jenis"
-                  }
-                  options={optionJenis.map((t) => ({ name: t.jenis, id: t.id }))}
-                  onChange={(value) => setJenis(Number(value))}
-                  resetKey={resetKey}
-                  disabled={loadingJenis || isJenisEmpty}
-                />
-              </div>
+              )}
 
               {/* Sub Jenis Combobox - hanya muncul jika jenis dipilih */}
               {jenis != 0 && (
@@ -672,7 +733,7 @@ const UploadDokumen = () => {
                     options={optionSubjenis.map((t) => ({ name: t.subjenis, id: t.id }))}
                     onChange={(value) => setSubjenis(Number(value))}
                     resetKey={resetKey}
-                    disabled={loadingSubjenis || isSubjenisEmpty || !isFormUsable()}
+                    disabled={loadingSubjenis || isSubjenisEmpty || !isFormSubjenisUsable()}
                   />
                 </div>
               )}
@@ -897,7 +958,8 @@ const UploadDokumen = () => {
         onClose={handleCloseModal}
         title="Berhasil!"
         message="Dokumen berhasil diupload ke dalam sistem."
-        buttonText="Kembali ke Daftar Dokumen"
+        // buttonText="Kembali ke Upload & Pengelolaan Dokumen"
+        buttonText="Kembali"
         onButtonClick={handleSuccessButtonClick}
       />
     </div>

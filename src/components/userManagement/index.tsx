@@ -13,6 +13,7 @@ import {
 } from "react-icons/hi2";
 import { User, UserResponse } from "@/types/user";
 import Pagination from "@/components/pagination/Pagination";
+import SuccessModalLink from '../modals/successModalLink';
 
 const MainPage = () => {
   const router = useRouter();
@@ -48,6 +49,9 @@ const MainPage = () => {
   const [itemResetPassword, setItemResetPassword] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState('');
   const [isDefaultPassword, setIsDefaultPassword] = useState(false);
+
+  // State untuk SuccessModalLink
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
 
   // Function untuk fetch data dengan parameter - dibungkus dengan useCallback
   const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
@@ -213,6 +217,9 @@ const MainPage = () => {
       setShowDeleteModal(false);
       setItemDelete(null);
       
+      // Tampilkan modal sukses
+      setIsSuccessModalOpen(true);
+      
     } catch (error: any) {
       setError(error.message || 'Terjadi kesalahan saat menghapus data');
     } finally {
@@ -224,6 +231,11 @@ const MainPage = () => {
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setItemDelete(null);
+  };
+
+  // Handler untuk SuccessModalLink
+  const handleCloseSuccessModal = () => {
+    setIsSuccessModalOpen(false);
   };
 
   // Handler untuk reset lupa password
@@ -537,6 +549,18 @@ const MainPage = () => {
           )}
         </div>
       </div>
+
+      {/* SuccessModalLink Component untuk Delete User */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseSuccessModal}
+        title="User Berhasil Dihapus!"
+        message="User telah berhasil dihapus dari sistem."
+        showTwoButtons={true}
+        primaryButtonText="Ke Dashboard"
+        secondaryButtonText="Lanjutkan Kelola User"
+        redirectPath="/dashboard"
+      />
 
       {/* Modal Konfirmasi Hapus */}
       {showDeleteModal && (

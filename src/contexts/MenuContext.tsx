@@ -24,6 +24,7 @@ export const useMenu = () => {
 const iconMap: Record<string, string> = {
   DashboardIcon: "DashboardIcon",
   UploadIcon: "UploadIcon", 
+  DaftarIcon: "DaftarIcon",
   ValidationIcon: "ValidationIcon",
   PengirimanIcon: "PengirimanIcon",
   LaporanIcon: "LaporanIcon",
