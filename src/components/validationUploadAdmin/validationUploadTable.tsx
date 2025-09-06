@@ -68,6 +68,7 @@ const ValidationUploadTable = ({ id }: Props) => {
 
    // State untuk SuccessModalLink
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isRejectSuccessModalOpen, setIsRejectSuccessModalOpen] = useState(false);
   const [validationType, setValidationType] = useState<'single' | 'multiple'>('single');
 
   // Filters state
@@ -259,6 +260,10 @@ const ValidationUploadTable = ({ id }: Props) => {
     setIsSuccessModalOpen(false);
   };
 
+  const handleCloseRejectSuccessModal = () => {
+    setIsRejectSuccessModalOpen(false);
+  };
+
   // Review modal handlers
   const handleOpenReviewModal = (files: FileItem[], uraian: string) => {
     setSelectedFiles(files);
@@ -361,6 +366,8 @@ const ValidationUploadTable = ({ id }: Props) => {
         
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        setIsRejectSuccessModalOpen(true);
         
       } else {
         const result = await response.json();
@@ -480,6 +487,8 @@ const ValidationUploadTable = ({ id }: Props) => {
           // Tampilkan SuccessModalLink untuk validasi multiple
           setValidationType('multiple');
           setIsSuccessModalOpen(true);
+        } else if (bulkAction === 'reject') {
+          setIsRejectSuccessModalOpen(true);
         }
         
       } else {
@@ -891,6 +900,18 @@ const ValidationUploadTable = ({ id }: Props) => {
           ? "Dokumen telah berhasil divalidasi dan disetujui." 
           : "Semua dokumen yang dipilih telah berhasil divalidasi dan disetujui."
         }
+        showTwoButtons={true}
+        primaryButtonText="Ke Dashboard"
+        secondaryButtonText="Lanjutkan Validasi"
+        redirectPath="/dashboard"
+      />
+
+      {/* SuccessModalLink Component untuk Penolakan */}
+      <SuccessModalLink
+        isOpen={isRejectSuccessModalOpen}
+        onClose={handleCloseRejectSuccessModal}
+        title="Dokumen Berhasil Ditolak!"
+        message="Dokumen telah berhasil ditolak dan catatan penolakan telah disimpan."
         showTwoButtons={true}
         primaryButtonText="Ke Dashboard"
         secondaryButtonText="Lanjutkan Validasi"
