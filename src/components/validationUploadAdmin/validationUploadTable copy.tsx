@@ -12,6 +12,7 @@ import {
 } from "react-icons/hi2";
 import { ValidationUploadUraianAdmin, FileItem, ValidationUploadUraianAdminResponse } from "@/types/validationUploadUraian";
 import Pagination from "@/components/pagination/Pagination";
+import SuccessModalLink from '../modals/successModalLink';
 
 interface Props {
   id: number | null;
@@ -64,6 +65,10 @@ const ValidationUploadTable = ({ id }: Props) => {
   const [selectedUraian, setSelectedUraian] = useState<string>("");
   const [downloadingFile, setDownloadingFile] = useState<number | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
+
+   // State untuk SuccessModalLink
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [validationType, setValidationType] = useState<'single' | 'multiple'>('single');
 
   // Filters state
   const [filters, setFilters] = useState({
@@ -249,6 +254,11 @@ const ValidationUploadTable = ({ id }: Props) => {
     setBulkNote("");
   };
 
+  // Handler untuk SuccessModalLink
+  const handleCloseSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
   // Review modal handlers
   const handleOpenReviewModal = (files: FileItem[], uraian: string) => {
     setSelectedFiles(files);
@@ -298,6 +308,10 @@ const ValidationUploadTable = ({ id }: Props) => {
         
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        // Tampilkan SuccessModalLink untuk validasi single
+        setValidationType('single');
+        setIsSuccessModalOpen(true);
         
       } else {
         const result = await response.json();
@@ -461,6 +475,12 @@ const ValidationUploadTable = ({ id }: Props) => {
         
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        if (bulkAction === 'validate') {
+          // Tampilkan SuccessModalLink untuk validasi multiple
+          setValidationType('multiple');
+          setIsSuccessModalOpen(true);
+        }
         
       } else {
         const result = response ? await response.json() : {};
@@ -861,6 +881,21 @@ const ValidationUploadTable = ({ id }: Props) => {
           </div>
         </div>
       )}
+
+      {/* SuccessModalLink Component */}
+      <SuccessModalLink
+        isOpen={isSuccessModalOpen}
+        onClose={handleCloseSuccessModal}
+        title="Validasi Berhasil!"
+        message={validationType === 'single' 
+          ? "Dokumen telah berhasil divalidasi dan disetujui." 
+          : "Semua dokumen yang dipilih telah berhasil divalidasi dan disetujui."
+        }
+        showTwoButtons={true}
+        primaryButtonText="Ke Dashboard"
+        secondaryButtonText="Lanjutkan Validasi"
+        redirectPath="/dashboard"
+      />
 
       {/* Modal Tolak Individual */}
       {showRejectModal && (
