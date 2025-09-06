@@ -57,6 +57,9 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   // State untuk SuccessModalLink
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [validationType, setValidationType] = useState<'single' | 'multiple'>('single');
+  
+  // State untuk modal reject success
+  const [isRejectSuccessModalOpen, setIsRejectSuccessModalOpen] = useState(false);
 
   const totalPages = Math.ceil(dataDetail.length / itemsPerPage);
   const currentItems = dataDetail.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -96,6 +99,11 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
   // Handler untuk SuccessModalLink
   const handleCloseSuccessModal = () => {
     setIsSuccessModalOpen(false);
+  };
+
+  // Handler untuk Reject Success Modal
+  const handleCloseRejectSuccessModal = () => {
+    setIsRejectSuccessModalOpen(false);
   };
 
   // Fungsi untuk membuka modal review
@@ -169,6 +177,9 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+        
+        // Tampilkan modal sukses penolakan
+        setIsRejectSuccessModalOpen(true);
         
         console.log(`Item dengan index ${itemToReject} telah di-reject dengan catatan: ${rejectNote}`);
       } else {
@@ -394,6 +405,9 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         // Reset checkbox states setelah update data
         setCheckedItems(new Array(updatedData.length).fill(false));
         setIsAllChecked(false);
+
+        // Tampilkan modal sukses penolakan
+        setIsRejectSuccessModalOpen(true);
       } else {
         const result = await response.json();
         setError(result.message || "Terjadi kesalahan saat menolak dokumen");
@@ -572,7 +586,7 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
         </div>
       </div>
 
-      {/* SuccessModalLink Component */}
+      {/* SuccessModalLink Component untuk Validasi */}
       <SuccessModalLink
         isOpen={isSuccessModalOpen}
         onClose={handleCloseSuccessModal}
@@ -581,6 +595,18 @@ const ValidationUploadTable = ({ dataDetail, onDataUpdate }: Props) => {
           ? "Dokumen telah berhasil divalidasi dan disetujui." 
           : "Semua dokumen yang dipilih telah berhasil divalidasi dan disetujui."
         }
+        showTwoButtons={true}
+        primaryButtonText="Ke Dashboard"
+        secondaryButtonText="Lanjutkan Validasi"
+        redirectPath="/dashboard"
+      />
+
+      {/* SuccessModalLink Component untuk Penolakan */}
+      <SuccessModalLink
+        isOpen={isRejectSuccessModalOpen}
+        onClose={handleCloseRejectSuccessModal}
+        title="Dokumen Berhasil Ditolak!"
+        message="Dokumen telah berhasil ditolak dan catatan penolakan telah disimpan."
         showTwoButtons={true}
         primaryButtonText="Ke Dashboard"
         secondaryButtonText="Lanjutkan Validasi"
