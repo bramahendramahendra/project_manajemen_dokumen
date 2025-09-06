@@ -11,6 +11,7 @@ export type DASHBOARD = {
 
 export type Document = {
   id: number;
+  dinas?: string;
   subjenis: string;
   maker_date: string;
   status_code: string;

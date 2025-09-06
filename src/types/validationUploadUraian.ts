@@ -12,8 +12,23 @@ export type FileItem = {
 
 export type ValidationUploadUraianAdmin = {
   id: number;
+  jenis: string;
   uraian: string;
   tanggal: Date;
   total_files: number;
   files: FileItem[];
+};
+
+export type ValidationUploadUraianAdminResponse = {
+  responseCode: number;
+  responseDesc: string;
+  responseData: {
+    items: ValidationUploadUraianAdmin[];
+  };
+  responseMeta: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_records: number;
+  };
 };

@@ -168,10 +168,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
         }
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
-
+      
       const result: DocumentListResponse = await response.json();
       
-      // Validasi struktur response - PERSIS seperti master dinas
       if (!result.responseData || !result.responseData.items) {
         throw new Error("Format data tidak valid");
       }

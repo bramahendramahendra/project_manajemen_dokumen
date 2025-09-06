@@ -39,18 +39,12 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden shadow-xl">
         <div className="flex flex-col items-center px-6 pt-8 pb-6 text-center">
-          {/* Icon container with red background */}
           <div className="relative mb-6">
-            {/* Background circular gradient */}
             <div className="absolute inset-0 bg-red-500 rounded-full opacity-20"></div>
-            
-            {/* Small dots around the circle */}
             <div className="absolute w-2 h-2 bg-red-500 rounded-full -top-1 left-1/2 -translate-x-1/2"></div>
             <div className="absolute w-2 h-2 bg-red-500 rounded-full top-1/4 -right-1"></div>
             <div className="absolute w-2 h-2 bg-red-500 rounded-full -bottom-1 left-1/2 -translate-x-1/2"></div>
             <div className="absolute w-2 h-2 bg-red-500 rounded-full top-1/4 -left-1"></div>
-            
-            {/* Main circle with X mark */}
             <div className="w-16 h-16 flex items-center justify-center bg-red-500 rounded-full relative z-10">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -68,21 +62,9 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
               </svg>
             </div>
           </div>
-          
-          {/* Title */}
-          <h2 className="text-3xl font-bold mb-6 text-gray-800">
-            {title}
-          </h2>
-          
-          {/* Message */}
-          <p className="text-gray-600 text-lg mb-8">
-            {message}
-          </p>
-          
-          {/* Small dot indicator */}
+          <h2 className="text-3xl font-bold mb-6 text-gray-800">{title}</h2>
+          <p className="text-gray-600 text-lg mb-8">{message}</p>
           <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mb-6"></div>
-          
-          {/* Button */}
           <button
             onClick={onClose}
             className="w-full py-4 bg-red-600 hover:bg-red-700 text-white text-xl font-medium rounded-xl transition-colors"
@@ -97,8 +79,8 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
 
 const FormPengirimanLangsungAdmin = () => {
   // State untuk loading dan error
-  const [loading, setLoading] = useState<boolean>(false); // State loading
-  const [error, setError] = useState<string | null>(null); // Error state
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
 
   // State untuk pencarian dan filter dokumen
@@ -109,34 +91,23 @@ const FormPengirimanLangsungAdmin = () => {
   // state untuk option 
   const [optionDinas, setOptionDinas] = useState<Dinas[]>([]);
 
-  // State untuk form
-  const [judul, setJudul] = useState<string>(""); // Judul
-  const [dinas, setDinas] = useState<number>(0);
-  const [lampiran, setLampiran] = useState<string>(""); // Lampiran
-  
-  // State baru untuk checkbox admin
-  const [isAdminChecked, setIsAdminChecked] = useState<boolean>(false);
+  // State untuk form - HANYA DINAS DAN JUDUL YANG WAJIB
+  const [judul, setJudul] = useState<string>(""); // REQUIRED
+  const [dinas, setDinas] = useState<number>(0); // REQUIRED
+  const [lampiran, setLampiran] = useState<string>(""); // OPTIONAL
 
   // State untuk data
-  const [documents, setDocuments] = useState<Document[]>([]); // Semua dokumen
+  const [documents, setDocuments] = useState<Document[]>([]);
 
-  // State untuk dropdown officials/dinas
-  const [selectedOfficial, setSelectedOfficial] = useState<Dinas | null>(null);
-  const [isLoadingOfficials, setIsLoadingOfficials] = useState<boolean>(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
-  const [officialSearchTerm, setOfficialSearchTerm] = useState<string>("");
-
-  // State untuk file upload
-  const [file, setFile] = useState<File | null>(null); // Hanya satu file
-  const [uploadProgress, setUploadProgress] = useState<number>(0); // Satu progress
-  const [tempFilePath, setTempFilePath] = useState<string>(""); // Satu path
+  // State untuk file upload - OPTIONAL
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [tempFilePath, setTempFilePath] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isUploadComplete, setIsUploadComplete] = useState<boolean>(false);
   
-  // State untuk SuccessModal
+  // State untuk modals
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
-
-  // State untuk menampilkan ErrorModal
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorTitle, setErrorTitle] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -183,7 +154,7 @@ const FormPengirimanLangsungAdmin = () => {
       'application/x-zip-compressed',
       'application/x-rar-compressed',
       'application/vnd.rar',
-      'application/octet-stream' // Untuk RAR di beberapa browser
+      'application/octet-stream'
     ];
     
     const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.pdf', '.doc', '.docx'];
@@ -201,11 +172,11 @@ const FormPengirimanLangsungAdmin = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Effect untuk menangani klik diluar dropdown untuk menutupnya
+  // Effect untuk menangani klik diluar dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
+        // setIsDropdownOpen(false);
       }
     }
     
@@ -227,15 +198,14 @@ const FormPengirimanLangsungAdmin = () => {
         }
         const result = await response.json();
         
-        // Pastikan data dokumen ada dan memiliki format yang benar
         if (result.responseData && result.responseData.items) {
           setDocuments(result.responseData.items);
         } else {
-          throw new Error("Format data tidak sesuai");
+          setDocuments([]);
         }
       } catch (err: any) {
-        setError(err.message || "Gagal mengambil data dokumen");
-        showErrorModal("Kesalahan", "Gagal memuat daftar dokumen. Silakan coba lagi nanti.");
+        console.warn("Gagal memuat dokumen:", err.message);
+        setDocuments([]);
       } finally {
         setLoading(false);
       }
@@ -244,16 +214,12 @@ const FormPengirimanLangsungAdmin = () => {
     fetchDocuments();
   }, []);
 
-  // Mengambil data officials/dinas dari API
+  // Mengambil data dinas dari API
   useEffect(() => {
     const fetchOptinDinas = async () => {
-      setIsLoadingOfficials(true);
       try {
         const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
         if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Dinas data not found");
-          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
@@ -264,10 +230,8 @@ const FormPengirimanLangsungAdmin = () => {
         }));
         setOptionDinas(fetchedOfficials);
       } catch (err: any) {
-        setError(err.message === "Failed to fetch" ? "Dinas data not found" : err.message);
-      } finally {
-        setIsLoadingOfficials(false);
-
+        console.error("Gagal memuat dinas:", err.message);
+        showErrorModal("Kesalahan", "Gagal memuat daftar dinas. Silakan refresh halaman.");
       }
     };
 
@@ -289,8 +253,7 @@ const FormPengirimanLangsungAdmin = () => {
     ? filteredDocuments
     : filteredDocuments.slice(0, 10);
 
-
-  // Handle perubahan checkbox
+  // Handle perubahan checkbox dokumen
   const handleCheckboxChange = (document: Document, isChecked: boolean) => {
     if (isChecked) {
       setSelectedDocuments((prev) => [...prev, document]);
@@ -312,19 +275,17 @@ const FormPengirimanLangsungAdmin = () => {
     setIsErrorModalOpen(true);
   };
   
-  // Handle file change untuk upload - DIUBAH UNTUK SINGLE FILE
+  // Handle file change untuk upload
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const selectedFile = e.target.files[0]; // Ambil file pertama saja
+      const selectedFile = e.target.files[0];
       
-      // Validasi tipe file
       if (!isValidFileType(selectedFile)) {
         showErrorModal("File Tidak Didukung", `File "${selectedFile.name}" tidak didukung. Hanya mendukung PNG, JPG, JPEG, GIF, PDF, DOC, DOCX, ZIP, dan RAR.`);
         return;
       }
 
-      // Validasi ukuran file (maksimal 100MB untuk ZIP/RAR, 10MB untuk file lainnya)
-      const maxSize = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB untuk ZIP/RAR, 10MB untuk file lainnya
+      const maxSize = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
       
       if (selectedFile.size > maxSize) {
         const maxSizeText = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? "100MB" : "10MB";
@@ -366,7 +327,7 @@ const FormPengirimanLangsungAdmin = () => {
     }
   };
   
-  // Handle remove file - DIUBAH UNTUK SINGLE FILE
+  // Handle remove file
   const handleRemoveFile = async () => {
     if (tempFilePath) {
       try {
@@ -386,22 +347,12 @@ const FormPengirimanLangsungAdmin = () => {
     setSuccess(false);
   };
   
- 
-  
-  // Handle pengiriman form
+  // Handle pengiriman form - VALIDASI HANYA UNTUK FIELD REQUIRED
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // console.log("Form submission started");
-    // console.log("Judul:", judul);
-    // console.log("Dinas:", dinas);
-    // console.log("Selected documents:", selectedDocuments);
-    // console.log("Lampiran:", lampiran);
-    // console.log("Temp file paths:", tempFilePath);
-
-    // ✅ VALIDASI MINIMAL - HANYA DINAS DAN JUDUL YANG WAJIB
-     if (!dinas) {
-      showErrorModal("Validasi Gagal", "Nama Dinas harus dipilih");
+    if (!dinas) {
+      showErrorModal("Validasi Gagal", "Kepada Dinas harus dipilih");
       return;
     }
     
@@ -410,45 +361,39 @@ const FormPengirimanLangsungAdmin = () => {
       return;
     }
     
-    // Reset error
     setError("");
-
-    // Set loading
     setLoading(true);
     
     try {
-      // Menyiapkan data dokumen yang dipilih
-      const documentIds = selectedDocuments.map(doc => doc.id);
-      // console.log("Document IDs to be sent:", documentIds);
-
       const user = JSON.parse(Cookies.get("user") || "{}");
-      // console.log("User cookie:", user);
 
       if (!user.userid || !user.name || user.dinas == '' || !user.nama_dinas) {
-        console.error("User tidak ditemukan di cookie.");
+        showErrorModal("Error Session", "Data pengguna tidak valid. Silakan login ulang.");
         return;
       }
 
       const foundNamaDinas = optionDinas.find((item) => item.id === dinas);
       
-      // ✅ Siapkan payload untuk API - BISA KOSONG UNTUK DOKUMEN DAN FILE
+      if (!foundNamaDinas) {
+        showErrorModal("Validasi Gagal", "Dinas yang dipilih tidak valid");
+        return;
+      }
+      
       const payload = {
         kepada_id: dinas,
-        kepada_dinas: foundNamaDinas?.dinas || "",
-        // kepada_id: selectedOfficial.id,
-        // kepada_dinas: selectedOfficial.dinas,
-        judul: judul,
-        dokumen_ids: documentIds, // Bisa array kosong []
-        lampiran: lampiran, // Bisa string kosong ""
-        file_path: tempFilePath, // Bisa string kosong ""
+        kepada_dinas: foundNamaDinas.dinas,
+        judul: judul.trim(),
+        dokumen_ids: selectedDocuments.length > 0 ? selectedDocuments.map(doc => doc.id) : [],
+        lampiran: lampiran.trim() || "",
+        file_path: tempFilePath || "",
+        file_name: file ? file.name : "",
         pengirim_userid: user.userid,
         pengirim_name: user.name,
         pengirim_department_id: user.dinas,
         pengirim_department_name: user.nama_dinas,
-        is_admin_request: isAdminChecked,
       };
       
-      // console.log("Starting actual API call with payload:", payload);
+      console.log("Payload yang dikirim:", payload);
 
       const response = await apiRequest("/direct-shipping/", "POST", payload);
 
@@ -457,15 +402,13 @@ const FormPengirimanLangsungAdmin = () => {
         throw new Error(errorData.responseDesc || "Gagal mengirim dokumen");
       }
       
-      // Jika berhasil, tampilkan modal sukses
       setIsSuccessModalOpen(true);
       setSuccess(true);
-    } catch (error) {
-      // Handle error dengan modal
+    } catch (error: any) {
       console.error("Error sending documents:", error);
       showErrorModal(
         "Pengiriman Gagal", 
-        "Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi."
+        error.message || "Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi."
       );
       setSuccess(false);
     } finally {
@@ -486,16 +429,13 @@ const FormPengirimanLangsungAdmin = () => {
   const handleSuccessButtonClick = async () => {
     setIsSuccessModalOpen(false);
     
-    // Reset form
     setDinas(0);
     setJudul("");
     setLampiran("");
     setSelectedDocuments([]);
     setSearchTerm("");
     setShowAll(false);
-    setIsAdminChecked(false);
     
-    // Reset file upload
     if (tempFilePath) {
       await handleRemoveFile();
     }
@@ -513,117 +453,105 @@ const FormPengirimanLangsungAdmin = () => {
           <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
             <form onSubmit={handleSubmitForm}>
               <div className="grid grid-cols-12 gap-6 p-6.5">
-                {/* Kolom Kiri */}
+                {/* Kolom Kiri - FORM UTAMA */}
                 <div className="col-span-12 lg:col-span-6">
-                  {/* Kepada Dinas with checkbox */}
-                  <div className="mb-0">
-                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Kepada Dinas
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <ElementComboboxAutocomplete
-                          label=""
-                          placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
-                          options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
-                          onChange={(value) => setDinas(Number(value))}
-                          resetKey={resetKey}
-                        />
-                      </div>
-                      {/* <div className="flex items-center">
-                        <label 
-                          className="flex items-center cursor-pointer"
-                          title="Admin"
-                        >
-                          <input
-                            type="checkbox"
-                            checked={isAdminChecked}
-                            onChange={(e) => setIsAdminChecked(e.target.checked)}
-                            className="h-4 w-4 mt-[-10px] rounded border-[#1D92F9] text-[#1D92F9] focus:ring-[#1D92F9] focus:ring-2"
-                          />
-                        </label>
-                      </div> */}
-                    </div>
-                  </div>
-
-                  {/* Judul */}
+                  {/* Kepada Dinas - REQUIRED */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Judul
+                      Kepada Dinas <span className="text-red-500">*</span>
+                    </label>
+                    <ElementComboboxAutocomplete
+                      label=""
+                      placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
+                      options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
+                      onChange={(value) => setDinas(Number(value))}
+                      resetKey={resetKey}
+                    />
+                  </div>
+
+                  {/* Judul - REQUIRED */}
+                  <div className="mb-4.5">
+                    <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
+                      Judul <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Masukkan Nama Judul..."
+                      placeholder="Masukkan judul pengiriman..."
                       value={judul}
                       onChange={(e) => setJudul(e.target.value)}
-                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                       required
                     />
                   </div>
 
+                  {/* Dokumen Yang Dipilih - OPTIONAL */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                       Dokumen Yang Dipilih
-                      <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                     </label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDocuments.map((doc) => (
-                        <div
-                          key={doc.id}
-                          className="flex items-center space-x-2 rounded-md bg-gray-100 px-3 py-2 shadow-sm dark:bg-gray-700"
-                        >
-                          <span className="text-sm text-gray-700 dark:text-white">
-                            {/* {doc} */}
-                            {getDocumentDisplayName(doc)}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDocument(doc.id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="currentColor"
-                              className="h-4 w-4"
+                    <div className="min-h-[60px] rounded-[7px] border border-gray-300 p-3 dark:border-dark-3">
+                      {selectedDocuments.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedDocuments.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center space-x-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-sm dark:bg-blue-900/20 dark:border-blue-800"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </button>
+                              <span className="text-blue-700 dark:text-blue-300">
+                                {getDocumentDisplayName(doc)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDocument(doc.id)}
+                                className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="1.5"
+                                  stroke="currentColor"
+                                  className="h-4 w-4"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                      {selectedDocuments.length === 0 && (
-                        <span className="text-gray-500 dark:text-gray-400">
-                          Belum ada dokumen yang dipilih.
-                        </span>
+                      ) : (
+                        <p className="text-gray-500 italic dark:text-gray-400">
+                          Belum ada dokumen yang dipilih. Anda bisa memilih dokumen di sebelah kanan atau lanjutkan tanpa memilih dokumen.
+                        </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Lampiran */}
+                  {/* Lampiran - OPTIONAL */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Lampiran (opsional)
+                      Lampiran
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                     </label>
                     <textarea
                       rows={6}
                       value={lampiran}
-                      placeholder="Isi Lampiran..."
+                      placeholder="Isi keterangan tambahan jika diperlukan..."
                       onChange={(e) => setLampiran(e.target.value)}
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                     ></textarea>
                   </div>
                   
-                  {/* File Upload (Opsional) */}
+                  {/* File Upload - OPTIONAL */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Upload File <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+                      Upload File
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                     </label>
                     
                     <div
@@ -710,7 +638,6 @@ const FormPengirimanLangsungAdmin = () => {
                             </div>
                           </div>
 
-                          {/* Cancel Button */}
                           {!isUploadComplete && (
                             <button
                               type="button"
@@ -728,7 +655,6 @@ const FormPengirimanLangsungAdmin = () => {
                             </button>
                           )}
 
-                          {/* Tombol Hapus setelah upload selesai */}
                           {isUploadComplete && (
                             <button
                               type="button"
@@ -743,7 +669,6 @@ const FormPengirimanLangsungAdmin = () => {
                       </div>
                     )}
                     
-                    {/* Pesan Error/Success */}
                     {error && !isErrorModalOpen && (
                       <p className="mt-2 text-red-500 text-sm">{error}</p>
                     )}
@@ -766,66 +691,60 @@ const FormPengirimanLangsungAdmin = () => {
                   </div>
                 </div>
 
-                {/* Kolom Kanan */}
+                {/* Kolom Kanan - DOKUMEN (OPTIONAL) */}
                 <div className="col-span-12 lg:col-span-6">
                   <div className="mb-4.5">
                     <div className="flex items-center justify-between">
                       <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                        Dokumen
-                        <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+                        Pilih Dokumen
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                       </label>
-                      {/* Input Pencarian */}
                       <input
                         type="text"
                         placeholder="Cari dokumen..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-[200px] rounded-[7px] bg-transparent px-5 py-2 text-dark ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white"
+                        className="w-[200px] rounded-[7px] bg-transparent px-3 py-2 text-sm text-dark ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white"
                       />
                     </div>
-                    <fieldset>
-                      <div className="mt-4 divide-y divide-gray-200 border-b border-t border-gray-200">
-                        {loading ? (
-                          // Tampilkan loading state
-                          Array.from({ length: 5 }).map((_, index) => (
-                            <div key={index} className="flex items-start py-4">
-                              <div className="min-w-0 flex-1">
-                                <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                    
+                    <div className="mt-6 rounded-[7px] p-2 dark:border-dark-3 dark:bg-dark-2">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                        Anda dapat memilih dokumen untuk disertakan dalam pengiriman, atau langsung kirim tanpa memilih dokumen.
+                      </p>
+                      
+                      <fieldset>
+                        <div className="divide-y divide-gray-200 border-b border-t border-gray-200 max-h-96 overflow-y-auto">
+                          {loading ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                              <div key={index} className="flex items-start py-3">
+                                <div className="min-w-0 flex-1">
+                                  <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                                </div>
+                                <div className="ml-3 flex h-6 items-center">
+                                  <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                                </div>
                               </div>
-                              <div className="ml-3 flex h-6 items-center">
-                                <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-                              </div>
-                            </div>
-                          ))
-                        ) : (
-                          // Tampilkan data dokumen
-                          displayedDocuments.length > 0 ? (
+                            ))
+                          ) : displayedDocuments.length > 0 ? (
                             displayedDocuments.map((doc) => (
-                              // displayedPeople.map((person) => (
                               <div
                                 key={doc.id}
-                                className="relative flex items-start py-4"
+                                className="relative flex items-start py-3"
                               >
-                                <div className="min-w-0 flex-1 text-[12px]">
+                                <div className="min-w-0 flex-1 text-sm">
                                   <label
-                                    // htmlFor={`person-${person.id}`}
                                     htmlFor={`document-${doc.id}`}
-                                    className="select-none font-medium text-gray-500"
+                                    className="select-none font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
                                   >
-                                    {/* {person.name} */}
                                     {getDocumentDisplayName(doc)}
                                   </label>
                                 </div>
                                 <div className="ml-3 flex h-6 items-center">
                                   <input
-                                    // id={`person-${person.id}`}
-                                    // name={`person-${person.id}`}
                                     id={`document-${doc.id}`}
                                     name={`document-${doc.id}`}
                                     type="checkbox"
-                                    // checked={selectedDocuments.includes(
-                                    //   person.name,
-                                    // )}
                                     checked={selectedDocuments.some(
                                       (selectedDoc) => selectedDoc.id === doc.id
                                     )}
@@ -835,51 +754,52 @@ const FormPengirimanLangsungAdmin = () => {
                                         e.target.checked,
                                       )
                                     }
-                                    // onChange={(e) =>
-                                    //   handleCheckboxChange(
-                                    //     person.name,
-                                    //     e.target.checked,
-                                    //   )
-                                    // }
                                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
                                   />
                                 </div>
                               </div>
                             ))
                           ) : (
-                            <div className="py-4 text-center">
-                              <span className="text-gray-500">
-                                {error ? "Terjadi kesalahan saat memuat data" : "Tidak ada dokumen yang tersedia"}
+                            <div className="py-8 text-center">
+                              <div className="text-gray-400 mb-2">
+                                <svg
+                                  className="mx-auto h-12 w-12"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  />
+                                </svg>
+                              </div>
+                              <span className="text-gray-500 text-sm">
+                                {searchTerm ? "Tidak ada dokumen yang sesuai dengan pencarian" : "Belum ada dokumen tersedia"}
                               </span>
+                              <p className="text-xs text-gray-400 mt-1">
+                                Anda masih bisa melanjutkan pengiriman tanpa dokumen
+                              </p>
                             </div>
-                          )
-                        )}
+                          )}
 
-                        {/* {filteredPeople.length > 10 && !showAll && (
-                          <div className="py-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => setShowAll(true)}
-                              className="text-[#0C479F] hover:underline"
-                            >
-                              Lihat Semua Dokumen
-                            </button>
-                          </div>
-                        )} */}
-
-                        {filteredDocuments.length > 10 && !showAll && (
-                          <div className="py-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => setShowAll(true)}
-                              className="text-[#0C479F] hover:underline"
-                            >
-                              Lihat Semua Dokumen
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </fieldset>
+                          {filteredDocuments.length > 10 && !showAll && (
+                            <div className="py-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setShowAll(true)}
+                                className="text-[#0C479F] hover:underline text-sm font-medium"
+                              >
+                                Lihat Semua Dokumen ({filteredDocuments.length})
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </fieldset>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -888,17 +808,15 @@ const FormPengirimanLangsungAdmin = () => {
         </div>
       </div>
       
-      {/* SuccessModal Component */}
       <SuccessModal
         isOpen={isSuccessModalOpen}
         onClose={handleCloseSuccessModal}
         title="Berhasil!"
         message="Dokumen berhasil dikirim ke Admin."
-        buttonText="Kembali ke Daftar Dokumen"
+        buttonText="Kembali ke Form"
         onButtonClick={handleSuccessButtonClick}
       />
       
-      {/* ErrorModal Component */}
       <ErrorModal
         isOpen={isErrorModalOpen}
         onClose={handleCloseErrorModal}

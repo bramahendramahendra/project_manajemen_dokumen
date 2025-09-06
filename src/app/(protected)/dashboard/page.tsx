@@ -12,20 +12,21 @@ import AdminPengawasTable from "@/components/dashboard/admin-pengawas/tablePage"
 const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [userLevelId, setUserLevelId] = useState<string>("");
+  const [user, setUser] = useState<any>({});
 
-  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-  console.log(user);
-  
-  
   useEffect(() => {
+    // Parse user data dari cookies
+    const userData = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+    setUser(userData);
+    
     // Set user level_id dari cookies
-    setUserLevelId(user.level_id || "");
+    setUserLevelId(userData.level_id || "");
     
     const hasVisited = localStorage.getItem("hasVisited");
     if (hasVisited === "true") {
       setIsModalOpen(true);
     }
-  }, []);
+  }, []); // Dependency array kosong karena hanya dijalankan sekali saat mount
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
