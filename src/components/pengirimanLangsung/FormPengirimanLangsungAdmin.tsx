@@ -1,36 +1,11 @@
 import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+import Image from "next/image";
 import { apiRequest } from "@/helpers/apiClient";
 import { apiRequestUpload } from "@/helpers/uploadClient";
-import Image from "next/image";
-import SuccessModal from "../modals/successModal";
 import Cookies from "js-cookie";
+import { Document, Dinas, ErrorModalProps } from "@/types/pengirimanLangsung";
 import ElementComboboxAutocomplete from "../elements/ElementComboboxAutocomplate";
-
-// Tipe data untuk dokumen
-interface Document {
-  id: number;
-  type_id: number;
-  jenis: string;
-  subtype_id: number;
-  subjenis: string;
-  dinas_id: number;
-  dinas: string;
-  tahun: string;
-}
-
-// Tipe data untuk dinas/official
-interface Dinas {
-  id: number;
-  dinas: string;
-}
-
-// Modal untuk error message
-interface ErrorModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-}
+import SuccessModal from "../modals/successModal";
 
 const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message }) => {
   if (!isOpen) return null;
@@ -147,6 +122,7 @@ const FormPengirimanLangsungAdmin = () => {
       'image/jpg', 
       'image/jpeg',
       'image/gif',
+      'image/svg+xml',
       'application/pdf',
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -157,7 +133,7 @@ const FormPengirimanLangsungAdmin = () => {
       'application/octet-stream'
     ];
     
-    const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.pdf', '.doc', '.docx'];
+    const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.pdf', '.doc', '.docx'];
     const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
     
     return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
@@ -202,10 +178,13 @@ const FormPengirimanLangsungAdmin = () => {
           setDocuments(result.responseData.items);
         } else {
           setDocuments([]);
+          throw new Error("Format data tidak sesuai");
         }
       } catch (err: any) {
-        console.warn("Gagal memuat dokumen:", err.message);
+        // console.warn("Gagal memuat dokumen:", err.message);
         setDocuments([]);
+        setError(err.message || "Gagal mengambil data dokumen");
+        showErrorModal("Kesalahan", "Gagal memuat daftar dokumen. Silakan coba lagi nanti.");
       } finally {
         setLoading(false);
       }
@@ -216,26 +195,33 @@ const FormPengirimanLangsungAdmin = () => {
 
   // Mengambil data dinas dari API
   useEffect(() => {
-    const fetchOptinDinas = async () => {
+    const fetchOptionDinas = async () => {
       try {
-        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM", "GET");
+        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM,PGW", "GET");
         if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Dinas data not found");
+          }
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const result = await response.json();
         
-        const fetchedOfficials = result.responseData.items.map((item: any) => ({
-          id: item.dinas,
-          dinas: item.nama_dinas,
-        }));
-        setOptionDinas(fetchedOfficials);
+        if (result.responseData && result.responseData.items) {
+          const fetchDinas = result.responseData.items.map((item: any) => ({
+            id: item.dinas,
+            dinas: item.nama_dinas,
+          }));
+          setOptionDinas(fetchDinas);
+        } else {
+          throw new Error("Format data dinas tidak sesuai");
+        }
       } catch (err: any) {
-        console.error("Gagal memuat dinas:", err.message);
+        console.error("Gagal memuat data dinas:", err.message);
         showErrorModal("Kesalahan", "Gagal memuat daftar dinas. Silakan refresh halaman.");
       }
     };
 
-    fetchOptinDinas();
+    fetchOptionDinas();
   }, []);
   
   // Format display name untuk dokumen
@@ -347,7 +333,7 @@ const FormPengirimanLangsungAdmin = () => {
     setSuccess(false);
   };
   
-  // Handle pengiriman form - VALIDASI HANYA UNTUK FIELD REQUIRED
+  // Handle pengiriman form
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -378,12 +364,14 @@ const FormPengirimanLangsungAdmin = () => {
         showErrorModal("Validasi Gagal", "Dinas yang dipilih tidak valid");
         return;
       }
+
+      const documentIds = selectedDocuments.length > 0 ? selectedDocuments.map(doc => doc.id) : [];
       
       const payload = {
         kepada_id: dinas,
         kepada_dinas: foundNamaDinas.dinas,
         judul: judul.trim(),
-        dokumen_ids: selectedDocuments.length > 0 ? selectedDocuments.map(doc => doc.id) : [],
+        dokumen_ids: documentIds,
         lampiran: lampiran.trim() || "",
         file_path: tempFilePath || "",
         file_name: file ? file.name : "",
@@ -393,7 +381,7 @@ const FormPengirimanLangsungAdmin = () => {
         pengirim_department_name: user.nama_dinas,
       };
       
-      console.log("Payload yang dikirim:", payload);
+      // console.log("Payload yang dikirim:", payload);
 
       const response = await apiRequest("/direct-shipping/", "POST", payload);
 
@@ -405,7 +393,7 @@ const FormPengirimanLangsungAdmin = () => {
       setIsSuccessModalOpen(true);
       setSuccess(true);
     } catch (error: any) {
-      console.error("Error sending documents:", error);
+      // console.error("Error sending documents:", error);
       showErrorModal(
         "Pengiriman Gagal", 
         error.message || "Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi."
@@ -453,7 +441,7 @@ const FormPengirimanLangsungAdmin = () => {
           <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
             <form onSubmit={handleSubmitForm}>
               <div className="grid grid-cols-12 gap-6 p-6.5">
-                {/* Kolom Kiri - FORM UTAMA */}
+                {/* Kolom Kiri */}
                 <div className="col-span-12 lg:col-span-6">
                   {/* Kepada Dinas - REQUIRED */}
                   <div className="mb-4.5">

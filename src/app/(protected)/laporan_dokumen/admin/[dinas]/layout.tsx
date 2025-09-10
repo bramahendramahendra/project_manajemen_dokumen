@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
-const formatSkpdForTitle = (skpd: string) => {
-  return skpd
+const formatTitle = (title: string) => {
+  return title
     .replace(/-/g, " ") 
     .replace(/\b\w/g, (char) => char.toUpperCase()); 
 };
@@ -9,11 +9,11 @@ const formatSkpdForTitle = (skpd: string) => {
 export async function generateMetadata({
   params,
 }: {
-  params: { skpd: string };
+  params: { dinas: string };
 }): Promise<Metadata> {
-  const skpd = formatSkpdForTitle(params.skpd);
+  const titlePage = formatTitle(params.dinas);
   return {
-    title: skpd ? `Validation Upload - ${skpd}` : "Validation Upload",
+    title: titlePage ? `Laporan Dokumen - ${titlePage}` : "Laporan Dokumen",
   };
 }
 

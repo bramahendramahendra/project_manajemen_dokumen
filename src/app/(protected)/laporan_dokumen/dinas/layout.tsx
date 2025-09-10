@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Validation Upload",
+  title: "Laporan Dokumen Dinas",
 };
 
 export default function Layout({
