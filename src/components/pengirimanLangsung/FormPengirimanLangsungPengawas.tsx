@@ -1,14 +1,11 @@
-import React, { useState, ChangeEvent } from "react";
+import React, { useState,  useEffect, useRef, ChangeEvent } from "react";
 import Image from "next/image";
+import { apiRequest } from "@/helpers/apiClient";
+import { apiRequestUpload } from "@/helpers/uploadClient";
+import Cookies from "js-cookie";
+import { Document, Dinas, ErrorModalProps } from "@/types/pengirimanLangsung";
+import ElementComboboxAutocomplete from "../elements/ElementComboboxAutocomplate";
 import SuccessModal from "../modals/successModal";
-
-// Modal untuk error message
-interface ErrorModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  message: string;
-}
 
 const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message }) => {
   if (!isOpen) return null;
@@ -17,18 +14,12 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden shadow-xl">
         <div className="flex flex-col items-center px-6 pt-8 pb-6 text-center">
-          {/* Icon container with red background */}
           <div className="relative mb-6">
-            {/* Background circular gradient */}
             <div className="absolute inset-0 bg-red-500 rounded-full opacity-20"></div>
-            
-            {/* Small dots around the circle */}
             <div className="absolute w-2 h-2 bg-red-500 rounded-full -top-1 left-1/2 -translate-x-1/2"></div>
             <div className="absolute w-2 h-2 bg-red-500 rounded-full top-1/4 -right-1"></div>
             <div className="absolute w-2 h-2 bg-red-500 rounded-full -bottom-1 left-1/2 -translate-x-1/2"></div>
             <div className="absolute w-2 h-2 bg-red-500 rounded-full top-1/4 -left-1"></div>
-            
-            {/* Main circle with X mark */}
             <div className="w-16 h-16 flex items-center justify-center bg-red-500 rounded-full relative z-10">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
@@ -46,21 +37,9 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
               </svg>
             </div>
           </div>
-          
-          {/* Title */}
-          <h2 className="text-3xl font-bold mb-6 text-gray-800">
-            {title}
-          </h2>
-          
-          {/* Message */}
-          <p className="text-gray-600 text-lg mb-8">
-            {message}
-          </p>
-          
-          {/* Small dot indicator */}
+          <h2 className="text-3xl font-bold mb-6 text-gray-800">{title}</h2>
+          <p className="text-gray-600 text-lg mb-8">{message}</p>
           <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mb-6"></div>
-          
-          {/* Button */}
           <button
             onClick={onClose}
             className="w-full py-4 bg-red-600 hover:bg-red-700 text-white text-xl font-medium rounded-xl transition-colors"
@@ -73,46 +52,46 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
   );
 };
 
-const people = [
-  { id: 1, name: "DPA" },
-  { id: 2, name: "RKA" },
-  { id: 3, name: "Anggaran Kas" },
-  { id: 4, name: "Laporan Tahunan" },
-  { id: 5, name: "Budget Proposal" },
-  { id: 6, name: "DPA" },
-  { id: 7, name: "RKA" },
-  { id: 8, name: "Anggaran Kas" },
-  { id: 9, name: "Laporan Tahunan" },
-  { id: 10, name: "Budget Proposal" },
-  { id: 11, name: "Dokumen Ekstra" },
-  { id: 12, name: "Anggaran Baru" },
-];
+const FormPengirimanLangsungPengawas = () => {
+  // State untuk loading dan error
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<boolean>(false);
 
-const FormPengirimanLangsung = () => {
-  const [searchTerm, setSearchTerm] = useState<string>(""); // Untuk pencarian
-  const [showAll, setShowAll] = useState<boolean>(false); // Untuk mengatur apakah semua data ditampilkan
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([]); // Dokumen yang dipilih
-  const [namaPengawas, setNamaPengawas] = useState<string>(""); // Nama pengawas
-  const [judul, setJudul] = useState<string>(""); // Judul
-  const [lampiran, setLampiran] = useState<string>(""); // Lampiran
-  const [loading, setLoading] = useState<boolean>(false); // State loading
+  // State untuk pencarian dan filter dokumen
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [showAll, setShowAll] = useState<boolean>(false); 
+  const [selectedDocuments, setSelectedDocuments] = useState<Document[]>([]); 
+
+  // state untuk option 
+  const [optionDinas, setOptionDinas] = useState<Dinas[]>([]);
+
+  // State untuk form - HANYA DINAS DAN JUDUL YANG WAJIB
+  const [judul, setJudul] = useState<string>(""); // REQUIRED
+  const [dinas, setDinas] = useState<number>(0); // REQUIRED
+  const [lampiran, setLampiran] = useState<string>(""); // OPTIONAL
+
+  // State untuk data
+  const [documents, setDocuments] = useState<Document[]>([]);
   
-  // State untuk file upload
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<number[]>([]);
-  const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
+  // State untuk file upload - OPTIONAL
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [tempFilePath, setTempFilePath] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isUploadComplete, setIsUploadComplete] = useState<boolean>(false);
-  const [error, setError] = useState<string>("");
-  const [success, setSuccess] = useState<boolean>(false);
-  
-  // State untuk menampilkan SuccessModal
+
+  // State untuk modals
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
-  
-  // State untuk menampilkan ErrorModal
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
   const [errorTitle, setErrorTitle] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+
+  // State untuk reset form
+  const [resetKey, setResetKey] = useState(0);
+
+  // Ref untuk dropdown
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fungsi untuk mendapatkan icon berdasarkan tipe file
   const getFileIcon = (file: File) => {
@@ -151,7 +130,7 @@ const FormPengirimanLangsung = () => {
       'application/x-zip-compressed',
       'application/x-rar-compressed',
       'application/vnd.rar',
-      'application/octet-stream' // Untuk RAR di beberapa browser
+      'application/octet-stream'
     ];
     
     const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.pdf', '.doc', '.docx'];
@@ -169,121 +148,188 @@ const FormPengirimanLangsung = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  // Effect untuk menangani klik diluar dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        // setIsDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  // Mengambil data dokumen dari API saat komponen dimuat
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await apiRequest("/direct-shipping/", "GET");
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        
+        if (result.responseData && result.responseData.items) {
+          setDocuments(result.responseData.items);
+        } else {
+          setDocuments([]);
+          throw new Error("Format data tidak sesuai");
+        }
+      } catch (err: any) {
+        // console.warn("Gagal memuat dokumen:", err.message);
+        setDocuments([]);
+        setError(err.message || "Gagal mengambil data dokumen");
+        showErrorModal("Kesalahan", "Gagal memuat daftar dokumen. Silakan coba lagi nanti.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDocuments();
+  }, []);
+
+  // Mengambil data dinas dari API
+  useEffect(() => {
+    const fetchOptionDinas = async () => {
+      try {
+        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM,PGW", "GET");
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error("Dinas data not found");
+          }
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const result = await response.json();
+        
+        if (result.responseData && result.responseData.items) {
+          const fetchDinas = result.responseData.items.map((item: any) => ({
+            id: item.dinas,
+            dinas: item.nama_dinas,
+          }));
+          setOptionDinas(fetchDinas);
+        } else {
+          throw new Error("Format data dinas tidak sesuai");
+        }
+      } catch (err: any) {
+        console.error("Gagal memuat data dinas:", err.message);
+        showErrorModal("Kesalahan", "Gagal memuat daftar dinas. Silakan refresh halaman.");
+      }
+    };
+
+    fetchOptionDinas();
+  }, []);
+
+  // Format display name untuk dokumen
+  const getDocumentDisplayName = (doc: Document): string => {
+    return `${doc.dinas} - ${doc.jenis} - ${doc.subjenis} - ${doc.tahun}`;
+  };
+
   // Filter dokumen berdasarkan pencarian
-  const filteredPeople = people.filter((person) =>
-    person.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  const filteredDocuments = documents.filter((doc) =>
+    getDocumentDisplayName(doc).toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Tentukan jumlah data yang ditampilkan
-  const displayedPeople = showAll
-    ? filteredPeople
-    : filteredPeople.slice(0, 10);
+  const displayedDocuments = showAll
+    ? filteredDocuments
+    : filteredDocuments.slice(0, 10);
 
-  // Handle perubahan checkbox
-  const handleCheckboxChange = (personName: string, isChecked: boolean) => {
+  // Handle perubahan checkbox dokumen
+  const handleCheckboxChange = (document: Document, isChecked: boolean) => {
     if (isChecked) {
-      setSelectedDocuments((prev) => [...prev, personName]);
+      setSelectedDocuments((prev) => [...prev, document]);
     } else {
-      setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+      setSelectedDocuments((prev) => 
+        prev.filter((doc) => doc.id !== document.id)
+      );
     }
   };
 
-  // Handle hapus dokumen
-  const handleRemoveDocument = (personName: string) => {
-    setSelectedDocuments((prev) => prev.filter((doc) => doc !== personName));
+  const handleRemoveDocument = (docId: number) => {
+    setSelectedDocuments((prev) => prev.filter((doc) => doc.id !== docId));
   };
-  
+
   // Fungsi untuk menampilkan error modal
   const showErrorModal = (title: string, message: string) => {
     setErrorTitle(title);
     setErrorMessage(message);
     setIsErrorModalOpen(true);
   };
-  
+
+
   // Handle file change untuk upload
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      const fileList = Array.from(e.target.files);
+      const selectedFile = e.target.files[0];
       
-      // Validasi tipe file
-      const invalidFiles = fileList.filter(file => !isValidFileType(file));
-      if (invalidFiles.length > 0) {
-        showErrorModal("File Tidak Didukung", `File tidak didukung: ${invalidFiles.map(f => f.name).join(', ')}. Hanya mendukung PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, dan RAR.`);
+      if (!isValidFileType(selectedFile)) {
+        showErrorModal("File Tidak Didukung", `File "${selectedFile.name}" tidak didukung. Hanya mendukung PNG, JPG, JPEG, GIF, PDF, DOC, DOCX, ZIP, dan RAR.`);
         return;
       }
 
-      // Validasi ukuran file (maksimal 100MB untuk ZIP/RAR, 10MB untuk file lainnya)
-      const oversizedFiles = fileList.filter(file => {
-        const maxSize = file.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024; // 100MB untuk ZIP/RAR, 10MB untuk file lainnya
-        return file.size > maxSize;
-      });
+      const maxSize = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? 100 * 1024 * 1024 : 10 * 1024 * 1024;
       
-      if (oversizedFiles.length > 0) {
-        const oversizedFileInfo = oversizedFiles.map(f => `${f.name} (${formatFileSize(f.size)})`).join(', ');
-        showErrorModal("File Terlalu Besar", `File terlalu besar: ${oversizedFileInfo}. Maksimal 100MB untuk ZIP/RAR dan 10MB untuk file lainnya.`);
+      if (selectedFile.size > maxSize) {
+        const maxSizeText = selectedFile.name.toLowerCase().match(/\.(zip|rar)$/) ? "100MB" : "10MB";
+        showErrorModal("File Terlalu Besar", `File "${selectedFile.name}" (${formatFileSize(selectedFile.size)}) melebihi batas maksimal ${maxSizeText}.`);
         return;
       }
 
-      setFiles(fileList);
-      
-      // Reset error dan success message
-      setError("");
-      setSuccess(false);
-      
-      // Inisialisasi progress untuk setiap file
-      setUploadProgress(fileList.map(() => 0));
-      
-      // Simulasi upload
-      simulateFileUpload(fileList);
+      setFile(selectedFile);
+      setUploadProgress(0);
+      setIsUploading(true);
+      setIsUploadComplete(false);
+      setError(null);
+
+      try {
+        const { response, status } = await apiRequestUpload(
+          "/direct-shipping/upload-file",
+          selectedFile,
+          (progress) => {
+            setUploadProgress(progress);
+          },
+        );
+
+        if (status === 200 && response.responseData?.temp_file_path) {
+          setTempFilePath(response.responseData.temp_file_path);
+          setIsUploadComplete(true);
+          setSuccess(true);
+        } else {
+          throw new Error(response.responseDesc || "Upload gagal.");
+        }
+      } catch (error: any) {
+        setError(error.message);
+        showErrorModal("Upload Gagal", `Terjadi kesalahan saat mengupload file "${selectedFile.name}". Silakan coba lagi.`);
+        setUploadProgress(0);
+        setIsUploading(false);
+        return;
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
   
-  // Simulasi upload file
-  const simulateFileUpload = (fileList: File[]) => {
-    setIsUploading(true);
-    
-    // Simulasi progressbar untuk masing-masing file
-    fileList.forEach((_, index) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.floor(Math.random() * 10) + 1;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-          
-          // Periksa jika semua file sudah 100%
-          setUploadProgress(prev => {
-            const newProgress = [...prev];
-            newProgress[index] = progress;
-            
-            // Jika semua sudah 100%
-            if (newProgress.every(p => p === 100)) {
-              setIsUploading(false);
-              setIsUploadComplete(true);
-              setSuccess(true);
-              
-              // Simulasi path file yang diupload
-              setTempFilePaths(fileList.map(file => `/uploads/${file.name}`));
-            }
-            
-            return newProgress;
-          });
-        } else {
-          setUploadProgress(prev => {
-            const newProgress = [...prev];
-            newProgress[index] = progress;
-            return newProgress;
-          });
-        }
-      }, 200);
-    });
-  };
-  
   // Handle remove file
-  const handleRemoveFile = () => {
-    setFiles([]);
-    setUploadProgress([]);
-    setTempFilePaths([]);
+  const handleRemoveFile = async () => {
+    if (tempFilePath) {
+      try {
+        await apiRequest("/direct-shipping/delete-file", "POST", {
+          file_path: tempFilePath,
+        });
+      } catch (error) {
+        console.warn("Gagal hapus file:", error);
+      }
+    }
+    
+    setFile(null);
+    setUploadProgress(0);
+    setTempFilePath("");
+    setIsUploading(false);
     setIsUploadComplete(false);
     setSuccess(false);
   };
@@ -291,53 +337,67 @@ const FormPengirimanLangsung = () => {
   // Handle pengiriman form
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // ✅ VALIDASI MINIMAL - HANYA NAMA PENGAWAS DAN JUDUL YANG WAJIB
-    if (!namaPengawas) {
-      showErrorModal("Validasi Gagal", "Nama Pengawas harus diisi");
+
+    if (!dinas) {
+      showErrorModal("Validasi Gagal", "Kepada Dinas harus dipilih");
       return;
     }
     
-    if (!judul) {
+    if (!judul.trim()) {
       showErrorModal("Validasi Gagal", "Judul harus diisi");
       return;
     }
     
-    // ✅ HAPUS VALIDASI/PERINGATAN UNTUK DOKUMEN DAN FILE
-    // Sekarang bisa kirim tanpa dokumen dan tanpa file
-    
-    // Set loading
+    setError("");
     setLoading(true);
     
     try {
-      // Simulasi API call (ganti dengan API call sebenarnya)
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const user = JSON.parse(Cookies.get("user") || "{}");
+
+      if (!user.userid || !user.name || user.dinas == '' || !user.nama_dinas) {
+        showErrorModal("Error Session", "Data pengguna tidak valid. Silakan login ulang.");
+        return;
+      }
+
+      const foundNamaDinas = optionDinas.find((item) => item.id === dinas);
       
-      // ✅ Di sini Anda bisa melakukan API call untuk mengirim data - PAYLOAD BISA KOSONG
-      // const response = await apiRequest("/send-documents", "POST", {
-      //   kepada: namaPengawas,
-      //   judul: judul,
-      //   dokumen: selectedDocuments, // Bisa array kosong []
-      //   lampiran: lampiran, // Bisa string kosong ""
-      //   files: tempFilePaths // Bisa array kosong []
-      // });
+      if (!foundNamaDinas) {
+        showErrorModal("Validasi Gagal", "Dinas yang dipilih tidak valid");
+        return;
+      }
+
+      const documentIds = selectedDocuments.length > 0 ? selectedDocuments.map(doc => doc.id) : [];
       
-      // if (!response.ok) {
-      //   throw new Error("Gagal mengirim dokumen");
-      // }
+      const payload = {
+        kepada_id: dinas,
+        kepada_dinas: foundNamaDinas.dinas,
+        judul: judul.trim(),
+        dokumen_ids: documentIds,
+        lampiran: lampiran.trim() || "",
+        file_path: tempFilePath || "",
+        file_name: file ? file.name : "",
+        pengirim_userid: user.userid,
+        pengirim_name: user.name,
+        pengirim_department_id: user.dinas,
+        pengirim_department_name: user.nama_dinas,
+      };
       
-      // Jika berhasil, tampilkan modal sukses
+      // console.log("Payload yang dikirim:", payload);
+
+      const response = await apiRequest("/direct-shipping/", "POST", payload);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.responseDesc || "Gagal mengirim dokumen");
+      }
+      
       setIsSuccessModalOpen(true);
       setSuccess(true);
-      
-      // Reset form dilakukan setelah user mengklik tombol di modal sukses
-      
-    } catch (error) {
-      // Handle error dengan modal
-      console.error("Error sending documents:", error);
+    } catch (error: any) {
+      // console.error("Error sending documents:", error);
       showErrorModal(
         "Pengiriman Gagal", 
-        "Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi."
+        error.message || "Terjadi kesalahan saat mengirim dokumen. Silakan coba lagi."
       );
       setSuccess(false);
     } finally {
@@ -353,25 +413,23 @@ const FormPengirimanLangsung = () => {
   const handleCloseSuccessModal = () => {
     setIsSuccessModalOpen(false);
   };
-  
+
   // Fungsi untuk menangani klik pada tombol di modal sukses
-  const handleSuccessButtonClick = () => {
+  const handleSuccessButtonClick = async () => {
     setIsSuccessModalOpen(false);
     
-    // Reset form setelah berhasil
-    setNamaPengawas("");
+    setDinas(0);
     setJudul("");
     setLampiran("");
     setSelectedDocuments([]);
     setSearchTerm("");
-    setFiles([]);
-    setUploadProgress([]);
-    setTempFilePaths([]);
-    setIsUploadComplete(false);
-    setSuccess(false);
+    setShowAll(false);
     
-    // Opsional: redirect ke halaman lain
-    // window.location.href = "/dokumen/daftar";
+    if (tempFilePath) {
+      await handleRemoveFile();
+    }
+    
+    setResetKey(prev => prev + 1);
   };
 
   return (
@@ -386,98 +444,103 @@ const FormPengirimanLangsung = () => {
               <div className="grid grid-cols-12 gap-6 p-6.5">
                 {/* Kolom Kiri */}
                 <div className="col-span-12 lg:col-span-6">
-                  {/* Kepada Pengawas */}
+                  {/* Kepada Dinas - REQUIRED */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Kepada Pengawas
+                      Kepada Dinas <span className="text-red-500">*</span>
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Masukkan Nama Pengawas..."
-                      value={namaPengawas}
-                      onChange={(e) => setNamaPengawas(e.target.value)}
-                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                      required
+                    <ElementComboboxAutocomplete
+                      label=""
+                      placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
+                      options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
+                      onChange={(value) => setDinas(Number(value))}
+                      resetKey={resetKey}
                     />
                   </div>
 
-                  {/* Judul */}
+                  {/* Judul - REQUIRED */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Judul
+                      Judul <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Masukkan Nama Judul..."
+                      placeholder="Masukkan judul pengiriman..."
                       value={judul}
                       onChange={(e) => setJudul(e.target.value)}
-                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
+                      className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                       required
                     />
                   </div>
 
+                  {/* Dokumen Yang Dipilih - OPTIONAL */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                       Dokumen Yang Dipilih
-                      <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                     </label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedDocuments.map((doc, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center space-x-2 rounded-md bg-gray-100 px-3 py-2 shadow-sm dark:bg-gray-700"
-                        >
-                          <span className="text-sm text-gray-700 dark:text-white">
-                            {doc}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveDocument(doc)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="currentColor"
-                              className="h-4 w-4"
+                    <div className="min-h-[60px] rounded-[7px] border border-gray-300 p-3 dark:border-dark-3">
+                      {selectedDocuments.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedDocuments.map((doc) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-center space-x-2 rounded-md bg-blue-50 border border-blue-200 px-3 py-2 text-sm dark:bg-blue-900/20 dark:border-blue-800"
                             >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </button>
+                              <span className="text-blue-700 dark:text-blue-300">
+                                {getDocumentDisplayName(doc)}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDocument(doc.id)}
+                                className="text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-200"
+                              >
+                                <svg
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  strokeWidth="1.5"
+                                  stroke="currentColor"
+                                  className="h-4 w-4"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M6 18L18 6M6 6l12 12"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                      {selectedDocuments.length === 0 && (
-                        <span className="text-gray-500 dark:text-gray-400">
-                          Belum ada dokumen yang dipilih.
-                        </span>
+                      ) : (
+                        <p className="text-gray-500 italic dark:text-gray-400">
+                          Belum ada dokumen yang dipilih. Anda bisa memilih dokumen di sebelah kanan atau lanjutkan tanpa memilih dokumen.
+                        </p>
                       )}
                     </div>
                   </div>
 
-                  {/* Lampiran */}
+                  {/* Lampiran - OPTIONAL */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Lampiran (opsional)
+                      Lampiran
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                     </label>
                     <textarea
                       rows={6}
-                      placeholder="Isi Lampiran..."
                       value={lampiran}
+                      placeholder="Isi keterangan tambahan jika diperlukan..."
                       onChange={(e) => setLampiran(e.target.value)}
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
                     ></textarea>
                   </div>
                   
-                  {/* File Upload (Opsional) */}
+                  {/* File Upload - OPTIONAL */}
                   <div className="mb-4.5">
                     <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                      Upload File (opsional)
+                      Upload File
+                      <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                     </label>
                     
                     <div
@@ -486,12 +549,12 @@ const FormPengirimanLangsung = () => {
                     >
                       <input
                         type="file"
-                        multiple
-                        name="profilePhoto"
-                        id="profilePhoto"
-                        accept="image/png, image/jpg, image/jpeg, image/gif, image/svg+xml, .pdf, .doc, .docx, .zip, .rar, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
+                        name="uploadFile"
+                        id="uploadFile"
+                        accept="image/png, image/jpg, image/jpeg, image/gif, .pdf, .doc, .docx, .zip, .rar, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
                         className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
                         onChange={handleFileChange}
+                        disabled={isUploading}
                       />
                       <div className="flex flex-col items-center justify-center">
                         <span className="flex h-13.5 w-13.5 items-center justify-center rounded-full border border-stroke bg-white dark:border-dark-3 dark:bg-gray-dark">
@@ -517,104 +580,90 @@ const FormPengirimanLangsung = () => {
                           drag and drop
                         </p>
                         <p className="mt-1 text-body-xs">
-                          PNG, JPG, GIF, SVG, PDF, DOC, DOCX, ZIP, RAR (maksimal 100MB untuk arsip, 10MB untuk file lainnya)
+                          PNG, JPG, GIF, PDF, DOC, DOCX, ZIP, RAR (maksimal 100MB untuk arsip, 10MB untuk file lainnya)
                         </p>
                       </div>
                     </div>
 
-                    {files.length > 0 && (
+                    {file && (
                       <div className="mt-4">
                         <h5 className="mb-3 font-semibold text-dark dark:text-white">
                           File Terpilih
                         </h5>
-                        {files.map((file, index) => {
-                          const isImage = file.type.startsWith("image/");
-                          const percent = uploadProgress[index];
-                          const fileIcon = getFileIcon(file);
-
-                          return (
-                            <div
-                              key={index}
-                              className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2 mb-2"
-                            >
-                              {isImage ? (
-                                <Image
-                                  src={URL.createObjectURL(file)}
-                                  alt="preview"
-                                  width={48}
-                                  height={48}
-                                  className="rounded-md border object-cover"
-                                />
-                              ) : (
-                                <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
-                                  {fileIcon}
-                                </div>
-                              )}
-
-                              <div className="flex-1 overflow-hidden">
-                                <div className="mb-1 flex items-center justify-between">
-                                  <span className="max-w-[70%] truncate text-sm font-medium">
-                                    {file.name}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {percent}%
-                                  </span>
-                                </div>
-                                <div className="mb-1 text-xs text-gray-400">
-                                  {formatFileSize(file.size)}
-                                </div>
-                                <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
-                                  <div
-                                    className={`h-2.5 rounded-full transition-all duration-300 ${
-                                      percent === 100 ? "bg-green-500" : "bg-blue-600"
-                                    }`}
-                                    style={{ width: `${percent}%` }}
-                                  ></div>
-                                </div>
-                              </div>
-
-                              {/* Cancel Button */}
-                              {!isUploadComplete && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setFiles([]);
-                                    setUploadProgress([]);
-                                    setTempFilePaths([]);
-                                    setIsUploading(false);
-                                    setIsUploadComplete(false);
-                                  }}
-                                  className="ml-2 text-sm text-red-500 hover:text-red-700"
-                                  title="Batalkan Upload"
-                                >
-                                  ✖
-                                </button>
-                              )}
-
-                              {/* Tombol Hapus setelah upload selesai */}
-                              {isUploadComplete && (
-                                <button
-                                  type="button"
-                                  onClick={handleRemoveFile}
-                                  className="mt-1 flex-shrink-0 text-sm text-red-500 hover:text-red-700"
-                                  title="Hapus File"
-                                >
-                                  🗑️
-                                </button>
-                              )}
+                        <div className="relative flex items-center gap-4 rounded-md border bg-white p-3 shadow-sm dark:bg-dark-2">
+                          {file.type.startsWith("image/") ? (
+                            <Image
+                              src={URL.createObjectURL(file)}
+                              alt="preview"
+                              width={48}
+                              height={48}
+                              className="rounded-md border object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
+                              {getFileIcon(file)}
                             </div>
-                          );
-                        })}
+                          )}
+
+                          <div className="flex-1 overflow-hidden">
+                            <div className="mb-1 flex items-center justify-between">
+                              <span className="max-w-[70%] truncate text-sm font-medium">
+                                {file.name}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                {uploadProgress}%
+                              </span>
+                            </div>
+                            <div className="mb-1 text-xs text-gray-400">
+                              {formatFileSize(file.size)}
+                            </div>
+                            <div className="h-2.5 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                              <div
+                                className={`h-2.5 rounded-full transition-all duration-300 ${
+                                  uploadProgress === 100 ? "bg-green-500" : "bg-blue-600"
+                                }`}
+                                style={{ width: `${uploadProgress}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {!isUploadComplete && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setFile(null);
+                                setUploadProgress(0);
+                                setTempFilePath("");
+                                setIsUploading(false);
+                                setIsUploadComplete(false);
+                              }}
+                              className="ml-2 text-sm text-red-500 hover:text-red-700"
+                              title="Batalkan Upload"
+                            >
+                              ✖
+                            </button>
+                          )}
+
+                          {isUploadComplete && (
+                            <button
+                              type="button"
+                              onClick={handleRemoveFile}
+                              className="mt-1 flex-shrink-0 text-sm text-red-500 hover:text-red-700"
+                              title="Hapus File"
+                            >
+                              🗑️
+                            </button>
+                          )}
+                        </div>
                       </div>
                     )}
                     
-                    {/* Pesan Error/Success */}
                     {error && !isErrorModalOpen && (
                       <p className="mt-2 text-red-500 text-sm">{error}</p>
                     )}
-                    {success && (
+                    {success && isUploadComplete && (
                       <p className="mt-2 text-green-500 text-sm">
-                        Upload Dokumen berhasil ditambahkan!
+                        File berhasil diupload!
                       </p>
                     )}
                   </div>
@@ -631,70 +680,115 @@ const FormPengirimanLangsung = () => {
                   </div>
                 </div>
 
-                {/* Kolom Kanan */}
+                {/* Kolom Kanan - DOKUMEN (OPTIONAL) */}
                 <div className="col-span-12 lg:col-span-6">
                   <div className="mb-4.5">
                     <div className="flex items-center justify-between">
                       <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                        Dokumen
-                        <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+                        Pilih Dokumen
+                        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
                       </label>
-                      {/* Input Pencarian */}
                       <input
                         type="text"
                         placeholder="Cari dokumen..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-[200px] rounded-[7px] bg-transparent px-5 py-2 text-dark ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white"
+                        className="w-[200px] rounded-[7px] bg-transparent px-3 py-2 text-sm text-dark ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white"
                       />
                     </div>
-                    <fieldset>
-                      <div className="mt-4 divide-y divide-gray-200 border-b border-t border-gray-200">
-                        {displayedPeople.map((person) => (
-                          <div
-                            key={person.id}
-                            className="relative flex items-start py-4"
-                          >
-                            <div className="min-w-0 flex-1 text-[12px]">
-                              <label
-                                htmlFor={`person-${person.id}`}
-                                className="select-none font-medium text-gray-500"
+                    
+                    <div className="mt-6 rounded-[7px] p-2 dark:border-dark-3 dark:bg-dark-2">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                        Anda dapat memilih dokumen untuk disertakan dalam pengiriman, atau langsung kirim tanpa memilih dokumen.
+                      </p>
+                      
+                      <fieldset>
+                        <div className="divide-y divide-gray-200 border-b border-t border-gray-200 max-h-96 overflow-y-auto">
+                          {loading ? (
+                            Array.from({ length: 5 }).map((_, index) => (
+                              <div key={index} className="flex items-start py-3">
+                                <div className="min-w-0 flex-1">
+                                  <div className="h-4 w-3/4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                                </div>
+                                <div className="ml-3 flex h-6 items-center">
+                                  <div className="h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+                                </div>
+                              </div>
+                            ))
+                          ) : displayedDocuments.length > 0 ? (
+                            displayedDocuments.map((doc) => (
+                              <div
+                                key={doc.id}
+                                className="relative flex items-start py-3"
                               >
-                                {person.name}
-                              </label>
+                                <div className="min-w-0 flex-1 text-sm">
+                                  <label
+                                    htmlFor={`document-${doc.id}`}
+                                    className="select-none font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
+                                  >
+                                    {getDocumentDisplayName(doc)}
+                                  </label>
+                                </div>
+                                <div className="ml-3 flex h-6 items-center">
+                                  <input
+                                    id={`document-${doc.id}`}
+                                    name={`document-${doc.id}`}
+                                    type="checkbox"
+                                    checked={selectedDocuments.some(
+                                      (selectedDoc) => selectedDoc.id === doc.id
+                                    )}
+                                    onChange={(e) =>
+                                      handleCheckboxChange(
+                                        doc,
+                                        e.target.checked,
+                                      )
+                                    }
+                                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+                                  />
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="py-8 text-center">
+                              <div className="text-gray-400 mb-2">
+                                <svg
+                                  className="mx-auto h-12 w-12"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                  aria-hidden="true"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  />
+                                </svg>
+                              </div>
+                              <span className="text-gray-500 text-sm">
+                                {searchTerm ? "Tidak ada dokumen yang sesuai dengan pencarian" : "Belum ada dokumen tersedia"}
+                              </span>
+                              <p className="text-xs text-gray-400 mt-1">
+                                Anda masih bisa melanjutkan pengiriman tanpa dokumen
+                              </p>
                             </div>
-                            <div className="ml-3 flex h-6 items-center">
-                              <input
-                                id={`person-${person.id}`}
-                                name={`person-${person.id}`}
-                                type="checkbox"
-                                checked={selectedDocuments.includes(
-                                  person.name,
-                                )}
-                                onChange={(e) =>
-                                  handleCheckboxChange(
-                                    person.name,
-                                    e.target.checked,
-                                  )
-                                }
-                                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                              />
+                          )}
+
+                          {filteredDocuments.length > 10 && !showAll && (
+                            <div className="py-4 text-center">
+                              <button
+                                type="button"
+                                onClick={() => setShowAll(true)}
+                                className="text-[#0C479F] hover:underline text-sm font-medium"
+                              >
+                                Lihat Semua Dokumen ({filteredDocuments.length})
+                              </button>
                             </div>
-                          </div>
-                        ))}
-                        {filteredPeople.length > 10 && !showAll && (
-                          <div className="py-4 text-center">
-                            <button
-                              type="button"
-                              onClick={() => setShowAll(true)}
-                              className="text-[#0C479F] hover:underline"
-                            >
-                              Lihat Semua Dokumen
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </fieldset>
+                          )}
+                        </div>
+                      </fieldset>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -703,17 +797,15 @@ const FormPengirimanLangsung = () => {
         </div>
       </div>
       
-      {/* SuccessModal Component */}
       <SuccessModal
         isOpen={isSuccessModalOpen}
         onClose={handleCloseSuccessModal}
         title="Berhasil!"
-        message="Dokumen berhasil dikirim ke Pengawas."
-        buttonText="Kembali ke Daftar Dokumen"
+        message="Dokumen berhasil dikirim ke Admin."
+        buttonText="Kembali ke Form"
         onButtonClick={handleSuccessButtonClick}
       />
       
-      {/* ErrorModal Component */}
       <ErrorModal
         isOpen={isErrorModalOpen}
         onClose={handleCloseErrorModal}
@@ -724,4 +816,4 @@ const FormPengirimanLangsung = () => {
   );
 };
 
-export default FormPengirimanLangsung;
+export default FormPengirimanLangsungPengawas;

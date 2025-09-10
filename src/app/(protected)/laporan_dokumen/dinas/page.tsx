@@ -1,10 +1,10 @@
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/daftarUpload";
+import MainPage from "@/components/laporan_dokumen/dinas";
 
-const DaftarUpload = () => {
+const LaporanDokumen = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Daftar Upload"},
+    { name: "Laporan Dokumen Dinas"},
   ];
 
   return (
@@ -17,4 +17,4 @@ const DaftarUpload = () => {
   );
 };
 
-export default DaftarUpload;
+export default LaporanDokumen;

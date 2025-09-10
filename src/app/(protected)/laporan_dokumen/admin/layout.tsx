@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Daftar Upload",
+  title: "Laporan Dokumen Admin",
 };
 
 export default function Layout({
