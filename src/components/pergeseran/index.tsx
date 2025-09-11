@@ -37,7 +37,7 @@ const MainPage = () => {
     SubperihalOption[]
   >([]);
 
-  // State untuk loading dan error
+  // State untuk loading dan error - Enhanced
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<boolean>(false);
@@ -45,6 +45,10 @@ const MainPage = () => {
   const [loadingSubperihal, setLoadingSubperihal] = useState<boolean>(false);
   const [errorPerihal, setErrorPerihal] = useState<string | null>(null);
   const [errorSubperihal, setErrorSubperihal] = useState<string | null>(null);
+
+  // State untuk tracking apakah data master kosong - NEW
+  const [isPerihalEmpty, setIsPerihalEmpty] = useState<boolean>(false);
+  const [isSubperihalEmpty, setIsSubperihalEmpty] = useState<boolean>(false);
 
   // State lainnya tetap sama
   const [deskripsi, setDeskripsi] = useState<string>("");
@@ -55,47 +59,88 @@ const MainPage = () => {
   // State untuk file upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  // Fungsi untuk mengecek apakah form perihal bisa digunakan - NEW
+  const isFormPerihalUsable = () => {
+    return !loadingPerihal && !isPerihalEmpty;
+  };
+
+  // Fungsi untuk mengecek apakah form subperihal bisa digunakan - NEW
+  const isFormSubperihalUsable = () => {
+    const perihalSelected = kategoriUtamaId !== null;
+    const subperihalDataAvailable = !loadingSubperihal && !isSubperihalEmpty;
+    
+    return perihalSelected && subperihalDataAvailable;
+  };
+
+  // Fungsi untuk mengecek apakah subperihal wajib dan sudah dipilih - NEW
+  const isSubperihalRequiredAndSelected = () => {
+    if (kategoriUtamaId !== null && !loadingSubperihal && !isSubperihalEmpty && subKategoriOptions.length > 0) {
+      return subKategoriId !== null;
+    }
+    return true;
+  };
+
+  // Fungsi untuk mengecek apakah semua data master sudah lengkap - NEW
+  const isMasterDataComplete = () => {
+    return isFormPerihalUsable() && kategoriUtamaId !== null && isSubperihalRequiredAndSelected();
+  };
+
   // Fetch data perihal saat komponen mount
   useEffect(() => {
     fetchPerihalOptions();
   }, []);
 
-  // Fetch data perihal dari API
+  // Fetch data perihal dari API - Enhanced
   const fetchPerihalOptions = async () => {
     setLoadingPerihal(true);
     setErrorPerihal(null);
+    setIsPerihalEmpty(false);
 
     try {
       const response = await apiRequest("/master_perihal/opt", "GET");
 
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Perihal data not found");
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
 
       if (result.responseCode === 200) {
-        setKategoriUtamaOptions(result.responseData.items);
+        // Check jika items null atau array kosong
+        if (!result.responseData?.items || result.responseData.items.length === 0) {
+          setIsPerihalEmpty(true);
+          setKategoriUtamaOptions([]);
+        } else {
+          setKategoriUtamaOptions(result.responseData.items);
+          setIsPerihalEmpty(false);
+        }
       } else {
         throw new Error(result.responseDesc || "Gagal mengambil data perihal");
       }
     } catch (err: any) {
       setErrorPerihal(
         err.message === "Failed to fetch"
-          ? "Gagal mengambil data perihal"
+          ? "Gagal mengambil data perihal. Periksa koneksi internet."
+          : err.message === "Perihal data not found"
+          ? "Data perihal belum tersedia"
           : err.message,
       );
+      setIsPerihalEmpty(true);
       console.error("Error fetching perihal options:", err);
     } finally {
       setLoadingPerihal(false);
     }
   };
 
-  // Fetch data subperihal berdasarkan ID perihal
+  // Fetch data subperihal berdasarkan ID perihal - Enhanced
   const fetchSubperihalOptions = async (perihalId: number) => {
     setLoadingSubperihal(true);
     setErrorSubperihal(null);
     setSubKategoriOptions([]);
+    setIsSubperihalEmpty(false);
 
     try {
       const response = await apiRequest(
@@ -105,6 +150,7 @@ const MainPage = () => {
 
       if (!response.ok) {
         if (response.status === 404) {
+          setIsSubperihalEmpty(true);
           setSubKategoriOptions([]);
           return;
         }
@@ -114,7 +160,14 @@ const MainPage = () => {
       const result = await response.json();
 
       if (result.responseCode === 200) {
-        setSubKategoriOptions(result.responseData.items);
+        // Check jika items null atau array kosong
+        if (!result.responseData?.items || result.responseData.items.length === 0) {
+          setIsSubperihalEmpty(true);
+          setSubKategoriOptions([]);
+        } else {
+          setSubKategoriOptions(result.responseData.items);
+          setIsSubperihalEmpty(false);
+        }
       } else {
         throw new Error(
           result.responseDesc || "Gagal mengambil data subperihal",
@@ -123,9 +176,10 @@ const MainPage = () => {
     } catch (err: any) {
       setErrorSubperihal(
         err.message === "Failed to fetch"
-          ? "Gagal mengambil data subperihal"
+          ? "Gagal mengambil data subperihal. Periksa koneksi internet."
           : err.message,
       );
+      setIsSubperihalEmpty(true);
       console.error("Error fetching subperihal options:", err);
       setSubKategoriOptions([]);
     } finally {
@@ -133,7 +187,18 @@ const MainPage = () => {
     }
   };
 
-  // Handler untuk memilih kategori utama
+  // Fungsi retry - NEW
+  const retryFetchPerihal = () => {
+    fetchPerihalOptions();
+  };
+
+  const retryFetchSubperihal = () => {
+    if (kategoriUtamaId) {
+      fetchSubperihalOptions(kategoriUtamaId);
+    }
+  };
+
+  // Handler untuk memilih kategori utama - Enhanced
   const handleKategoriSelect = (option: PerihalOption) => {
     setKategoriUtama(option.nama_perihal);
     setKategoriUtamaId(option.perihal);
@@ -159,6 +224,14 @@ const MainPage = () => {
   };
 
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    // Cek apakah form bisa digunakan - NEW
+    if (!isMasterDataComplete()) {
+      setError("Lengkapi data master terlebih dahulu sebelum upload file.");
+      // Reset file input
+      e.target.value = "";
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -207,13 +280,19 @@ const MainPage = () => {
   };
 
   const handleSimpan = async () => {
-    // Validasi form
+    // Validasi form - Enhanced
+    if (!isMasterDataComplete()) {
+      alert("Data master belum lengkap. Pastikan semua data yang diperlukan telah dipilih.");
+      return;
+    }
+
     if (!kategoriUtamaId || !kategoriUtama.trim()) {
       alert("Perihal harus dipilih");
       return;
     }
 
-    if (!subKategoriId || !subKategori.trim()) {
+    // Validasi subperihal hanya jika ada data subperihal yang tersedia
+    if (!isSubperihalRequiredAndSelected()) {
       alert("Sub Perihal harus dipilih");
       return;
     }
@@ -239,7 +318,12 @@ const MainPage = () => {
       // Buat FormData untuk upload file
       const formData = new FormData();
       formData.append("perihal", kategoriUtamaId.toString());
-      formData.append("subperihal", subKategoriId.toString());
+      
+      // Hanya append subperihal jika ada yang dipilih
+      if (subKategoriId !== null) {
+        formData.append("subperihal", subKategoriId.toString());
+      }
+      
       formData.append("deskripsi", deskripsi);
       formData.append("file", selectedFile);
       formData.append("pembuat_userid", user.userid);
@@ -272,7 +356,6 @@ const MainPage = () => {
       console.log("API response:", result);
 
       // Jika berhasil
-      // alert("Data pergeseran berhasil disimpan!");
       setSuccess(true);
 
       // Reset form setelah berhasil
@@ -532,9 +615,113 @@ const MainPage = () => {
     }
   };
 
-  // Fungsi untuk mengecek apakah tombol cetak harus diblock
+  // Fungsi untuk mengecek apakah tombol cetak harus diblock - Enhanced
   const isCetakDisabled = () => {
-    return !subKategoriId || !subKategori || tableData.length === 0 || isLoadingFile;
+    return !isMasterDataComplete() || tableData.length === 0 || isLoadingFile;
+  };
+
+  // Komponen untuk menampilkan pesan data kosong - NEW
+  const EmptyDataMessage = ({ type, onRetry }: { type: string, onRetry: () => void }) => (
+    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800">
+      <div className="flex items-center">
+        <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+            Data {type} belum tersedia
+          </p>
+          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+            Hubungi administrator untuk menambahkan data {type} terlebih dahulu.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="ml-3 text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+        >
+          Coba Lagi
+        </button>
+      </div>
+    </div>
+  );
+
+  // Komponen untuk menampilkan status form - NEW
+  const FormStatusMessage = () => {
+    if (loadingPerihal || loadingSubperihal) {
+      return (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              Memuat data master...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isPerihalEmpty) {
+      return null; // EmptyDataMessage akan ditampilkan
+    }
+
+    if (!isFormPerihalUsable()) {
+      return (
+        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              Data master sedang dimuat atau belum tersedia.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (kategoriUtamaId === null) {
+      return (
+        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              Pilih Perihal terlebih dahulu untuk melanjutkan.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isSubperihalRequiredAndSelected()) {
+      return (
+        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              Pilih Sub Perihal untuk melanjutkan.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
+        <div className="flex items-center">
+          <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <p className="text-sm font-medium text-green-800 dark:text-green-200">
+            Form siap digunakan. Silakan lengkapi data dan upload dokumen.
+          </p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -561,16 +748,35 @@ const MainPage = () => {
             </div>
           )}
 
+          {/* Status pesan form - NEW */}
+          <FormStatusMessage />
+          
+          {/* Pesan jika data master kosong - NEW */}
+          {isPerihalEmpty && (
+            <EmptyDataMessage type="Perihal" onRetry={retryFetchPerihal} />
+          )}
+          
+          {kategoriUtamaId !== null && isSubperihalEmpty && (
+            <EmptyDataMessage type="Sub Perihal" onRetry={retryFetchSubperihal} />
+          )}
+
           <div className="flex flex-col space-y-4">
-            {/* Dropdown Level 1 - Kategori Utama */}
+            {/* Dropdown Level 1 - Kategori Utama - Enhanced */}
             <div className="relative">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Perihal Utama
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Perihal Utama <span className="text-red-500">*</span>
+                </label>
+                {loadingPerihal && (
+                  <span className="text-xs text-blue-500">Memuat data...</span>
+                )}
+              </div>
               <div
-                className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingPerihal ? "cursor-not-allowed opacity-50" : ""}`}
+                className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${
+                  loadingPerihal || isPerihalEmpty ? "cursor-not-allowed opacity-50" : ""
+                }`}
                 onClick={() =>
-                  !loadingPerihal && setIsKategoriOpen(!isKategoriOpen)
+                  !loadingPerihal && !isPerihalEmpty && setIsKategoriOpen(!isKategoriOpen)
                 }
               >
                 <span
@@ -578,6 +784,8 @@ const MainPage = () => {
                 >
                   {loadingPerihal
                     ? "Memuat data perihal..."
+                    : isPerihalEmpty
+                    ? "Data perihal belum tersedia"
                     : kategoriUtama || "Pilih Perihal"}
                 </span>
                 <svg
@@ -593,12 +801,12 @@ const MainPage = () => {
                 </svg>
               </div>
 
-              {/* Error message untuk perihal */}
+              {/* Error message untuk perihal - Enhanced */}
               {errorPerihal && (
                 <div className="mt-1 text-sm text-red-500">
                   {errorPerihal}
                   <button
-                    onClick={fetchPerihalOptions}
+                    onClick={retryFetchPerihal}
                     className="ml-2 text-blue-500 underline hover:text-blue-700"
                   >
                     Coba lagi
@@ -608,6 +816,7 @@ const MainPage = () => {
 
               {isKategoriOpen &&
                 !loadingPerihal &&
+                !isPerihalEmpty &&
                 kategoriUtamaOptions.length > 0 && (
                   <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                     {kategoriUtamaOptions.map((option, index) => (
@@ -623,16 +832,29 @@ const MainPage = () => {
                 )}
             </div>
 
-            {/* Dropdown Level 2 - Sub Kategori */}
+            {/* Dropdown Level 2 - Sub Kategori - Enhanced */}
             {kategoriUtamaId && (
               <div className="relative">
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Sub Perihal
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Sub Perihal
+                    {!loadingSubperihal && !isSubperihalEmpty && subKategoriOptions.length > 0 && (
+                      <span className="text-red-500">*</span>
+                    )}
+                  </label>
+                  {loadingSubperihal && (
+                    <span className="text-xs text-blue-500">Memuat data...</span>
+                  )}
+                </div>
                 <div
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingSubperihal ? "cursor-not-allowed opacity-50" : ""}`}
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${
+                    loadingSubperihal || (isSubperihalEmpty && subKategoriOptions.length === 0) 
+                      ? "cursor-not-allowed opacity-50" 
+                      : ""
+                  }`}
                   onClick={() =>
                     !loadingSubperihal &&
+                    !isSubperihalEmpty &&
                     subKategoriOptions.length > 0 &&
                     setIsSubKategoriOpen(!isSubKategoriOpen)
                   }
@@ -642,7 +864,7 @@ const MainPage = () => {
                   >
                     {loadingSubperihal
                       ? "Memuat data subperihal..."
-                      : (subKategoriOptions?.length === 0 || !subKategoriOptions)
+                      : isSubperihalEmpty || subKategoriOptions.length === 0
                         ? "Tidak ada subperihal tersedia"
                         : subKategori || "Pilih Sub Perihal"}
                   </span>
@@ -659,15 +881,12 @@ const MainPage = () => {
                   </svg>
                 </div>
 
-                {/* Error message untuk subperihal */}
+                {/* Error message untuk subperihal - Enhanced */}
                 {errorSubperihal && (
                   <div className="mt-1 text-sm text-red-500">
                     {errorSubperihal}
                     <button
-                      onClick={() =>
-                        kategoriUtamaId &&
-                        fetchSubperihalOptions(kategoriUtamaId)
-                      }
+                      onClick={retryFetchSubperihal}
                       className="ml-2 text-blue-500 underline hover:text-blue-700"
                     >
                       Coba lagi
@@ -677,6 +896,7 @@ const MainPage = () => {
 
                 {isSubKategoriOpen &&
                   !loadingSubperihal &&
+                  !isSubperihalEmpty &&
                   subKategoriOptions.length > 0 && (
                     <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                       {subKategoriOptions.map((option, index) => (
@@ -710,15 +930,24 @@ const MainPage = () => {
               </div>
             )}
 
-            {/* Textarea untuk Deskripsi */}
+            {/* Textarea untuk Deskripsi - Enhanced */}
             <textarea
               value={deskripsi}
               onChange={handleDeskripsiChange}
-              placeholder="Deskripsi alasan pergeseran"
-              className="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={
+                !isMasterDataComplete() 
+                  ? "Lengkapi data master terlebih dahulu" 
+                  : "Deskripsi alasan pergeseran"
+              }
+              className={`h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                !isMasterDataComplete()
+                  ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                  : ""
+              }`}
+              disabled={!isMasterDataComplete()}
             />
 
-            {/* Tombol untuk Upload, Simpan, Download Template, dan Cetak */}
+            {/* Tombol untuk Upload, Simpan, Download Template, dan Cetak - Enhanced */}
             <div className="flex items-center space-x-4">
 
               <button
@@ -745,7 +974,9 @@ const MainPage = () => {
               </button>
               
               <label
-                className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-3.5 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+                className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-3.5 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${
+                  isLoadingFile || !isMasterDataComplete() ? "cursor-not-allowed opacity-50" : ""
+                }`}
               >
                 {isLoadingFile ? (
                   <>
@@ -768,7 +999,7 @@ const MainPage = () => {
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                       />
                     </svg>
-                    Upload Excel
+                    {!isMasterDataComplete() ? "Lengkapi Master Data" : "Upload Excel"}
                   </>
                 )}
                 <input
@@ -777,11 +1008,11 @@ const MainPage = () => {
                   accept=".xlsx, .xls"
                   onChange={handleFileUpload}
                   className="hidden"
-                  disabled={isLoadingFile}
+                  disabled={isLoadingFile || !isMasterDataComplete()}
                 />
               </label>
 
-              {/* Tombol Cetak dengan kondisi disabled */}
+              {/* Tombol Cetak dengan kondisi disabled - Enhanced */}
               <button
                 onClick={handleCetak}
                 disabled={isCetakDisabled()}
@@ -790,6 +1021,13 @@ const MainPage = () => {
                     ? "cursor-not-allowed bg-gray-300 text-gray-500"
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
+                title={
+                  !isMasterDataComplete() 
+                    ? "Lengkapi data master terlebih dahulu"
+                    : tableData.length === 0
+                    ? "Upload file Excel terlebih dahulu"
+                    : "Cetak dokumen"
+                }
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -810,8 +1048,21 @@ const MainPage = () => {
               
               <button
                 onClick={handleSimpan}
-                disabled={loading || isLoadingFile}
-                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white hover:from-[#0C479F] hover:to-[#0C479F] ${loading || isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+                disabled={loading || isLoadingFile || !isMasterDataComplete() || !deskripsi.trim() || !selectedFile}
+                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white hover:from-[#0C479F] hover:to-[#0C479F] ${
+                  loading || isLoadingFile || !isMasterDataComplete() || !deskripsi.trim() || !selectedFile 
+                    ? "cursor-not-allowed opacity-50" 
+                    : ""
+                }`}
+                title={
+                  !isMasterDataComplete()
+                    ? "Lengkapi data master terlebih dahulu"
+                    : !deskripsi.trim()
+                    ? "Isi deskripsi terlebih dahulu"
+                    : !selectedFile
+                    ? "Upload file terlebih dahulu"
+                    : "Kirim data pergeseran"
+                }
               >
                 <div className="flex items-center justify-center">
                   {loading ? (
@@ -837,10 +1088,6 @@ const MainPage = () => {
                   {loading ? "Mengirim..." : "Kirim"}
                 </span>
               </button>
-
-              
-
-              
             </div>
 
             {/* Tabel Data */}
@@ -908,7 +1155,7 @@ const MainPage = () => {
                     </tbody>
                   </table>
                 ) : (
-                  // Empty State
+                  // Empty State - Enhanced
                   <div className="flex items-center justify-center bg-gray-50 px-6 py-16">
                     <div className="text-center">
                       <svg
@@ -929,7 +1176,10 @@ const MainPage = () => {
                         Belum ada data
                       </h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        Silakan upload file excel/lampiran terlebih dahulu
+                        {!isMasterDataComplete() 
+                          ? "Lengkapi data master terlebih dahulu, kemudian upload file Excel"
+                          : "Silakan upload file excel/lampiran terlebih dahulu"
+                        }
                       </p>
                     </div>
                   </div>
