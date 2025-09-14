@@ -168,9 +168,11 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
           
           return {
-            id: `${dinas}_${index}`, // Membuat ID unik dari dinas dan index
+            id: `${dinas}_${index}`,
             sender: item.pengirim_nama,
+            // sender: "",
             senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
+            // senderDinas: "", // Menggunakan nama dinas dari parameter
             date: dateObject.toLocaleDateString('id-ID'), // Format tanggal Indonesia
             dateObject: dateObject, // Simpan object Date untuk perhitungan
             lampiran: item.judul,
