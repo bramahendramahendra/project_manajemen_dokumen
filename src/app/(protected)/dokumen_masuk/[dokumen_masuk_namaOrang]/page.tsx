@@ -46,12 +46,10 @@ const DokumenMasukDetail = () => {
   ];
 
   return (
-    // <DefaultLayout>
     <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <DokumenMasukDetailDokumen senderNamaDinas={namaDinas}/>
     </>
-    // </DefaultLayout>
   );
 };
 

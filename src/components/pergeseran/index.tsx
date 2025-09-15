@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, ChangeEvent } from "react";
 import * as XLSX from "xlsx";
-import { apiRequest } from "@/helpers/apiClient";
+import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
 import { htmlToPlainText } from "@/utils/htmlTextFormatter";
 import Cookies from "js-cookie";
 
@@ -22,20 +22,15 @@ const MainPage = () => {
   const [kategoriUtamaId, setKategoriUtamaId] = useState<number | null>(null);
   const [subKategori, setSubKategori] = useState<string>("");
   const [subKategoriId, setSubKategoriId] = useState<number | null>(null);
-  const [selectedDeskripsiDetail, setSelectedDeskripsiDetail] =
-    useState<string>("");
+  const [selectedDeskripsiDetail, setSelectedDeskripsiDetail] = useState<string>("");
 
   // State untuk dropdown controls
   const [isKategoriOpen, setIsKategoriOpen] = useState<boolean>(false);
   const [isSubKategoriOpen, setIsSubKategoriOpen] = useState<boolean>(false);
 
   // State untuk data API
-  const [kategoriUtamaOptions, setKategoriUtamaOptions] = useState<
-    PerihalOption[]
-  >([]);
-  const [subKategoriOptions, setSubKategoriOptions] = useState<
-    SubperihalOption[]
-  >([]);
+  const [kategoriUtamaOptions, setKategoriUtamaOptions] = useState<PerihalOption[]>([]);
+  const [subKategoriOptions, setSubKategoriOptions] = useState<SubperihalOption[]>([]);
 
   // State untuk loading dan error
   const [loading, setLoading] = useState<boolean>(false);
@@ -46,14 +41,41 @@ const MainPage = () => {
   const [errorPerihal, setErrorPerihal] = useState<string | null>(null);
   const [errorSubperihal, setErrorSubperihal] = useState<string | null>(null);
 
-  // State lainnya tetap sama
+  // State untuk tracking apakah data master kosong
+  const [isPerihalEmpty, setIsPerihalEmpty] = useState<boolean>(false);
+  const [isSubperihalEmpty, setIsSubperihalEmpty] = useState<boolean>(false);
+
+  // State untuk file upload
   const [deskripsi, setDeskripsi] = useState<string>("");
   const [tableData, setTableData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [isLoadingFile, setIsLoadingFile] = useState<boolean>(false);
-
-  // State untuk file upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  // State untuk download template
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState<boolean>(false);
+
+  // Helper functions untuk validasi
+  const isFormPerihalUsable = () => {
+    return !loadingPerihal && !isPerihalEmpty;
+  };
+
+  const isFormSubperihalUsable = () => {
+    const perihalSelected = kategoriUtamaId !== null;
+    const subperihalDataAvailable = !loadingSubperihal && !isSubperihalEmpty;
+    return perihalSelected && subperihalDataAvailable;
+  };
+
+  const isSubperihalRequiredAndSelected = () => {
+    if (kategoriUtamaId !== null && !loadingSubperihal && !isSubperihalEmpty && subKategoriOptions.length > 0) {
+      return subKategoriId !== null;
+    }
+    return true;
+  };
+
+  const isMasterDataComplete = () => {
+    return isFormPerihalUsable() && kategoriUtamaId !== null && isSubperihalRequiredAndSelected();
+  };
 
   // Fetch data perihal saat komponen mount
   useEffect(() => {
@@ -64,27 +86,40 @@ const MainPage = () => {
   const fetchPerihalOptions = async () => {
     setLoadingPerihal(true);
     setErrorPerihal(null);
+    setIsPerihalEmpty(false);
 
     try {
       const response = await apiRequest("/master_perihal/opt", "GET");
 
       if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Perihal data not found");
+        }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
 
       if (result.responseCode === 200) {
-        setKategoriUtamaOptions(result.responseData.items);
+        if (!result.responseData?.items || result.responseData.items.length === 0) {
+          setIsPerihalEmpty(true);
+          setKategoriUtamaOptions([]);
+        } else {
+          setKategoriUtamaOptions(result.responseData.items);
+          setIsPerihalEmpty(false);
+        }
       } else {
         throw new Error(result.responseDesc || "Gagal mengambil data perihal");
       }
     } catch (err: any) {
       setErrorPerihal(
         err.message === "Failed to fetch"
-          ? "Gagal mengambil data perihal"
+          ? "Gagal mengambil data perihal. Periksa koneksi internet."
+          : err.message === "Perihal data not found"
+          ? "Data perihal belum tersedia"
           : err.message,
       );
+      setIsPerihalEmpty(true);
       console.error("Error fetching perihal options:", err);
     } finally {
       setLoadingPerihal(false);
@@ -96,15 +131,14 @@ const MainPage = () => {
     setLoadingSubperihal(true);
     setErrorSubperihal(null);
     setSubKategoriOptions([]);
+    setIsSubperihalEmpty(false);
 
     try {
-      const response = await apiRequest(
-        `/master_subperihal/opt/${perihalId}`,
-        "GET",
-      );
+      const response = await apiRequest(`/master_subperihal/opt/${perihalId}`, "GET");
 
       if (!response.ok) {
         if (response.status === 404) {
+          setIsSubperihalEmpty(true);
           setSubKategoriOptions([]);
           return;
         }
@@ -114,18 +148,23 @@ const MainPage = () => {
       const result = await response.json();
 
       if (result.responseCode === 200) {
-        setSubKategoriOptions(result.responseData.items);
+        if (!result.responseData?.items || result.responseData.items.length === 0) {
+          setIsSubperihalEmpty(true);
+          setSubKategoriOptions([]);
+        } else {
+          setSubKategoriOptions(result.responseData.items);
+          setIsSubperihalEmpty(false);
+        }
       } else {
-        throw new Error(
-          result.responseDesc || "Gagal mengambil data subperihal",
-        );
+        throw new Error(result.responseDesc || "Gagal mengambil data subperihal");
       }
     } catch (err: any) {
       setErrorSubperihal(
         err.message === "Failed to fetch"
-          ? "Gagal mengambil data subperihal"
+          ? "Gagal mengambil data subperihal. Periksa koneksi internet."
           : err.message,
       );
+      setIsSubperihalEmpty(true);
       console.error("Error fetching subperihal options:", err);
       setSubKategoriOptions([]);
     } finally {
@@ -133,16 +172,25 @@ const MainPage = () => {
     }
   };
 
+  // Fungsi retry
+  const retryFetchPerihal = () => {
+    fetchPerihalOptions();
+  };
+
+  const retryFetchSubperihal = () => {
+    if (kategoriUtamaId) {
+      fetchSubperihalOptions(kategoriUtamaId);
+    }
+  };
+
   // Handler untuk memilih kategori utama
   const handleKategoriSelect = (option: PerihalOption) => {
     setKategoriUtama(option.nama_perihal);
     setKategoriUtamaId(option.perihal);
-    setSubKategori(""); // Reset sub kategori
+    setSubKategori("");
     setSubKategoriId(null);
     setSelectedDeskripsiDetail("");
     setIsKategoriOpen(false);
-
-    // Fetch subperihal options untuk kategori yang dipilih
     fetchSubperihalOptions(option.perihal);
   };
 
@@ -158,14 +206,146 @@ const MainPage = () => {
     setDeskripsi(e.target.value);
   };
 
+  // Handle download template
+  const handleDownloadTemplate = async () => {
+    setIsDownloadingTemplate(true);
+    try {
+      console.log('Downloading template from API: /files/template-pergeseran');
+      
+      // Menggunakan downloadFileRequest helper untuk konsistensi
+      const response = await downloadFileRequest("/files/template-pergeseran");
+      
+      console.log('Download response status:', response.status);
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          // Coba ambil detail error dari response
+          try {
+            const errorData = await response.json();
+            console.error('Template not found details:', errorData);
+            throw new Error('Template pergeseran tidak ditemukan di server');
+          } catch (parseError) {
+            console.error('Error parsing error response:', parseError);
+            throw new Error('Template pergeseran tidak ditemukan di server');
+          }
+        } else if (response.status === 400) {
+          try {
+            const errorData = await response.json();
+            console.error('Bad request details:', errorData);
+            throw new Error(errorData.ResponseDesc || 'Format permintaan tidak valid');
+          } catch (parseError) {
+            throw new Error('Format permintaan tidak valid');
+          }
+        } else {
+          throw new Error(`Error ${response.status}: Gagal mengunduh template pergeseran`);
+        }
+      }
+
+      // Membuat blob dari response
+      const blob = await response.blob();
+      
+      if (blob.size === 0) {
+        throw new Error('File template pergeseran kosong atau tidak dapat dibaca');
+      }
+      
+      console.log('Blob size:', blob.size, 'bytes');
+      
+      // Membuat URL object untuk blob
+      const blobUrl = window.URL.createObjectURL(blob);
+      
+      // Tentukan nama file untuk download
+      let downloadFileName = 'Template_Pergeseran';
+      let fileExtension = '.zip'; // default extension
+      
+      // Coba dapatkan nama file dari header Content-Disposition
+      const contentDisposition = response.headers.get('Content-Disposition');
+      if (contentDisposition) {
+        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (fileNameMatch) {
+          const fullFileName = fileNameMatch[1].replace(/['"]/g, '');
+          downloadFileName = fullFileName;
+          console.log('Filename from header:', fullFileName);
+        }
+      }
+      
+      // Jika tidak ada nama file dari header, deteksi dari Content-Type
+      if (!downloadFileName.includes('.')) {
+        const contentType = response.headers.get('Content-Type');
+        console.log('Content-Type:', contentType);
+        
+        // Deteksi format berdasarkan Content-Type
+        if (contentType) {
+          if (contentType.includes('application/zip') || contentType.includes('application/x-zip-compressed')) {
+            fileExtension = '.zip';
+          } else if (contentType.includes('application/x-rar-compressed') || contentType.includes('application/vnd.rar')) {
+            fileExtension = '.rar';
+          } else if (contentType.includes('application/x-7z-compressed')) {
+            fileExtension = '.7z';
+          } else if (contentType.includes('application/x-tar')) {
+            fileExtension = '.tar';
+          } else if (contentType.includes('application/gzip')) {
+            fileExtension = '.gz';
+          } else if (contentType.includes('application/x-bzip2')) {
+            fileExtension = '.bz2';
+          } else if (contentType.includes('application/x-xz')) {
+            fileExtension = '.xz';
+          }
+        }
+        
+        // Tambahkan timestamp jika diperlukan
+        const timestamp = new Date().toISOString().slice(0, 10);
+        downloadFileName = `${downloadFileName}_${timestamp}${fileExtension}`;
+      }
+      
+      console.log('Final download filename:', downloadFileName);
+      
+      // Membuat link download
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = downloadFileName;
+      link.style.display = 'none'; // Sembunyikan link
+      
+      // Tambahkan ke DOM, klik, lalu hapus
+      document.body.appendChild(link);
+      link.click();
+      
+      // Cleanup
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+      
+      console.log('Template pergeseran download completed successfully');
+      
+      // Show success message
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Terjadi kesalahan saat mengunduh template pergeseran';
+      setError(errorMessage);
+      
+      // Auto clear error after 5 seconds
+      setTimeout(() => setError(null), 5000);
+      
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  };
+
   const handleFileUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    if (!isMasterDataComplete()) {
+      setError("Lengkapi data master terlebih dahulu sebelum upload file.");
+      e.target.value = "";
+      return;
+    }
+
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Simpan file untuk dikirim ke API
     setSelectedFile(file);
-
-    // Mulai loading
     setIsLoadingFile(true);
     setTableData([]);
     setHeaders([]);
@@ -179,7 +359,6 @@ const MainPage = () => {
         const ws = wb.Sheets[wsname];
         const data = XLSX.utils.sheet_to_json(ws, { header: 1 });
 
-        // Simulasi delay untuk efek loading yang lebih terlihat (opsional)
         setTimeout(() => {
           if (data.length > 0) {
             const headers = data[0] as string[];
@@ -188,13 +367,11 @@ const MainPage = () => {
             setTableData(rows);
           }
           setIsLoadingFile(false);
-        }, 800); // Delay 800ms untuk demonstrasi loading
+        }, 800);
       } catch (error) {
         console.error("Error reading file:", error);
         setIsLoadingFile(false);
-        alert(
-          "Terjadi kesalahan saat membaca file. Pastikan file adalah format Excel yang valid.",
-        );
+        alert("Terjadi kesalahan saat membaca file. Pastikan file adalah format Excel yang valid.");
       }
     };
 
@@ -207,13 +384,17 @@ const MainPage = () => {
   };
 
   const handleSimpan = async () => {
-    // Validasi form
+    if (!isMasterDataComplete()) {
+      alert("Data master belum lengkap. Pastikan semua data yang diperlukan telah dipilih.");
+      return;
+    }
+
     if (!kategoriUtamaId || !kategoriUtama.trim()) {
       alert("Perihal harus dipilih");
       return;
     }
 
-    if (!subKategoriId || !subKategori.trim()) {
+    if (!isSubperihalRequiredAndSelected()) {
       alert("Sub Perihal harus dipilih");
       return;
     }
@@ -228,7 +409,6 @@ const MainPage = () => {
       return;
     }
 
-    // Set loading
     setLoading(true);
     setError(null);
     setSuccess(false);
@@ -236,10 +416,13 @@ const MainPage = () => {
     try {
       const user = JSON.parse(Cookies.get("user") || "{}");
 
-      // Buat FormData untuk upload file
       const formData = new FormData();
       formData.append("perihal", kategoriUtamaId.toString());
-      formData.append("subperihal", subKategoriId.toString());
+      
+      if (subKategoriId !== null) {
+        formData.append("subperihal", subKategoriId.toString());
+      }
+      
       formData.append("deskripsi", deskripsi);
       formData.append("file", selectedFile);
       formData.append("pembuat_userid", user.userid);
@@ -247,35 +430,19 @@ const MainPage = () => {
       formData.append("pembuat_id_dinas", user.dinas);
       formData.append("pembuat_dinas", user.nama_dinas);
 
-      console.log("Sending data:", {
-        perihal: kategoriUtamaId,
-        subperihal: subKategoriId,
-        deskripsi: deskripsi,
-        file: selectedFile.name,
-        pembuat_userid: user.userid,
-        pembuat_nama: user.name,
-        pembuat_id_dinas: user.dinas,
-        pembuat_dinas: user.nama_dinas,
-      });
-
-      // Gunakan apiRequest yang sudah ada (sudah support FormData)
       const response = await apiRequest("/pergeseran/", "POST", formData);
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(
-          errorData.responseDesc || "Gagal menyimpan data pergeseran",
-        );
+        throw new Error(errorData.responseDesc || "Gagal menyimpan data pergeseran");
       }
 
       const result = await response.json();
       console.log("API response:", result);
 
-      // Jika berhasil
-      // alert("Data pergeseran berhasil disimpan!");
       setSuccess(true);
 
-      // Reset form setelah berhasil
+      // Reset form
       setKategoriUtama("");
       setKategoriUtamaId(null);
       setSubKategori("");
@@ -286,20 +453,13 @@ const MainPage = () => {
       setHeaders([]);
       setSelectedFile(null);
 
-      // Reset file input
-      const fileInput = document.getElementById(
-        "file-upload",
-      ) as HTMLInputElement;
+      const fileInput = document.getElementById("file-upload") as HTMLInputElement;
       if (fileInput) {
         fileInput.value = "";
       }
     } catch (error) {
-      // Handle error
       console.error("Error saving data:", error);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Terjadi kesalahan saat menyimpan data";
+      const errorMessage = error instanceof Error ? error.message : "Terjadi kesalahan saat menyimpan data";
       alert(`Penyimpanan Gagal: ${errorMessage}`);
       setError(errorMessage);
       setSuccess(false);
@@ -308,26 +468,17 @@ const MainPage = () => {
     }
   };
 
-  // template downloadnya disini
-  const handleDownloadTemplate = () => {
-
-  };
-
   const handleCetak = () => {
-    // Membuat tabel HTML dari data
     let tableHTML = "";
     if (tableData.length > 0) {
-      tableHTML =
-        '<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse: collapse;">';
+      tableHTML = '<table border="1" cellpadding="8" cellspacing="0" style="width:100%; border-collapse: collapse;">';
 
-      // Header tabel
       tableHTML += '<thead><tr style="background-color: #f2f2f2;">';
       headers.forEach((header) => {
         tableHTML += `<th>${header}</th>`;
       });
       tableHTML += "</tr></thead>";
 
-      // Body tabel
       tableHTML += "<tbody>";
       tableData.forEach((row, rowIndex) => {
         tableHTML += `<tr style="${rowIndex % 2 === 0 ? "" : "background-color: #f9f9f9;"}">`;
@@ -339,134 +490,50 @@ const MainPage = () => {
       tableHTML += "</tbody></table>";
     }
 
-    // Perihal lengkap untuk cetak
     const perihalLengkap = subKategori || "........";
 
-    // Membuat seluruh dokumen HTML
     const printContent = `
         <!DOCTYPE html>
         <html>
         <head>
             <title>Dokumen Pergeseran</title>
             <style>
-                body {
-                    font-family: Arial, sans-serif;
-                    line-height: 1.5;
-                    margin: 20px;
-                }
-                .header-box {
-                    border: 2px solid black;
-                    text-align: center;
-                    padding: 10px;
-                    margin-bottom: 20px;
-                }
-                .header-title {
-                    font-size: 18px;
-                    font-weight: bold;
-                    margin: 5px 0;
-                }
-                .content-box {
-                    border: 2px solid black;
-                    padding: 20px;
-                    margin-bottom: 20px;
-                }
-                .letter-header {
-                    display: flex;
-                    justify-content: space-between;
-                }
-                .letter-left {
-                    width: 50%;
-                }
-                .letter-right {
-                    width: 50%;
-                    text-align: right;
-                }
-                .letter-body {
-                    margin-top: 20px;
-                    text-align: justify;
-                }
-                .signature {
-                    margin-top: 40px;
-                    text-align: right;
-                }
-                .page-break {
-                    page-break-after: always;
-                }
-                .attachment-page {
-                    page-break-before: always;
-                }
-                .attachment-title {
-                    font-weight: bold;
-                    margin-bottom: 15px;
-                    font-size: 16px;
-                    text-decoration: underline;
-                }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                }
-                th, td {
-                    border: 1px solid black;
-                    padding: 8px;
-                    text-align: left;
-                }
-                th {
-                    background-color: #f2f2f2;
-                    font-weight: bold;
-                }
-                tr:nth-child(even) {
-                    background-color: #f9f9f9;
-                }
+                body { font-family: Arial, sans-serif; line-height: 1.5; margin: 20px; }
+                .header-box { border: 2px solid black; text-align: center; padding: 10px; margin-bottom: 20px; }
+                .header-title { font-size: 18px; font-weight: bold; margin: 5px 0; }
+                .content-box { border: 2px solid black; padding: 20px; margin-bottom: 20px; }
+                .letter-header { display: flex; justify-content: space-between; }
+                .letter-left { width: 50%; }
+                .letter-right { width: 50%; text-align: right; }
+                .letter-body { margin-top: 20px; text-align: justify; }
+                .signature { margin-top: 40px; text-align: right; }
+                .page-break { page-break-after: always; }
+                .attachment-page { page-break-before: always; }
+                .attachment-title { font-weight: bold; margin-bottom: 15px; font-size: 16px; text-decoration: underline; }
+                table { width: 100%; border-collapse: collapse; }
+                th, td { border: 1px solid black; padding: 8px; text-align: left; }
+                th { background-color: #f2f2f2; font-weight: bold; }
+                tr:nth-child(even) { background-color: #f9f9f9; }
                 @media print {
-                    body {
-                        margin: 10mm;
-                    }
-                    .no-print {
-                        display: none;
-                    }
-                    @page {
-                        size: A4 portrait;
-                        margin: 10mm;
-                        color: #ffffff;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                    @page landscape {
-                        size: A4 landscape;
-                        margin: 10mm;
-                        color: #ffffff;
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                    .attachment-page {
-                        page: landscape;
-                    }
-                    html {
-                        -webkit-print-color-adjust: exact;
-                        print-color-adjust: exact;
-                    }
-                    @top-center, @top-right, @top-left,
-                    @bottom-center, @bottom-right, @bottom-left {
-                        color: #ffffff !important;
-                    }
+                    body { margin: 10mm; }
+                    .no-print { display: none; }
+                    @page { size: A4 portrait; margin: 10mm; }
+                    .attachment-page { page: landscape; }
                 }
             </style>
         </head>
         <body>
-            <!-- Kop Surat -->
             <div class="header-box">
                 <div class="header-title">PEMERINTAH KABUPATEN REMBANG</div>
                 <div class="header-title">KOP PERANGKAT DAERAH</div>
             </div>
             
-            <!-- Isi Surat -->
             <div class="content-box">
                 <div class="letter-header">
                     <div class="letter-left">
                         <div>Nomor&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: ........</div>
                         <div>Lampiran : ........</div>
                         <div>Perihal&nbsp;&nbsp;&nbsp;&nbsp;: ${perihalLengkap}</div>
-                        
                     </div>
                     <div class="letter-right">
                         <div>Rembang,</div>
@@ -482,7 +549,6 @@ const MainPage = () => {
                     <p>Dengan memperhatikan ketentuan Pergeseran Anggaran sebagaimana tercantum Peraturan Bupati Nomor......Tahun 2022 tentang Pergeseran Anggaran, kami mengajukan pergeseran anggaran antar objek dalam jenis belanja yang sama dengan alasan sebagai berikut :</p>
                     
                     <p>${deskripsi || "........"}</p>
-                        
                     
                     <p>Berkaitan dengan hal tersebut diatas, kami mohon kiranya Bapak Sekretaris Daerah dapat meyetujui usulan pergeseran anggaran yang kami ajukan, agar dapat ditampung dalam Peraturan Bupati tentang Penjabaran Perubahan APBD sebagai dasar penerbitan Dokumen Pelaksanaan Perubahan Anggaran Satuan Kerja Perangkat Derah (DPPA-SKPD), dengan daftar rincian usulan pergeseran anggaran sebagaimana terlampir.</p>
                 </div>
@@ -495,16 +561,13 @@ const MainPage = () => {
                 </div>
             </div>
             
-            <!-- Mengakhiri halaman pertama -->
             <div class="page-break"></div>
             
-            <!-- Lampiran Tabel pada halaman baru dengan orientasi landscape -->
             <div class="attachment-page">
                 <div class="attachment-title">LAMPIRAN</div>
                 ${tableHTML}
             </div>
             
-            <!-- Tombol Cetak (hanya tampil di browser) -->
             <div class="no-print" style="margin-top: 20px; text-align: center;">
                 <button onclick="window.print();" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
                     Cetak Dokumen
@@ -517,24 +580,121 @@ const MainPage = () => {
         </html>
     `;
 
-    // Membuka jendela baru untuk cetak
     const printWindow = window.open("", "_blank");
     if (printWindow) {
       printWindow.document.write(printContent);
       printWindow.document.close();
-
-      printWindow.onload = function () {
-        // Cetak otomatis (opsional)
-        // printWindow.print();
-      };
     } else {
       alert("Harap izinkan popup untuk mencetak dokumen.");
     }
   };
 
-  // Fungsi untuk mengecek apakah tombol cetak harus diblock
   const isCetakDisabled = () => {
-    return !subKategoriId || !subKategori || tableData.length === 0 || isLoadingFile;
+    return !isMasterDataComplete() || tableData.length === 0 || isLoadingFile;
+  };
+
+  // Komponen untuk menampilkan pesan data kosong
+  const EmptyDataMessage = ({ type, onRetry }: { type: string, onRetry: () => void }) => (
+    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800">
+      <div className="flex items-center">
+        <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+        </svg>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+            Data {type} belum tersedia
+          </p>
+          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+            Hubungi administrator untuk menambahkan data {type} terlebih dahulu.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onRetry}
+          className="ml-3 text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
+        >
+          Coba Lagi
+        </button>
+      </div>
+    </div>
+  );
+
+  // Komponen untuk menampilkan status form
+  const FormStatusMessage = () => {
+    if (loadingPerihal || loadingSubperihal) {
+      return (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
+          <div className="flex items-center">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
+            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+              Memuat data master...
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (isPerihalEmpty) {
+      return null;
+    }
+
+    if (!isFormPerihalUsable()) {
+      return (
+        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              Data master sedang dimuat atau belum tersedia.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (kategoriUtamaId === null) {
+      return (
+        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              Pilih Perihal terlebih dahulu untuk melanjutkan.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!isSubperihalRequiredAndSelected()) {
+      return (
+        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+              Pilih Sub Perihal untuk melanjutkan.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
+        <div className="flex items-center">
+          <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+          </svg>
+          <p className="text-sm font-medium text-green-800 dark:text-green-200">
+            Form siap digunakan. Silakan lengkapi data dan upload dokumen.
+          </p>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -561,16 +721,35 @@ const MainPage = () => {
             </div>
           )}
 
+          {/* Status pesan form */}
+          <FormStatusMessage />
+          
+          {/* Pesan jika data master kosong */}
+          {isPerihalEmpty && (
+            <EmptyDataMessage type="Perihal" onRetry={retryFetchPerihal} />
+          )}
+          
+          {kategoriUtamaId !== null && isSubperihalEmpty && (
+            <EmptyDataMessage type="Sub Perihal" onRetry={retryFetchSubperihal} />
+          )}
+
           <div className="flex flex-col space-y-4">
             {/* Dropdown Level 1 - Kategori Utama */}
             <div className="relative">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Perihal Utama
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Perihal Utama <span className="text-red-500">*</span>
+                </label>
+                {loadingPerihal && (
+                  <span className="text-xs text-blue-500">Memuat data...</span>
+                )}
+              </div>
               <div
-                className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingPerihal ? "cursor-not-allowed opacity-50" : ""}`}
+                className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${
+                  loadingPerihal || isPerihalEmpty ? "cursor-not-allowed opacity-50" : ""
+                }`}
                 onClick={() =>
-                  !loadingPerihal && setIsKategoriOpen(!isKategoriOpen)
+                  !loadingPerihal && !isPerihalEmpty && setIsKategoriOpen(!isKategoriOpen)
                 }
               >
                 <span
@@ -578,6 +757,8 @@ const MainPage = () => {
                 >
                   {loadingPerihal
                     ? "Memuat data perihal..."
+                    : isPerihalEmpty
+                    ? "Data perihal belum tersedia"
                     : kategoriUtama || "Pilih Perihal"}
                 </span>
                 <svg
@@ -598,7 +779,7 @@ const MainPage = () => {
                 <div className="mt-1 text-sm text-red-500">
                   {errorPerihal}
                   <button
-                    onClick={fetchPerihalOptions}
+                    onClick={retryFetchPerihal}
                     className="ml-2 text-blue-500 underline hover:text-blue-700"
                   >
                     Coba lagi
@@ -608,6 +789,7 @@ const MainPage = () => {
 
               {isKategoriOpen &&
                 !loadingPerihal &&
+                !isPerihalEmpty &&
                 kategoriUtamaOptions.length > 0 && (
                   <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                     {kategoriUtamaOptions.map((option, index) => (
@@ -626,13 +808,26 @@ const MainPage = () => {
             {/* Dropdown Level 2 - Sub Kategori */}
             {kategoriUtamaId && (
               <div className="relative">
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Sub Perihal
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Sub Perihal
+                    {!loadingSubperihal && !isSubperihalEmpty && subKategoriOptions.length > 0 && (
+                      <span className="text-red-500">*</span>
+                    )}
+                  </label>
+                  {loadingSubperihal && (
+                    <span className="text-xs text-blue-500">Memuat data...</span>
+                  )}
+                </div>
                 <div
-                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${loadingSubperihal ? "cursor-not-allowed opacity-50" : ""}`}
+                  className={`flex w-full cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm ${
+                    loadingSubperihal || (isSubperihalEmpty && subKategoriOptions.length === 0) 
+                      ? "cursor-not-allowed opacity-50" 
+                      : ""
+                  }`}
                   onClick={() =>
                     !loadingSubperihal &&
+                    !isSubperihalEmpty &&
                     subKategoriOptions.length > 0 &&
                     setIsSubKategoriOpen(!isSubKategoriOpen)
                   }
@@ -642,7 +837,7 @@ const MainPage = () => {
                   >
                     {loadingSubperihal
                       ? "Memuat data subperihal..."
-                      : (subKategoriOptions?.length === 0 || !subKategoriOptions)
+                      : isSubperihalEmpty || subKategoriOptions.length === 0
                         ? "Tidak ada subperihal tersedia"
                         : subKategori || "Pilih Sub Perihal"}
                   </span>
@@ -664,10 +859,7 @@ const MainPage = () => {
                   <div className="mt-1 text-sm text-red-500">
                     {errorSubperihal}
                     <button
-                      onClick={() =>
-                        kategoriUtamaId &&
-                        fetchSubperihalOptions(kategoriUtamaId)
-                      }
+                      onClick={retryFetchSubperihal}
                       className="ml-2 text-blue-500 underline hover:text-blue-700"
                     >
                       Coba lagi
@@ -677,6 +869,7 @@ const MainPage = () => {
 
                 {isSubKategoriOpen &&
                   !loadingSubperihal &&
+                  !isSubperihalEmpty &&
                   subKategoriOptions.length > 0 && (
                     <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
                       {subKategoriOptions.map((option, index) => (
@@ -714,38 +907,61 @@ const MainPage = () => {
             <textarea
               value={deskripsi}
               onChange={handleDeskripsiChange}
-              placeholder="Deskripsi alasan pergeseran"
-              className="h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder={
+                !isMasterDataComplete() 
+                  ? "Lengkapi data master terlebih dahulu" 
+                  : "Deskripsi alasan pergeseran"
+              }
+              className={`h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                !isMasterDataComplete()
+                  ? "bg-gray-50 text-gray-500 cursor-not-allowed"
+                  : ""
+              }`}
+              disabled={!isMasterDataComplete()}
             />
 
             {/* Tombol untuk Upload, Simpan, Download Template, dan Cetak */}
             <div className="flex items-center space-x-4">
-
               <button
                 onClick={handleDownloadTemplate}
-                className="group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0F6838] to-[#22C55E] px-3.5 py-3 font-medium text-white hover:from-[#0F6838] hover:to-[#0F6838] dark:bg-white/10 dark:text-white"
+                disabled={isDownloadingTemplate}
+                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0F6838] to-[#22C55E] px-3.5 py-3 font-medium text-white hover:from-[#0F6838] hover:to-[#0F6838] dark:bg-white/10 dark:text-white ${
+                  isDownloadingTemplate ? "cursor-not-allowed opacity-50" : ""
+                }`}
+                title={isDownloadingTemplate ? "Sedang mendownload..." : "Download template Excel untuk pergeseran"}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                <span className="group-hover:opacity-100">
-                  Download Template
-                </span>
+                {isDownloadingTemplate ? (
+                  <>
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    <span>Downloading...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <span className="group-hover:opacity-100">
+                      Download Template
+                    </span>
+                  </>
+                )}
               </button>
               
               <label
-                className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-3.5 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+                className={`flex cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-3.5 py-3 font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 ${
+                  isLoadingFile || !isMasterDataComplete() ? "cursor-not-allowed opacity-50" : ""
+                }`}
               >
                 {isLoadingFile ? (
                   <>
@@ -768,7 +984,7 @@ const MainPage = () => {
                         d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                       />
                     </svg>
-                    Upload Excel
+                    {!isMasterDataComplete() ? "Lengkapi Master Data" : "Upload Excel"}
                   </>
                 )}
                 <input
@@ -777,11 +993,11 @@ const MainPage = () => {
                   accept=".xlsx, .xls"
                   onChange={handleFileUpload}
                   className="hidden"
-                  disabled={isLoadingFile}
+                  disabled={isLoadingFile || !isMasterDataComplete()}
                 />
               </label>
 
-              {/* Tombol Cetak dengan kondisi disabled */}
+              {/* Tombol Cetak */}
               <button
                 onClick={handleCetak}
                 disabled={isCetakDisabled()}
@@ -790,6 +1006,13 @@ const MainPage = () => {
                     ? "cursor-not-allowed bg-gray-300 text-gray-500"
                     : "bg-blue-600 text-white hover:bg-blue-700"
                 }`}
+                title={
+                  !isMasterDataComplete() 
+                    ? "Lengkapi data master terlebih dahulu"
+                    : tableData.length === 0
+                    ? "Upload file Excel terlebih dahulu"
+                    : "Cetak dokumen"
+                }
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -810,8 +1033,21 @@ const MainPage = () => {
               
               <button
                 onClick={handleSimpan}
-                disabled={loading || isLoadingFile}
-                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white hover:from-[#0C479F] hover:to-[#0C479F] ${loading || isLoadingFile ? "cursor-not-allowed opacity-50" : ""}`}
+                disabled={loading || isLoadingFile || !isMasterDataComplete() || !deskripsi.trim() || !selectedFile}
+                className={`group flex items-center justify-center gap-2 rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-3.5 py-3 font-medium text-white hover:from-[#0C479F] hover:to-[#0C479F] ${
+                  loading || isLoadingFile || !isMasterDataComplete() || !deskripsi.trim() || !selectedFile 
+                    ? "cursor-not-allowed opacity-50" 
+                    : ""
+                }`}
+                title={
+                  !isMasterDataComplete()
+                    ? "Lengkapi data master terlebih dahulu"
+                    : !deskripsi.trim()
+                    ? "Isi deskripsi terlebih dahulu"
+                    : !selectedFile
+                    ? "Upload file terlebih dahulu"
+                    : "Kirim data pergeseran"
+                }
               >
                 <div className="flex items-center justify-center">
                   {loading ? (
@@ -837,10 +1073,6 @@ const MainPage = () => {
                   {loading ? "Mengirim..." : "Kirim"}
                 </span>
               </button>
-
-              
-
-              
             </div>
 
             {/* Tabel Data */}
@@ -850,7 +1082,6 @@ const MainPage = () => {
                   // Loading State
                   <div className="flex flex-col items-center justify-center bg-white px-6 py-16">
                     <div className="mb-4">
-                      {/* Spinner Loading */}
                       <div className="relative">
                         <div className="h-12 w-12 rounded-full border-4 border-gray-200"></div>
                         <div className="absolute top-0 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
@@ -929,7 +1160,10 @@ const MainPage = () => {
                         Belum ada data
                       </h3>
                       <p className="mt-1 text-sm text-gray-500">
-                        Silakan upload file excel/lampiran terlebih dahulu
+                        {!isMasterDataComplete() 
+                          ? "Lengkapi data master terlebih dahulu, kemudian upload file Excel"
+                          : "Silakan upload file excel/lampiran terlebih dahulu"
+                        }
                       </p>
                     </div>
                   </div>

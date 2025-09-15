@@ -8,8 +8,7 @@ import { useSearchParams } from "next/navigation";
 
 // Interface untuk data API response
 interface KirimanDokumen {
-  id_table: number;
-  pengirim_nama_dinas: string;
+  pengirim_nama: string;
   pengirim_date: string;
   judul: string;
   lampiran: string;
@@ -28,7 +27,6 @@ interface KirimanDokumen {
 // Interface untuk data yang sudah diformat
 interface FormattedKirimanDokumen {
   id: string;
-  id_table: number;
   sender: string;
   senderDinas: string;
   date: string;
@@ -48,27 +46,6 @@ interface FormattedKirimanDokumen {
   }[];
 }
 
-// Interface untuk response detail message
-interface MessageDetailResponse {
-  title: string;
-  content: string;
-  jenisSubjenis: string[];
-}
-
-// Interface untuk response detail download
-interface DownloadDetailResponse {
-  documentTitle: string;
-  documentFiles: {
-    jenis: string;
-    subjenis: string;
-    total_files: number;
-    files: Array<{
-      file_doc: string;
-    }>;
-  }[];
-  fileName: string;
-}
-
 const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: string | null }) => {
   const searchParams = useSearchParams();
 
@@ -81,13 +58,26 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
 
   // State untuk modal
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState<MessageDetailResponse | null>(null);
-  const [loadingMessage, setLoadingMessage] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<{
+    title: string;
+    content: string;
+    jenisSubjenis: string[];
+  } | null>(null);
 
   // State untuk modal download
   const [isDownloadModalOpen, setIsDownloadModalOpen] = useState(false);
-  const [selectedDownloadData, setSelectedDownloadData] = useState<DownloadDetailResponse | null>(null);
-  const [loadingDownload, setLoadingDownload] = useState(false);
+  const [selectedDownloadData, setSelectedDownloadData] = useState<{
+    documentTitle: string;
+    documentFiles: {
+      jenis: string;
+      subjenis: string;
+      total_files: number;
+      files: Array<{
+        file_doc: string;
+      }>;
+    }[];
+    fileName: string;
+  } | null>(null);
   
   // State untuk loading download
   const [downloadingGroupIndex, setDownloadingGroupIndex] = useState<number | null>(null);
@@ -159,7 +149,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         setLoading(true);
         const user = JSON.parse(Cookies.get("user") || "{}");
 
-        const response = await apiRequest(`/inbox/detail/${user.dinas}/${dinas}`, "GET");
+        const response = await apiRequest(`/kotak_masuk/all/detail/${user.dinas}/${dinas}`, "GET");
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -179,8 +169,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           
           return {
             id: `${dinas}_${index}`,
-            id_table: item.id_table,
-            sender: item.pengirim_nama_dinas,
+            sender: item.pengirim_nama,
             // sender: "",
             senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
             // senderDinas: "", // Menggunakan nama dinas dari parameter
@@ -208,70 +197,10 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
     fetchData();
   }, [dinas, namaDinas, senderNamaDinas]);
 
-  // Fungsi untuk fetch detail message dari API
-  const fetchMessageDetail = async (id: number): Promise<MessageDetailResponse | null> => {
-    try {
-      setLoadingMessage(true);
-      const response = await apiRequest(`/inbox/message/${id}`, "GET");
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      const jenisSubjenisArray = result.responseData.documents?.map((doc: any) => `${doc.jenis} - ${doc.subjenis}`) || [];
-    
-      // Sesuaikan dengan struktur response API Anda
-      return {
-        title: result.responseData.judul || "",
-        content: result.responseData.lampiran || "",
-        jenisSubjenis: jenisSubjenisArray 
-      };
-      
-    } catch (error) {
-      console.error("Error fetching message detail:", error);
-      alert("Gagal memuat detail pesan");
-      return null;
-    } finally {
-      setLoadingMessage(false);
-    }
-  };
-
-  // Fungsi untuk fetch detail download dari API
-  const fetchDownloadDetail = async (id: number): Promise<DownloadDetailResponse | null> => {
-    try {
-      setLoadingDownload(true);
-      const response = await apiRequest(`/inbox/download/${id}`, "GET");
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      
-      // Sesuaikan dengan struktur response API Anda
-      return {
-        documentTitle: result.responseData.judul || "" ,
-        documentFiles: result.responseData.documents || [],
-        fileName: result.responseData.file_name || ""
-      };      
-    } catch (error) {
-      console.error("Error fetching download detail:", error);
-      alert("Gagal memuat detail download");
-      return null;
-    } finally {
-      setLoadingDownload(false);
-    }
-  };
-
-  // Fungsi untuk membuka modal pesan - UPDATED
-  const openMessageModal = async (id: number) => {
-    const messageDetail = await fetchMessageDetail(id);
-    if (messageDetail) {
-      setSelectedMessage(messageDetail);
-      setIsModalOpen(true);
-    }
+  // Fungsi untuk membuka modal pesan
+  const openMessageModal = (title: string, content: string, jenisSubjenis: string[]) => {
+    setSelectedMessage({ title, content, jenisSubjenis });
+    setIsModalOpen(true);
   };
 
   // Fungsi untuk menutup modal
@@ -280,13 +209,10 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
     setSelectedMessage(null);
   };
 
-  // Fungsi untuk membuka modal download - UPDATED
-  const openDownloadModal = async (id: number) => {
-    const downloadDetail = await fetchDownloadDetail(id);
-    if (downloadDetail) {
-      setSelectedDownloadData(downloadDetail);
-      setIsDownloadModalOpen(true);
-    }
+  // Fungsi untuk membuka modal download
+  const openDownloadModal = (documentTitle: string, documentFiles: any[], fileName: string) => {
+    setSelectedDownloadData({ documentTitle, documentFiles, fileName });
+    setIsDownloadModalOpen(true);
   };
 
   // Fungsi untuk menutup modal download
@@ -637,45 +563,29 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
                   
                     {/* Tombol Aksi */}
                     <div className="flex space-x-3">
-                      {/* Tombol Isi Pesan - UPDATED */}
+                      {/* Tombol Isi Pesan */}
                       <button
-                        onClick={() => openMessageModal(item.id_table)}
-                        disabled={loadingMessage}
-                        className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => openMessageModal(item.messageTitle, item.messageContent, item.messageJenisSubjenis)}
+                        className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors"
                       >
                         <div className="flex items-center">
-                          {loadingMessage ? (
-                            <svg className="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          {loadingMessage ? 'Loading...' : 'Isi Pesan'}
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
+                          </svg>
+                          Isi Pesan
                         </div>
                       </button>
                       
-                      {/* Tombol Download - UPDATED */}
+                      {/* Tombol Download */}
                       <button
-                        onClick={() => openDownloadModal(item.id_table)}
-                        disabled={loadingDownload}
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => openDownloadModal(item.lampiran, item.documentFiles, item.fileName)}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors"
                       >
                         <div className="flex items-center">
-                          {loadingDownload ? (
-                            <svg className="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          {loadingDownload ? 'Loading...' : 'Download'}
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                          Download
                         </div>
                       </button>
                     </div>
@@ -709,7 +619,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           </div>
         )}
         
-        {/* Modal Isi Pesan - UPDATED */}
+        {/* Modal Isi Pesan */}
         {isModalOpen && selectedMessage && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
             <div className="w-full max-w-xl rounded-xl bg-white p-6 shadow-xl">
@@ -787,7 +697,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           </div>
         )}
 
-        {/* Modal Download - UPDATED */}
+        {/* Modal Download */}
         {isDownloadModalOpen && selectedDownloadData && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm">
             <div className="w-full max-w-2xl max-h-[80vh] rounded-xl bg-white shadow-xl overflow-hidden">
@@ -879,7 +789,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
                                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                     </svg>
-                                    Download... 
+                                    Download...
                                   </span>
                                 ) : (
                                   <span className="flex items-center">

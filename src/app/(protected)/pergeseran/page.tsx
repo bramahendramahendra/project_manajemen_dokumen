@@ -1,13 +1,5 @@
-import { Metadata } from "next";
-
 import Breadcrumb from "@/components/breadcrumbs";
 import MainPage from "@/components/pergeseran";
-
-export const metadata: Metadata = {
-    title: "Pergeseran",
-    // description: "This is Next.js Home page for NextAdmin Dashboard Kit",
-};
-
 
 const Pergeseran = () => {
   const breadcrumbs = [
