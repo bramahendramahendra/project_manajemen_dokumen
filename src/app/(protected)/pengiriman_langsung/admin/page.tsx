@@ -1,4 +1,3 @@
-"use client"
 import MainPage from "@/components/pengirimanLangsung/FormPengirimanLangsungAdmin";
 import Breadcrumb from "@/components/breadcrumbs";
 
