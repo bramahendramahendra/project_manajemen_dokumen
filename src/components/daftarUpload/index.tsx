@@ -89,6 +89,7 @@ const MainPage = () => {
     return cleanup;
   }, [debounceSearch]);
 
+  // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -96,15 +97,16 @@ const MainPage = () => {
     try {
       const user = JSON.parse(Cookies.get("user") || "{}");
       
+      // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
         ...filterParams
       });
 
-      // Hapus parameter kosong
+      // Hapus parameter kosong - PERSIS seperti master dinas
       Array.from(queryParams.entries()).forEach(([key, value]) => {
-        if (!value || value.trim() === '') queryParams.delete(key);
+        if (!value) queryParams.delete(key);
       });
 
       const response = await apiRequest(`/daftar_upload/${user.dinas}?${queryParams.toString()}`, "GET");

@@ -32,7 +32,7 @@ const LaporanDokumenInstansi = () => {
     const { id, dinas } = result;
     setID(id);
     setDinas(dinas);
-  }, []);
+  }, [searchParams]);
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },

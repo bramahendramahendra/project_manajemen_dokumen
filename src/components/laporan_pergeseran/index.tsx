@@ -6,7 +6,7 @@ import { encryptObject } from "@/utils/crypto";
 import Cookies from "js-cookie";
 import { HiOutlineArrowTopRightOnSquare, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { LaporanPergeseran, LaporanPergeseranResponse } from "@/types/laporanPergeseran";
-import Pagination from "../pagination/Pagination";
+import Pagination from "../pagination/Pagination9";
 
 const MainPage = () => {
   const router = useRouter();

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import Pagination from "@/components/pagination/Pagination";
+import Pagination from "@/components/pagination/Pagination9";
 import { HiOutlineDocumentDownload, HiOutlineSearch, HiOutlineTrash } from "react-icons/hi";
 import { useRouter, useSearchParams } from "next/navigation";
 import Cookies from "js-cookie";

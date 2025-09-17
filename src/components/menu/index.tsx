@@ -9,7 +9,7 @@ import {
   HiOutlineTrash,
 } from "react-icons/hi2";
 import { Menu } from "@/types/menu";
-import Pagination from "@/components/pagination/Pagination";
+import Pagination from "@/components/pagination/Pagination9";
 
 const MainPage = () => {
   const router = useRouter();

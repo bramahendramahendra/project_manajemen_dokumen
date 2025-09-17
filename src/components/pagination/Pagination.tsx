@@ -62,7 +62,7 @@ const Pagination = ({
                   {totalRecords} hasil
                   {searchTerm && (
                     <span className="text-gray-500 dark:text-gray-400 font-normal">
-                      {" "}untuk "{searchTerm}"
+                      {" "}untuk &ldquo;{searchTerm}&rdquo;
                     </span>
                   )}
                 </span>

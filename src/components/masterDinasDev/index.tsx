@@ -10,7 +10,7 @@ import {
 } from "react-icons/hi2";
 import { Dinas } from "@/types/dinas";
 import { formatIndonesianDateTime } from "@/utils/dateFormatter";
-import Pagination from "@/components/pagination/Pagination";
+import Pagination from "@/components/pagination/Pagination9";
 
 const MainPage = () => {
   const router = useRouter();
