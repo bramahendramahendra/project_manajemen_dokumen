@@ -181,17 +181,15 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
             id: `${dinas}_${index}`,
             id_table: item.id_table,
             sender: item.pengirim_nama_dinas,
-            // sender: "",
             senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
-            // senderDinas: "", // Menggunakan nama dinas dari parameter
             date: dateObject.toLocaleDateString('id-ID'), // Format tanggal Indonesia
             dateObject: dateObject, // Simpan object Date untuk perhitungan
             lampiran: item.judul,
-            messageTitle: item.judul,
-            messageContent: item.lampiran,
-            messageJenisSubjenis: jenisSubjenisArray,
-            fileName: item.file_name,
-            documentFiles: item.documnet || [], // Simpan data dokumen lengkap
+            // messageTitle: item.judul,
+            // messageContent: item.lampiran,
+            // messageJenisSubjenis: jenisSubjenisArray,
+            // fileName: item.file_name,
+            // documentFiles: item.documnet || [], // Simpan data dokumen lengkap
           };
         });
 

@@ -1,61 +1,59 @@
 "use client";
-import { useRouter } from "next/navigation";
-// import DefaultLayout from "@/components/Layouts/DefaultLayout";
+import { useState, useEffect } from "react";
+import { useSearchParams  } from "next/navigation";
+import Cookies from "js-cookie";
+import { decryptObject } from "@/utils/crypto";
 import Breadcrumb from "@/components/breadcrumbs";
 import ValidationUploadTable from "@/components/validationUpload/validationUploadTable";
 
-interface Props {
-  params: {
-    skpd: string;
-    belumValidasi: number; 
-  };
-}
+const ValidationUploadDetail = () => {
+  const searchParams = useSearchParams();
 
-const validationUpload = [
-  { skpd: "Dinas Pendidikan", belumValidasi: 1 },
-  { skpd: "Dinas Kesehatan", belumValidasi: 3 },
-  { skpd: "Dinas Pertanian", belumValidasi: 5 },
-  { skpd: "Dinas Kelautan", belumValidasi: 0 },
-  { skpd: "Dinas Kesejahteraan", belumValidasi: 1 },
-  { skpd: "Dinas Politik", belumValidasi: 4 },
-  { skpd: "Dinas Pertahanan", belumValidasi: 1 },
-  { skpd: "Dinas Keuangan", belumValidasi: 5 },
-];
+  const [error, setError] = useState<string | null>(null);
+  const [id, setID] = useState<number | null>(null);
+  const [skpd, setSkpd] = useState<string | null>(null);
+  const [totalPending, setTotalPending] = useState<number | null>(null);
 
-const decodeSkpdFromUrl = (skpd: string) => {
-  return skpd.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
-};
+  const key = process.env.NEXT_PUBLIC_APP_KEY;
+  const encrypted = searchParams.get(`${key}`);
+  const user = Cookies.get("user");
 
-const ValidationUploadDetail = ({ params }: Props) => {
-  const skpd = decodeSkpdFromUrl(params.skpd);
-  const foundSkpd = validationUpload.find((item) => item.skpd === skpd);
+  useEffect(() => {
+    if (!encrypted || !user) {
+      setError("Token atau data tidak tersedia.");
+      return;
+    }
+    const result = decryptObject(encrypted, user);
+    if (!result) {
+      setError("Gagal dekripsi atau data rusak.");
+      return;
+    }
+    const { id, skpd, total } = result;
+    setID(id);
+    setSkpd(skpd);
+    setTotalPending(total);
+  }, [encrypted, user]);
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Validation Upload", href: "/validation_upload" },
-    { name: skpd },
+    { name: "Validation Upload", href: "/validation_upload_admin" },
+    { name: `${skpd}` },
   ];
 
-  if (!foundSkpd) {
-    return (
-      // <DefaultLayout>
-      <>
-        <h1>Error 404: SKPD &quot;{skpd}&quot; Data tidak ditemukan</h1>
-        <p>Data ini tidak ada</p>
-      </>
-      // </DefaultLayout>
-    );
-  }
-
   return (
-    // <DefaultLayout>
     <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-      <h1>Detail Page for {skpd}</h1>
-      <p>Belum di validasi: {foundSkpd.belumValidasi}</p>
-      <ValidationUploadTable />
+
+      {error ? (
+        <div className="text-left text-red-500">{error}</div>
+      ) : (
+        <>
+          <h1>Detail Page for {skpd}</h1>
+          <p>Belum di validasi: {totalPending}</p>
+          <ValidationUploadTable id={id} />
+        </>
+      )}
     </>
-    // </DefaultLayout>
   );
 };
 

@@ -415,6 +415,10 @@ const MainPage = () => {
               onPageChange={handlePageChange}
               itemsPerPage={itemsPerPage}
               onItemsPerPageChange={handleItemsPerPageChange}
+              totalRecords={totalRecords}
+              loading={loading}
+              isSearchActive={!!filters.search}
+              searchTerm={filters.search}
             />
           )}
         </div>

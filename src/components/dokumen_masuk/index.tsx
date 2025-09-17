@@ -34,7 +34,7 @@ const MainPage = () => {
         // console.log(user);
         
         
-        const response = await apiRequest(`/kotak_masuk/all`, "GET");
+        const response = await apiRequest(`/inbox/dinas/${user.dinas}`, "GET");
         // const response = await apiRequest(`/kotak_masuk/all/${user.dinas}`, "GET");
         if (!response.ok) {
           if (response.status === 404) {
@@ -49,7 +49,7 @@ const MainPage = () => {
         const formattedData: DataDinas[] = result.responseData.items.map((item: any) => ({
           id: item.dinas,
           nama_dinas: item.nama_dinas,
-          jumlah_dokumen_baru: item.jumlah_dokumen_baru,
+          jumlah_dokumen_baru: item.total_open,
           icon: getIconByDinasName(item.nama_dinas), // Assign icon berdasarkan nama dinas
         }));
 

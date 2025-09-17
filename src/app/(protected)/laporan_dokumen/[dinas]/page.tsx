@@ -4,7 +4,7 @@ import { useSearchParams  } from "next/navigation";
 import Cookies from "js-cookie";
 import { decryptObject } from "@/utils/crypto";
 import Breadcrumb from "@/components/breadcrumbs";
-import LaporanDokumenDetail from "@/components/laporan_dokumen/admin/detail";
+import LaporanDokumenDetail from "@/components/laporan_dokumen/detail";
 
 
 const LaporanDokumenInstansi = () => {

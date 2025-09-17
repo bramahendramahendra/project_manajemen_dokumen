@@ -1,5 +1,5 @@
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/laporan_dokumen/admin";
+import MainPage from "@/components/laporan_dokumen";
 
 const LaporanDokumen = () => {
   const breadcrumbs = [
