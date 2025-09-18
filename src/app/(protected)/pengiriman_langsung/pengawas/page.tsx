@@ -1,5 +1,5 @@
 "use client"
-import MainPage from "@/components/pengirimanLangsungBackup/FormPengirimanLangsungPengawas";
+import MainPage from "@/components/pengirimanLangsung/FormPengirimanLangsungPengawas";
 import Breadcrumb from "@/components/breadcrumbs";
 const PengirimanLangsungPengawas = () => {
   const breadcrumbs = [
