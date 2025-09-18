@@ -134,7 +134,7 @@ const PengelolaanDokumen = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds - PERSIS seperti master dinas
   useEffect(() => {

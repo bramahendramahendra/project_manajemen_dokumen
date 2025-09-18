@@ -163,7 +163,7 @@ const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds - PERSIS seperti master dinas
   useEffect(() => {
@@ -503,7 +503,7 @@ const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
       )}
 
       {/* Data Table */}
-      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-md dark:bg-gray-dark dark:shadow-card">
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">

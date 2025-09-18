@@ -124,7 +124,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -195,7 +195,7 @@ const MainPage = () => {
       const encrypted = encryptObject({ id, skpd, total }, user);
 
       const formattedSkpd = formatSkpdForUrl(skpd);
-      router.push(`/validation_upload_admin/${formattedSkpd}?${key}=${encrypted}`);
+      router.push(`/validation_upload/${formattedSkpd}?${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);
       alert("Terjadi kesalahan saat memproses data!");
@@ -280,7 +280,7 @@ const MainPage = () => {
         </div>
       )}
 
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">

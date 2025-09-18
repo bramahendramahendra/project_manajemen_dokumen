@@ -403,7 +403,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
 
   // Fungsi untuk kembali ke daftar
   const handleBack = () => {
-    router.push('/daftar_upload/admin');
+    router.push('/daftar_upload');
   };
 
   // Loading state

@@ -1,11 +1,10 @@
 "use client";
 import { useRouter } from "next/navigation";
-// import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import Breadcrumb from "@/components/breadcrumbs";
 import MainPage from "@/components/masterDinas";
 import { HiPlus } from "react-icons/hi2";
 
-const SettingDinas = () => {
+const MasterDinas = () => {
   const Router = useRouter();
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
@@ -13,7 +12,6 @@ const SettingDinas = () => {
   ];
   
   return (
-    // <DefaultLayout>
     <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
       <div className="mb-6 grid grid-cols-12">
@@ -35,8 +33,7 @@ const SettingDinas = () => {
         </div>
       </div>
     </>
-    // </DefaultLayout>
   );
 };
 
-export default SettingDinas;
+export default MasterDinas;

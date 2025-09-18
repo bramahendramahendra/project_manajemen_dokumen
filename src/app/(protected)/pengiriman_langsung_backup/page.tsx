@@ -1,6 +1,6 @@
 // import { Metadata } from "next";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
-import MainPage from "@/components/pengirimanLangsung";
+import MainPage from "@/components/pengirimanLangsungBackup";
 
 import Breadcrumb from "@/components/breadcrumbs";
 import { redirect } from "next/navigation";

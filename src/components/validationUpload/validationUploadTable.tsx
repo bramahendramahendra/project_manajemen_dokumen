@@ -184,7 +184,7 @@ const ValidationUploadTable = ({ id }: Props) => {
       }
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [id, currentPage, itemsPerPage, filters]);
+  }, [id, searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -740,7 +740,7 @@ const ValidationUploadTable = ({ id }: Props) => {
         </div>
       )}
 
-      <div className="mt-4 rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <div className="mt-4 rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-semibold text-dark dark:text-white">
             Validasi Dokumen

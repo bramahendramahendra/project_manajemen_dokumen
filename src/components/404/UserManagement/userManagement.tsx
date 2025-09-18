@@ -1,6 +1,6 @@
 const UserManagement = ({ error }: { error: string | null }) => {
     return (
-      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-md dark:bg-gray-dark dark:shadow-card">
         <div className="flex flex-col overflow-x-auto">
           <table className="w-full table-auto">
             <thead>

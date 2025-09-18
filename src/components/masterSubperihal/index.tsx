@@ -6,7 +6,6 @@ import Cookies from "js-cookie";
 import { HiOutlinePencilSquare, HiOutlineTrash, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { Subperihal, SubperihalResponse } from "@/types/subperihal";
 import { htmlToReadableText } from "@/utils/htmlTextFormatter";
-import { formatIndonesianDateTime } from "@/utils/dateFormatter";
 import Pagination from "@/components/pagination/Pagination";
 
 const MainPage = () => {
@@ -30,8 +29,8 @@ const MainPage = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   
   const [filters, setFilters] = useState({
-    sort_by: '',
-    sort_dir: 'DESC',
+    sort_by: 'terakhir_diubah,tanggal_dibuat',
+    sort_dir: 'DESC,DESC',
     search: ''
   });
 
@@ -136,7 +135,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {

@@ -6,28 +6,9 @@ import { encryptObject } from "@/utils/crypto";
 import Cookies from "js-cookie";
 import { HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray, HiOutlineExclamationTriangle, HiOutlineDocumentText, HiOutlinePencilSquare, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { DaftarUpload, FileItem, DaftarUploadResponse } from "@/types/daftarUpload";
+import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
+import { statusColor } from "@/utils/status";
 import Pagination from "@/components/pagination/Pagination";
-
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case '001':
-      return 'bg-yellow-100 text-yellow-800'; // Warna kuning untuk Proses
-    case '002':
-      return 'bg-red-100 text-red-800'; // Warna merah untuk Tolak
-    case '003':
-      return 'bg-green-100 text-green-800'; // Warna hijau untuk Diterima
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
 
 const MainPage = () => {
   const router = useRouter();
@@ -104,9 +85,9 @@ const MainPage = () => {
         ...filterParams
       });
 
-      // Hapus parameter kosong - PERSIS seperti master dinas
+      // Hapus parameter kosong
       Array.from(queryParams.entries()).forEach(([key, value]) => {
-        if (!value) queryParams.delete(key);
+        if (!value || value.trim() === '') queryParams.delete(key);
       });
 
       const response = await apiRequest(`/daftar_upload/${user.dinas}?${queryParams.toString()}`, "GET");
@@ -165,7 +146,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -223,7 +204,7 @@ const MainPage = () => {
     try {
       const encrypted = encryptObject({ id }, user);
       
-      router.push(`/daftar_upload/admin/perbaikan?${key}=${encrypted}`);
+      router.push(`/daftar_upload/perbaikan?${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);
       alert("Terjadi kesalahan saat memproses data!");
@@ -433,7 +414,7 @@ const MainPage = () => {
         </div>
       )}
 
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
@@ -551,7 +532,7 @@ const MainPage = () => {
 
                   <td className="px-4 py-4">
                     <p className="text-dark dark:text-white">
-                      {formatDate(new Date(item.tanggal))}
+                      {formatIndonesianDateOnly(item.tanggal)}
                     </p>
                   </td>
 
@@ -564,7 +545,7 @@ const MainPage = () => {
                   <td className="px-4 py-4">
                     <button
                       onClick={() => item.status_code === '002' ? handleRejectStatusClick(item) : undefined}
-                      className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status_code)} ${
+                      className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${statusColor(item.status_code)} ${
                         item.status_code === '002' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
                       }`}
                       disabled={item.status_code !== '002'}
@@ -667,7 +648,7 @@ const MainPage = () => {
               {rejectedItem && (
                 <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
                   <p><strong>Dokumen:</strong> {rejectedItem.uraian}</p>
-                  <p><strong>Tanggal Upload:</strong> {formatDate(new Date(rejectedItem.tanggal))}</p>
+                  <p><strong>Tanggal Upload:</strong> {formatIndonesianDateOnly(rejectedItem.tanggal)}</p>
                 </div>
               )}
             </div>

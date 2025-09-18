@@ -175,7 +175,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           const dateObject = new Date(item.pengirim_date);
           
           // Format jenis dan subjenis menjadi array "jenis - subjenis"
-          const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
+          // const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
           
           return {
             id: `${dinas}_${index}`,

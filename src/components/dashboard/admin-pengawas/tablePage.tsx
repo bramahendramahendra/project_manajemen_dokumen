@@ -4,50 +4,9 @@ import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { HiOutlineDocumentText, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { Document, DocumentResponse } from "@/types/dashboard";
+import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
+import { statusColor } from "@/utils/status";
 import Pagination from "@/components/pagination/Pagination";
-
-// Fungsi untuk mendapatkan warna status berdasarkan status_code
-const getStatusColor = (statusCode: string) => {
-  switch (statusCode) {
-    case '001': // Pending/Proses
-      return 'bg-yellow-100 text-yellow-800';
-    case '002': // Ditolak
-      return 'bg-red-100 text-red-800';
-    case '003': // Diterima
-      return 'bg-green-100 text-green-800';
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
-
-// Fungsi untuk mengubah nama status sesuai dengan mapping
-const getDisplayStatusName = (statusCode: string, statusDoc: string) => {
-  switch (statusCode) {
-    case '001':
-      return 'Diproses';
-    case '002':
-      return 'Ditolak';
-    case '003':
-      return 'Diterima';
-    default:
-      return statusDoc; // fallback ke status dari API
-  }
-};
-
-// Format tanggal dalam bahasa Indonesia dari ISO string
-const formatDate = (dateString: string): string => {
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
-  } catch (error) {
-    console.error("Error formatting date:", error);
-    return "Tanggal tidak valid";
-  }
-};
 
 const TablePage = () => {
   const [loading, setLoading] = useState(true);
@@ -299,7 +258,7 @@ const TablePage = () => {
         </div>
       )}
 
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
@@ -412,12 +371,12 @@ const TablePage = () => {
                   </td>
                   <td className="px-4 py-4">
                     <p className="text-dark dark:text-white">
-                      {formatDate(item.maker_date)}
+                      {formatIndonesianDateOnly(item.maker_date)}
                     </p>
                   </td>
                   <td className="px-4 py-4 xl:pr-7.5">
-                    <div className={`${getStatusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}>
-                      <span>{getDisplayStatusName(item.status_code, item.status_doc)}</span>
+                    <div className={`${statusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}>
+                      <span>{item.status_doc}</span>
                     </div>
                   </td>
                 </tr>

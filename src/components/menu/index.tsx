@@ -121,7 +121,7 @@ const MainPage = () => {
       {error && <p className="text-red-500 mt-2">{error}</p>}
       {success && <p className="text-green-500 mt-2">Data berhasil dihapus!</p>}  
         
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         <div className="max-w-full overflow-x-auto">
           <table className="w-full table-auto">
             <thead>

@@ -699,7 +699,7 @@ const MainPage = () => {
 
   return (
     <div className="col-span-12 xl:col-span-12">
-      <div className="overflow-hidden rounded-[10px] bg-white shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <div className="overflow-hidden rounded-[10px] bg-white shadow-md dark:bg-gray-dark dark:shadow-card">
         <div className="mb-4 flex items-center justify-between px-7.5 pt-7.5">
           <h4 className="text-xl font-semibold text-black dark:text-white">
             Form Pergeseran
