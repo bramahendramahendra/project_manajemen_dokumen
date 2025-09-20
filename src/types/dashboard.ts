@@ -31,3 +31,26 @@ export type DocumentResponse = {
     total_records: number;
   };
 }
+
+export type DocumentItem = {
+  id: number;
+  subjenis: string;
+  maker_date: string;
+  status_code: string;
+  status_doc: string;
+  dinas_name?: string;
+}
+
+export type DocumentItemResponse = {
+  responseCode: number;
+  responseDesc: string;
+  responseData: {
+    items: DocumentItem[];
+  };
+  responseMeta: {
+    page: number;
+    per_page: number;
+    total_pages: number;
+    total_records: number;
+  };
+}

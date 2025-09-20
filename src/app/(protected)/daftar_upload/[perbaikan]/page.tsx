@@ -38,7 +38,7 @@ const PerbaikiDokumenPage = () => {
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Daftar Upload", href: "/daftar_upload/admin" },
+    { name: "Daftar Upload", href: "/daftar_upload" },
     { name: "Perbaiki Dokumen" },
   ];
 

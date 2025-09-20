@@ -6,28 +6,9 @@ import { encryptObject } from "@/utils/crypto";
 import Cookies from "js-cookie";
 import { HiOutlineDocumentMagnifyingGlass, HiOutlineXMark, HiOutlineArrowDownTray, HiOutlineExclamationTriangle, HiOutlineDocumentText, HiOutlinePencilSquare, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { DaftarUpload, FileItem, DaftarUploadResponse } from "@/types/daftarUpload";
+import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
+import { statusColor } from "@/utils/status";
 import Pagination from "@/components/pagination/Pagination";
-
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
-
-const getStatusColor = (status: string) => {
-  switch (status) {
-    case '001':
-      return 'bg-yellow-100 text-yellow-800'; // Warna kuning untuk Proses
-    case '002':
-      return 'bg-red-100 text-red-800'; // Warna merah untuk Tolak
-    case '003':
-      return 'bg-green-100 text-green-800'; // Warna hijau untuk Diterima
-    default:
-      return 'bg-gray-100 text-gray-800';
-  }
-};
 
 const MainPage = () => {
   const router = useRouter();
@@ -57,8 +38,8 @@ const MainPage = () => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: 'jenis,id',
-    sort_dir: 'ASC,DESC',
+    sort_by: 'status,tanggal',
+    sort_dir: 'DESC,DESC',
     search: ''
   });
 
@@ -83,12 +64,13 @@ const MainPage = () => {
     }
   }, [searchTerm]); // Menambahkan searchTerm ke dependency array
 
-  // // Effect untuk debounced search
+  // Effect untuk debounced search
   useEffect(() => {
     const cleanup = debounceSearch();
     return cleanup;
   }, [debounceSearch]);
 
+  // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
@@ -96,6 +78,7 @@ const MainPage = () => {
     try {
       const user = JSON.parse(Cookies.get("user") || "{}");
       
+      // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
@@ -110,7 +93,7 @@ const MainPage = () => {
       const response = await apiRequest(`/daftar_upload/${user.dinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error("Data dokumen tidak ditemukan");
+          throw new Error("Data dokumen daftar upload tidak ditemukan");
         }
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
@@ -163,7 +146,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -221,7 +204,7 @@ const MainPage = () => {
     try {
       const encrypted = encryptObject({ id }, user);
       
-      router.push(`/daftar_upload/admin/perbaikan?${key}=${encrypted}`);
+      router.push(`/daftar_upload/perbaikan?${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);
       alert("Terjadi kesalahan saat memproses data!");
@@ -431,7 +414,7 @@ const MainPage = () => {
         </div>
       )}
 
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
@@ -455,7 +438,7 @@ const MainPage = () => {
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Cari uraian, jenis, tanggal, files, atau status..."
+                placeholder="Cari uraian, tanggal upload, total files, atau status..."
                 className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -470,24 +453,6 @@ const MainPage = () => {
                 </button>
               )}
             </div>
-          </div>
-          
-          {/* Records count */}
-          <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-            {!loading && totalRecords > 0 && (
-              <>
-                {filters.search && (
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                    {totalRecords} hasil
-                  </span>
-                )}
-                {!filters.search && (
-                  <>Menampilkan {Math.min(totalRecords, itemsPerPage)} dari {totalRecords} data</>
-                )}
-              </>
-            )}
-            {!loading && totalRecords === 0 && !filters.search && "Tidak ada data"}
-            {!loading && totalRecords === 0 && filters.search && "Tidak ditemukan"}
           </div>
         </div>
 
@@ -515,7 +480,7 @@ const MainPage = () => {
           </div>
         )}
 
-        <div className="max-w-full overflow-x-auto">
+        <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
@@ -567,7 +532,7 @@ const MainPage = () => {
 
                   <td className="px-4 py-4">
                     <p className="text-dark dark:text-white">
-                      {formatDate(new Date(item.tanggal))}
+                      {formatIndonesianDateOnly(item.tanggal)}
                     </p>
                   </td>
 
@@ -580,7 +545,7 @@ const MainPage = () => {
                   <td className="px-4 py-4">
                     <button
                       onClick={() => item.status_code === '002' ? handleRejectStatusClick(item) : undefined}
-                      className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${getStatusColor(item.status_code)} ${
+                      className={`px-2.5 py-0.5 text-xs font-medium rounded-full ${statusColor(item.status_code)} ${
                         item.status_code === '002' ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''
                       }`}
                       disabled={item.status_code !== '002'}
@@ -635,6 +600,10 @@ const MainPage = () => {
               onPageChange={handlePageChange}
               itemsPerPage={itemsPerPage}
               onItemsPerPageChange={handleItemsPerPageChange}
+              totalRecords={totalRecords}
+              loading={loading}
+              isSearchActive={!!filters.search}
+              searchTerm={filters.search}
             />
           )}
         </div>
@@ -679,7 +648,7 @@ const MainPage = () => {
               {rejectedItem && (
                 <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
                   <p><strong>Dokumen:</strong> {rejectedItem.uraian}</p>
-                  <p><strong>Tanggal Upload:</strong> {formatDate(new Date(rejectedItem.tanggal))}</p>
+                  <p><strong>Tanggal Upload:</strong> {formatIndonesianDateOnly(rejectedItem.tanggal)}</p>
                 </div>
               )}
             </div>

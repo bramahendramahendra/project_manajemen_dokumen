@@ -489,6 +489,7 @@ const UploadDokumen = () => {
         
         // Reset form
         setDinas(0);
+        setLevelId('');
         setJenis(0);
         setSubjenis(0);
         setTahun('');
@@ -497,7 +498,17 @@ const UploadDokumen = () => {
         setUploadProgress([]);
         setTempFilePaths([]);
         setIsUploadComplete(false);
+        setIsUploading(false);
         setResetKey((prev) => prev + 1);
+
+        // PENTING: Reset file input element
+        const fileInput = document.getElementById('documentFIle') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+
+         setOptionJenis([]);
+        setOptionSubjenis([]);
       } else {
         const result = await response.json();
         setError(result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen");
@@ -788,8 +799,8 @@ const UploadDokumen = () => {
                   <input
                     type="file"
                     multiple
-                    name="profilePhoto"
-                    id="profilePhoto"
+                    name="documentFIle"
+                    id="documentFIle"
                     accept="image/png, image/jpg, image/jpeg, image/gif, image/svg+xml, .pdf, .doc, .docx, .zip, .rar, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
                     className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
                     onChange={handleFileChange}
