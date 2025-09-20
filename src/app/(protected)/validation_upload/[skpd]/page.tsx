@@ -36,7 +36,7 @@ const ValidationUploadDetail = () => {
 
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Validation Upload", href: "/validation_upload_admin" },
+    { name: "Validation Upload", href: "/validation_upload" },
     { name: `${skpd}` },
   ];
 

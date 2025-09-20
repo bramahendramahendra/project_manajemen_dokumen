@@ -6,7 +6,7 @@ import { encryptObject } from "@/utils/crypto";
 import Cookies from "js-cookie";
 import { HiOutlineArrowTopRightOnSquare, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { LaporanPergeseran, LaporanPergeseranResponse } from "@/types/laporanPergeseran";
-import Pagination from "../pagination/Pagination9";
+import Pagination from "../pagination/Pagination";
 
 const MainPage = () => {
   const router = useRouter();
@@ -349,7 +349,7 @@ const MainPage = () => {
           </div>
         )}
 
-        <div className="max-w-full overflow-x-auto">
+        <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
@@ -412,7 +412,11 @@ const MainPage = () => {
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               itemsPerPage={itemsPerPage}
-              onItemsPerPageChange={setItemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              totalRecords={totalRecords}
+              loading={loading}
+              isSearchActive={!!filters.search}
+              searchTerm={filters.search}
             />
           )}
         </div>

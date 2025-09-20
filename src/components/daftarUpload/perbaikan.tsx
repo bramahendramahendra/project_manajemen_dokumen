@@ -398,7 +398,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
   // Fungsi untuk menutup modal dan kembali ke daftar
   const handleSuccessModalClose = () => {
     setIsSuccessModalOpen(false);
-    router.push('/daftar_upload/admin');
+    router.push('/daftar_upload');
   };
 
   // Fungsi untuk kembali ke daftar

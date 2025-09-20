@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Pengiriman Langsung Pengawas",
+  title: "Laporan Pergeseran",
 };
 
 export default function Layout({

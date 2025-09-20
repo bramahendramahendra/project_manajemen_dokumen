@@ -1,7 +1,7 @@
 import MainPage from "@/components/pengirimanLangsung";
 import Breadcrumb from "@/components/breadcrumbs";
 
-const PengirimanLangsungAdmin = () => {
+const PengirimanLangsung = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
     { name: "Pengiriman Langsung"},
@@ -17,4 +17,4 @@ const PengirimanLangsungAdmin = () => {
   );
 };
 
-export default PengirimanLangsungAdmin;
+export default PengirimanLangsung;

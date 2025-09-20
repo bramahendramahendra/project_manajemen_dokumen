@@ -405,7 +405,7 @@ const MainPage = () => {
           </div>
         )}
 
-        <div className="max-w-full overflow-x-auto">
+        <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">

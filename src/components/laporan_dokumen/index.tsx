@@ -184,7 +184,7 @@ const MainPage = () => {
         dinas.toLowerCase().replace(/\s+/g, "-")
       );
       
-      router.push(`/laporan_dokumen/admin/${formattedNama}?${key}=${encrypted}`);
+      router.push(`/laporan_dokumen/${formattedNama}?${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);
       alert("Terjadi kesalahan saat memproses data!");
@@ -397,7 +397,7 @@ const MainPage = () => {
                           <HiOutlineArrowTopRightOnSquare />
                         </span>
                         <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                          Review
+                          Details
                         </span>
                       </button>
                     </div>

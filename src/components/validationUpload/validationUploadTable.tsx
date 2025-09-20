@@ -8,9 +8,11 @@ import {
   HiOutlineArrowDownTray,
   HiOutlineXMark,
   HiOutlineXCircle,
-  HiOutlineDocumentText
+  HiOutlineDocumentText,
+  HiMagnifyingGlass
 } from "react-icons/hi2";
 import { ValidationUploadUraianAdmin, FileItem, ValidationUploadUraianAdminResponse } from "@/types/validationUploadUraian";
+import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
 import Pagination from "@/components/pagination/Pagination";
 import SuccessModalLink from '../modals/successModalLink';
 
@@ -20,13 +22,13 @@ interface Props {
 
 type BulkAction = 'validate' | 'reject' | 'delete';
 
-const formatDate = (date: Date): string => {
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
+// const formatDate = (date: Date): string => {
+//   return date.toLocaleDateString("id-ID", {
+//     day: "numeric",
+//     month: "long",
+//     year: "numeric",
+//   });
+// };
 
 const ValidationUploadTable = ({ id }: Props) => {
   const [loading, setLoading] = useState(true);
@@ -741,19 +743,72 @@ const ValidationUploadTable = ({ id }: Props) => {
       )}
 
       <div className="mt-4 rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-dark dark:text-white">
-            Validasi Dokumen
-          </h2>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {!loading && totalRecords > 0 && (
-              <>Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data</>
+        {/* Header Section with Search */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="flex items-center">
+            <h2 className="text-xl font-semibold text-dark dark:text-white">
+              Validasi Dokumen
+            </h2>
+            {searchLoading && (
+              <div className="ml-3">
+                <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
             )}
-            {!loading && totalRecords === 0 && "Tidak ada data"}
           </div>
-        </div> 
-       
-        <div className="max-w-full overflow-x-auto">
+          
+          {/* Search Box */}
+          <div className="relative w-full sm:w-80">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="Cari uraian, tanggal upload, total files, atau status..."
+                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
+              </div>
+              {searchTerm && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <HiOutlineXCircle className="h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Active Search Indicator */}
+        {filters.search && (
+          <div className="mb-4 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+            <div className="flex items-center">
+              <HiMagnifyingGlass className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+              <span className="text-sm text-blue-800 dark:text-blue-300">
+                Menampilkan hasil pencarian untuk: <span className="font-semibold">&quot;{filters.search}&quot;</span>
+              </span>
+              {totalRecords > 0 && (
+                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-full">
+                  {totalRecords} hasil
+                </span>
+              )}
+            </div>
+            <button
+              onClick={handleClearSearch}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+              title="Hapus pencarian"
+            >
+              <HiOutlineXCircle className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800 ">
@@ -808,7 +863,7 @@ const ValidationUploadTable = ({ id }: Props) => {
                   </td>
                   <td className="px-4 py-4">
                     <p className="text-dark dark:text-white">
-                      {formatDate(new Date(item.tanggal))}
+                      {formatIndonesianDateOnly(item.tanggal)}
                     </p>
                   </td>
                   <td className="px-4 py-4 xl:pr-7.5">

@@ -38,8 +38,8 @@ const MainPage = () => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: 'jenis,id',
-    sort_dir: 'ASC,DESC',
+    sort_by: 'status,tanggal',
+    sort_dir: 'DESC,DESC',
     search: ''
   });
 
@@ -93,7 +93,7 @@ const MainPage = () => {
       const response = await apiRequest(`/daftar_upload/${user.dinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error("Data dokumen tidak ditemukan");
+          throw new Error("Data dokumen daftar upload tidak ditemukan");
         }
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
@@ -438,7 +438,7 @@ const MainPage = () => {
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Cari uraian, jenis, tanggal, files, atau status..."
+                placeholder="Cari uraian, tanggal upload, total files, atau status..."
                 className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -480,7 +480,7 @@ const MainPage = () => {
           </div>
         )}
 
-        <div className="max-w-full overflow-x-auto">
+        <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">

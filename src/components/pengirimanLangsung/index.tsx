@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+import React, { useState,  useEffect, useRef, ChangeEvent } from "react";
 import Image from "next/image";
 import { apiRequest } from "@/helpers/apiClient";
 import { apiRequestUpload } from "@/helpers/uploadClient";
@@ -53,7 +53,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ isOpen, onClose, title, message
   );
 };
 
-const FormPengirimanLangsungAdmin = () => {
+const PengirimanLangsung = () => {
   // State untuk loading dan error
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,14 +74,14 @@ const FormPengirimanLangsungAdmin = () => {
 
   // State untuk data
   const [documents, setDocuments] = useState<Document[]>([]);
-
+  
   // State untuk file upload - OPTIONAL
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [tempFilePath, setTempFilePath] = useState<string>("");
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [isUploadComplete, setIsUploadComplete] = useState<boolean>(false);
-  
+
   // State untuk modals
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
@@ -224,7 +224,7 @@ const FormPengirimanLangsungAdmin = () => {
 
     fetchOptionDinas();
   }, []);
-  
+
   // Format display name untuk dokumen
   const getDocumentDisplayName = (doc: Document): string => {
     return `${doc.dinas} - ${doc.jenis} - ${doc.subjenis} - ${doc.tahun}`;
@@ -261,7 +261,8 @@ const FormPengirimanLangsungAdmin = () => {
     setErrorMessage(message);
     setIsErrorModalOpen(true);
   };
-  
+
+
   // Handle file change untuk upload
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -437,7 +438,7 @@ const FormPengirimanLangsungAdmin = () => {
       <div className="col-span-12 xl:col-span-12">
         <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
           <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-            Pengiriman dokumen secara langsung pada Admin
+            Pengiriman dokumen secara langsung pada Pengawas
           </h4>
           <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
             <form onSubmit={handleSubmitForm}>
@@ -816,4 +817,4 @@ const FormPengirimanLangsungAdmin = () => {
   );
 };
 
-export default FormPengirimanLangsungAdmin;
+export default PengirimanLangsung;

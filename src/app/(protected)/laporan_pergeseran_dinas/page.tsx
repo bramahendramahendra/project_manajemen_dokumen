@@ -1,11 +1,10 @@
-"use client"
-import MainPage from "@/components/pengirimanLangsung/FormPengirimanLangsung";
 import Breadcrumb from "@/components/breadcrumbs";
+import MainPage from "@/components/laporan_pergeseran_dinas/";
 
-const PengirimanLangsungDinas = () => {
+const LaporanPergeseran = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Pengiriman Langsung Dinas"},
+    { name: "Laporan Pergeseran"},
   ];
 
   return (
@@ -18,4 +17,4 @@ const PengirimanLangsungDinas = () => {
   );
 };
 
-export default PengirimanLangsungDinas;
+export default LaporanPergeseran;

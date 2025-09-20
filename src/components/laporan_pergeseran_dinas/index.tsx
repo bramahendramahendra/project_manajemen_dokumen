@@ -1,17 +1,15 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
+import { encryptObject } from "@/utils/crypto";
+import Cookies from "js-cookie";
 import { HiOutlineDocumentDownload, HiOutlineTrash } from "react-icons/hi";
 import { HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { LaporanPergeseranDocument, LaporanPergeseranDocumentResponse } from "@/types/laporanPergeseran";
 import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
 import Pagination from "@/components/pagination/Pagination";
 
-interface Props {
-  idDinas: number | null;
-}
-
-const MainPage = ({ idDinas }: Props) => {
+const MainPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -70,17 +68,13 @@ const MainPage = ({ idDinas }: Props) => {
     return cleanup;
   }, [debounceSearch]);
 
-
-   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
-    if (!idDinas) {
-      setError("ID tidak ditemukan");
-      setLoading(false);
-      return;
-    }
+    const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
     
     setLoading(true);
     setError(null);
     try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
+
       // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -93,7 +87,7 @@ const MainPage = ({ idDinas }: Props) => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/reports/pergeseran/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran/${user.dinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data laporan pergeseran dokumen tidak ditemukan");
