@@ -1,5 +1,5 @@
 "use client";
-import Pagination from "../pagination/Pagination";
+import Pagination from "../pagination/Pagination9";
 import { apiRequest, downloadFileRequest  } from "@/helpers/apiClient";
 import Cookies from "js-cookie";
 import { decryptObject } from "@/utils/crypto";
@@ -175,23 +175,21 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           const dateObject = new Date(item.pengirim_date);
           
           // Format jenis dan subjenis menjadi array "jenis - subjenis"
-          const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
+          // const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
           
           return {
             id: `${dinas}_${index}`,
             id_table: item.id_table,
             sender: item.pengirim_nama_dinas,
-            // sender: "",
             senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
-            // senderDinas: "", // Menggunakan nama dinas dari parameter
             date: dateObject.toLocaleDateString('id-ID'), // Format tanggal Indonesia
             dateObject: dateObject, // Simpan object Date untuk perhitungan
             lampiran: item.judul,
-            messageTitle: item.judul,
-            messageContent: item.lampiran,
-            messageJenisSubjenis: jenisSubjenisArray,
-            fileName: item.file_name,
-            documentFiles: item.documnet || [], // Simpan data dokumen lengkap
+            // messageTitle: item.judul,
+            // messageContent: item.lampiran,
+            // messageJenisSubjenis: jenisSubjenisArray,
+            // fileName: item.file_name,
+            // documentFiles: item.documnet || [], // Simpan data dokumen lengkap
           };
         });
 

@@ -41,7 +41,7 @@ const TableDetailUraian = ({
 
   return (
     <div className="col-span-12 xl:col-span-6">
-      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
+      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-md dark:bg-gray-dark dark:shadow-card">
         <ElemenComboboxDetailUraian
           // dokumenPerTahun={dokumenPerTahun}
           dokumenPerTahun={filterList}

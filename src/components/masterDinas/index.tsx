@@ -1,22 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { encryptObject } from "@/utils/crypto";
-import {
-  HiOutlinePencilSquare,
-  HiOutlineTrash,
-} from "react-icons/hi2";
+import Cookies from "js-cookie";
+import { HiOutlinePencilSquare, HiOutlineTrash, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { Dinas, DinasResponse } from "@/types/dinas";
 import { formatIndonesianDateTime } from "@/utils/dateFormatter";
 import Pagination from "@/components/pagination/Pagination";
 
 const MainPage = () => {
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [dataList, setDataList] = useState<Dinas[]>([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -28,9 +29,37 @@ const MainPage = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [filters, setFilters] = useState({
-    sort_by: '',
-    sort_dir: 'DESC'
+    sort_by: 'terakhir_diubah,tanggal_dibuat',
+    sort_dir: 'DESC,DESC',
+    search: ''
   });
+
+  // Reset halaman ke 1 ketika melakukan pencarian
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Debounced search function
+  const debounceSearch = useCallback(() => {
+    if (searchTerm.trim() !== '') {
+      const timeoutId = setTimeout(() => {
+        setFilters(prev => ({ ...prev, search: searchTerm }));
+        setCurrentPage(1); // Reset to first page when searching
+      }, 500); // 500ms delay
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Jika searchTerm kosong, langsung clear search filter tanpa delay
+      setFilters(prev => ({ ...prev, search: '' }));
+      setCurrentPage(1);
+    }
+  }, [searchTerm]); // Menambahkan searchTerm ke dependency array
+
+  // Effect untuk debounced search
+  useEffect(() => {
+    const cleanup = debounceSearch();
+    return cleanup;
+  }, [debounceSearch]);
 
   // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
@@ -47,7 +76,7 @@ const MainPage = () => {
 
       // Hapus parameter kosong
       Array.from(queryParams.entries()).forEach(([key, value]) => {
-        if (!value) queryParams.delete(key);
+        if (!value || value.trim() === '') queryParams.delete(key);
       });
 
       const response = await apiRequest(`/master_dinas/?${queryParams.toString()}`, "GET");
@@ -82,23 +111,28 @@ const MainPage = () => {
       setTotalPages(result.responseMeta.total_pages);
       setTotalRecords(result.responseMeta.total_records);
     } catch (err: any) {
-      console.error("Error fetching data:", err);
       setError(
-        err.message === "Failed to fetch"
+        err.message === "Failed to fetch" 
           ? "Tidak dapat terhubung ke server"
-          : err.message,
+          : err.message === "Document data not found"
+          ? "Data tidak ditemukan"
+          : err.message
       );
       setDataList([]);
       setTotalPages(0);
       setTotalRecords(0);
     } finally {
       setLoading(false);
+      setSearchLoading(false);
     }
   };
 
   useEffect(() => {
+    if (filters.search !== searchTerm) {
+      setSearchLoading(true);
+    }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -119,6 +153,23 @@ const MainPage = () => {
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
     setCurrentPage(1); // Reset ke halaman pertama
+  };
+
+  // Handler untuk retry ketika error
+  const handleRetry = () => {
+    fetchData(currentPage, itemsPerPage, filters);
+  };
+
+  // Handler untuk clear search
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setFilters(prev => ({ ...prev, search: "" }));
+    setCurrentPage(1);
+  };
+
+  // Handler untuk search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
   };
 
   // Handler untuk edit
@@ -189,11 +240,6 @@ const MainPage = () => {
     setItemDelete(null);
   };
 
-  // Handler untuk retry ketika error
-  const handleRetry = () => {
-    fetchData(currentPage, itemsPerPage, filters);
-  };
-
   // Render loading skeleton
   const renderLoadingSkeleton = () => (
     Array.from({ length: itemsPerPage }).map((_, index) => (
@@ -220,15 +266,26 @@ const MainPage = () => {
   // Render empty state
   const renderEmptyState = () => (
     <tr>
-      <td colSpan={4} className="px-4 py-20 text-center">
+      <td colSpan={6} className="px-4 py-20 text-center">
         <div className="flex flex-col items-center justify-center">
-          <div className="text-gray-400 text-6xl mb-4">🏢</div>
+          <div className="text-gray-400 text-6xl mb-4">📄</div>
           <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
-            Data dinas belum tersedia
+            {filters.search ? "Tidak ada hasil pencarian" : "Data dinas belum tersedia"}
           </p>
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-            Silakan tambah data dinas terlebih dahulu
+            {filters.search 
+              ? `Tidak ditemukan hasil untuk &quot;${filters.search}&quot;`
+              : "Silakan tambah data dinas terlebih dahulu"
+            }
           </p>
+          {filters.search && (
+            <button
+              onClick={handleClearSearch}
+              className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Hapus Pencarian
+            </button>
+          )}
         </div>
       </td>
     </tr>
@@ -267,18 +324,73 @@ const MainPage = () => {
         </div>
       )}
 
-      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-dark dark:text-white">Master Data Dinas</h2>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {!loading && totalRecords > 0 && (
-              <>Menampilkan {(currentPage - 1) * itemsPerPage + 1} - {Math.min(currentPage * itemsPerPage, totalRecords)} dari {totalRecords} data</>
+      <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
+        {/* Header Section with Search */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="flex items-center">
+            <h2 className="text-xl font-semibold text-dark dark:text-white">
+              Master Data Dinas
+            </h2>
+            {searchLoading && (
+              <div className="ml-3">
+                <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
             )}
-            {!loading && totalRecords === 0 && "Tidak ada data"}
+          </div>
+          
+          {/* Search Box */}
+          <div className="relative w-full sm:w-80">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="Cari uraian, jenis, tanggal, files, atau status..."
+                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
+              </div>
+              {searchTerm && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <HiOutlineXCircle className="h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* Active Search Indicator */}
+        {filters.search && (
+          <div className="mb-4 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+            <div className="flex items-center">
+              <HiMagnifyingGlass className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+              <span className="text-sm text-blue-800 dark:text-blue-300">
+                Menampilkan hasil pencarian untuk: <span className="font-semibold">&quot;{filters.search}&quot;</span>
+              </span>
+              {totalRecords > 0 && (
+                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-full">
+                  {totalRecords} hasil
+                </span>
+              )}
+            </div>
+            <button
+              onClick={handleClearSearch}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+              title="Hapus pencarian"
+            >
+              <HiOutlineXCircle className="h-5 w-5" />
+            </button>
+          </div>
+        )}
         
-        <div className="max-w-full overflow-x-auto">
+        <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
@@ -359,6 +471,10 @@ const MainPage = () => {
               onPageChange={handlePageChange}
               itemsPerPage={itemsPerPage}
               onItemsPerPageChange={handleItemsPerPageChange}
+              totalRecords={totalRecords}
+              loading={loading}
+              isSearchActive={!!filters.search}
+              searchTerm={filters.search}
             />
           )}
         </div>

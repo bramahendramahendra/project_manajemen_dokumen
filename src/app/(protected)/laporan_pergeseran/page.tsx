@@ -1,11 +1,5 @@
-import { Metadata } from "next";
 import Breadcrumb from "@/components/breadcrumbs";
 import MainPage from "@/components/laporan_pergeseran/";
-
-export const metadata: Metadata = {
-    title: "Laporan Dokumen",
-};
-
 
 const LaporanPergeseran = () => {
   const breadcrumbs = [

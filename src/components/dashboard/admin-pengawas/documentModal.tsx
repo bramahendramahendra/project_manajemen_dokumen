@@ -1,39 +1,10 @@
-// DocumentModal.tsx - PERSIS seperti master dinas dengan pagination lengkap untuk Admin/Pengawas
 import React, { useState, useEffect } from "react";
 import { HiX } from "react-icons/hi";
-import { 
-  HiDocument, 
-  HiClock, 
-  HiCheck, 
-  HiXMark 
-} from "react-icons/hi2";
+import { HiDocument, HiClock, HiCheck, HiXMark } from "react-icons/hi2";
 import { apiRequest } from "@/helpers/apiClient";
 import Cookies from "js-cookie";
+import { DocumentItem, DocumentItemResponse } from "@/types/dashboard";
 import Pagination from "@/components/pagination/Pagination";
-
-// Interface sesuai dengan response API - PERSIS seperti master dinas
-interface DocumentItem {
-  id: number;
-  subjenis: string;
-  maker_date: string;
-  status_code: string;
-  status_doc: string;
-  dinas_name?: string;
-}
-
-interface DocumentListResponse {
-  responseCode: number;
-  responseDesc: string;
-  responseData: {
-    items: DocumentItem[];
-  };
-  responseMeta: {
-    page: number;
-    per_page: number;
-    total_pages: number;
-    total_records: number;
-  };
-}
 
 interface DocumentModalProps {
   isOpen: boolean;
@@ -116,7 +87,6 @@ const getDisplayStatusName = (statusCode: string, statusDoc: string) => {
 };
 
 const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCode, title }) => {
-  // State management PERSIS seperti master dinas
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -155,9 +125,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
         ...filterParams
       });
 
-      // Hapus parameter kosong - PERSIS seperti master dinas
+      // Hapus parameter kosong
       Array.from(queryParams.entries()).forEach(([key, value]) => {
-        if (!value) queryParams.delete(key);
+        if (!value || value.trim() === '') queryParams.delete(key);
       });
 
       const response = await apiRequest(`/dashboard/document-monitoring/list-status/${statusCode}?${queryParams.toString()}`, "GET");
@@ -169,7 +139,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
       
-      const result: DocumentListResponse = await response.json();
+      const result: DocumentItemResponse = await response.json();
       
       if (!result.responseData || !result.responseData.items) {
         throw new Error("Format data tidak valid");
@@ -184,11 +154,12 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
       setTotalPages(result.responseMeta.total_pages);
       setTotalRecords(result.responseMeta.total_records);
     } catch (err: any) {
-      console.error("Error fetching data:", err);
       setError(
-        err.message === "Failed to fetch"
+        err.message === "Failed to fetch" 
           ? "Tidak dapat terhubung ke server"
-          : err.message,
+          : err.message === "Document data not found"
+          ? "Data tidak ditemukan"
+          : err.message
       );
       setDataList([]);
       setTotalPages(0);
@@ -346,7 +317,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
         </div>
         
         {/* Content - Table PERSIS seperti master dinas */}
-        <div className="max-w-full overflow-x-auto">
+        <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
@@ -414,6 +385,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
               onPageChange={handlePageChange}
               itemsPerPage={itemsPerPage}
               onItemsPerPageChange={handleItemsPerPageChange}
+              totalRecords={totalRecords}
+              loading={loading}
+              isSearchActive={false}
+              // searchTerm={filters.search}
             />
           )}
         </div>
