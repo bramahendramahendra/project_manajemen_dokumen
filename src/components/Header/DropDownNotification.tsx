@@ -83,7 +83,7 @@ const DropdownNotification = () => {
     // Subscribe ke event error
     const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
       console.error('SSE Error in notification dropdown:', error);
-      setError('Koneksi notifikasi bermasalah');
+      // setError('Koneksi notifikasi bermasalah');
     });
 
     // Subscribe ke event connection untuk status

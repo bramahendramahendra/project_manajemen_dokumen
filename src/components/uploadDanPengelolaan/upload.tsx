@@ -254,7 +254,7 @@ const UploadDokumen = () => {
     }
 
     fetchOptionSubjenis(); 
-  }, [jenis, fetchOptionSubjenis]);
+  }, [jenis]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     // Cek apakah form bisa digunakan

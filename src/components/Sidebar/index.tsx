@@ -93,7 +93,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     // Subscribe ke event error untuk handling error
     const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
       console.error('SSE Error in sidebar:', error);
-      setError('Koneksi notifikasi bermasalah');
+      // setError('Koneksi notifikasi bermasalah');
     });
 
     // Subscribe ke event connection untuk status koneksi
