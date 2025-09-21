@@ -230,7 +230,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
       setError("ID dokumen tidak ditemukan");
       setLoadingDocument(false);
     }
-  }, [documentId]);
+  }, [documentId, fetchDocumentData]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {

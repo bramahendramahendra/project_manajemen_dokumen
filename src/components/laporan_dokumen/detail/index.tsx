@@ -153,7 +153,7 @@ const MainPage = ({ id }: Props) => {
       }
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [id, searchTerm, currentPage, itemsPerPage, filters]);
+  }, [id, searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {

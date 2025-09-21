@@ -123,7 +123,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
   // Load data saat component mount
   useEffect(() => {
     fetchCountData();
-  }, [dinas]);
+  }, [dinas, fetchCountData]);
 
   // Auto hide error message after 5 seconds - konsisten dengan master dinas
   useEffect(() => {

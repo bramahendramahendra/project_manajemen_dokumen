@@ -149,7 +149,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {

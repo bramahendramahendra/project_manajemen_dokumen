@@ -306,7 +306,7 @@ const UploadDokumen = () => {
     }
     
     fetchOptionJenis();
-  }, [dinas, levelId]);
+  }, [dinas, levelId, fetchOptionJenis]);
 
   useEffect(() => {
     if (!jenis) {
@@ -317,7 +317,7 @@ const UploadDokumen = () => {
     }
 
     fetchOptionSubjenis();
-  }, [jenis]);
+  }, [jenis, fetchOptionSubjenis]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     // Cek apakah form bisa digunakan

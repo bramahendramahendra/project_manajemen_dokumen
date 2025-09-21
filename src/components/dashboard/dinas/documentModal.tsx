@@ -176,7 +176,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
     if (isOpen && statusCode && dinas) {
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [isOpen, statusCode, dinas, currentPage, itemsPerPage, filters]);
+  }, [isOpen, statusCode, dinas, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds - PERSIS seperti master dinas
   useEffect(() => {

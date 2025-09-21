@@ -174,7 +174,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ isOpen, onClose, statusCo
     if (isOpen && statusCode) {
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [isOpen, statusCode, currentPage, itemsPerPage, filters]);
+  }, [isOpen, statusCode, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds - PERSIS seperti master dinas
   useEffect(() => {
