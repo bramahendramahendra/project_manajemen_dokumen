@@ -5,7 +5,7 @@ import { apiRequest } from "@/helpers/apiClient";
 import { HiOutlineDocumentText, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { Document, DocumentResponse } from "@/types/dashboard";
 import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
-import { statusColor } from "@/utils/status";
+import { statusColor, statusIcon } from "@/utils/status";
 import Pagination from "@/components/pagination/Pagination";
 
 const TablePage = () => {
@@ -98,6 +98,7 @@ const TablePage = () => {
       const res: Document[] = result.responseData.items.map((item: any) => ({
           id: item.id,
           dinas: item.dinas || '',
+          jenis: item.jenis,
           subjenis: item.subjenis,
           maker_date: item.maker_date,
           status_code: item.status_code,
@@ -170,7 +171,6 @@ const TablePage = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-
 
   // Render loading skeleton
   const renderLoadingSkeleton = () => (
@@ -359,7 +359,7 @@ const TablePage = () => {
                       <div>
                         <p className="font-medium text-dark dark:text-white">{item.subjenis}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          ID: {item.id}
+                          Jenis: {item.jenis}
                         </p>
                       </div>
                     </div>
@@ -376,7 +376,11 @@ const TablePage = () => {
                   </td>
                   <td className="px-4 py-4 xl:pr-7.5">
                     <div className={`${statusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}>
-                      <span>{item.status_doc}</span>
+                    {/* <span className={`${statusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}> */}                     
+                      <span>
+                        {statusIcon(item.status_code)}
+                        {item.status_doc}
+                      </span>
                     </div>
                   </td>
                 </tr>

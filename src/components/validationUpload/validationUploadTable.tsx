@@ -186,7 +186,7 @@ const ValidationUploadTable = ({ id }: Props) => {
       }
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [id, searchTerm, currentPage, itemsPerPage, filters, fetchData]);
+  }, [id, searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
