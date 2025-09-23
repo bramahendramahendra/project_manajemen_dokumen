@@ -77,7 +77,6 @@ const TablePage = () => {
       });
 
       const response = await apiRequest(`/dashboard/document-monitoring/list?${queryParams.toString()}`, "GET");
-      
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data dokumen tidak ditemukan");

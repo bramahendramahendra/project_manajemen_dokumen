@@ -28,6 +28,9 @@ const TablePage = () => {
     search: ''
   });
 
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+  const userDinas = user.dinas;
+
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
     setCurrentPage(1);
@@ -57,9 +60,6 @@ const TablePage = () => {
 
   // Function untuk fetch data dengan parameter
   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
-    const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-    const idDinas = user.dinas;
-
     setLoading(true);
     setError(null);
 
@@ -76,7 +76,7 @@ const TablePage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/dashboard/document-dinas/list/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/dashboard/document-dinas/list/${userDinas}?${queryParams.toString()}`, "GET");
       
       if (!response.ok) {
         if (response.status === 404) {

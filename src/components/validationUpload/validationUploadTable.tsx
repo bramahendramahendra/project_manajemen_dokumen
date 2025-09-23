@@ -782,7 +782,7 @@ const ValidationUploadTable = ({ id }: Props) => {
             <div className="flex items-center">
               <HiMagnifyingGlass className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
               <span className="text-sm text-blue-800 dark:text-blue-300">
-                Menampilkan hasil pencarian untuk: <span className="font-semibold">"{filters.search}"</span>
+                Menampilkan hasil pencarian untuk: <span className="font-semibold">&quot;{filters.search}&quot;</span>
               </span>
               {totalRecords > 0 && (
                 <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-full">

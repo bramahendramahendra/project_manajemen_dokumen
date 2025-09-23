@@ -43,6 +43,9 @@ const MainPage = () => {
     search: ''
   });
 
+  const user = JSON.parse(Cookies.get("user") || "{}");
+  const userDinas = user.dinas || "";
+
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
     setCurrentPage(1);
@@ -76,8 +79,6 @@ const MainPage = () => {
     setError(null);
 
     try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-      
       // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -90,7 +91,7 @@ const MainPage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/daftar_upload/${user.dinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/daftar_upload/${userDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data dokumen daftar upload tidak ditemukan");

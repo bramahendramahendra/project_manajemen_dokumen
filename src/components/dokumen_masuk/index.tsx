@@ -79,7 +79,7 @@ const MainPage = () => {
   }, [debounceSearch]);
 
   // Function untuk fetch data dengan parameter
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
 
@@ -141,7 +141,8 @@ const MainPage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  }, []); // Empty dependency array karena function ini tidak bergantung pada state atau props
+
   
   // useEffect untuk fetch data
   useEffect(() => {
@@ -149,7 +150,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
