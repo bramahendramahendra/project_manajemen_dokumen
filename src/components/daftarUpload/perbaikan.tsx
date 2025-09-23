@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Cookies from "js-cookie";
@@ -136,8 +136,8 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  // Fungsi untuk fetch data dokumen - YANG DIRAPIKAN
-  const fetchDocumentData = async () => {
+  // Fungsi untuk fetch data dokumen - DIPINDAH KE useCallback
+  const fetchDocumentData = useCallback(async () => {
     if (!documentId) {
       setError("ID dokumen tidak valid");
       setLoadingDocument(false);
@@ -221,7 +221,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
     } finally {
       setLoadingDocument(false);
     }
-  };
+  }, [documentId]); // Dependency array hanya berisi documentId
 
   useEffect(() => {
     if (documentId) {
@@ -230,7 +230,7 @@ const PerbaikanDokumen = ({ documentId }: PerbaikanDokumenProps) => {
       setError("ID dokumen tidak ditemukan");
       setLoadingDocument(false);
     }
-  }, [documentId, fetchDocumentData]);
+  }, [documentId, fetchDocumentData]); // Sekarang fetchDocumentData sudah stabil
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {

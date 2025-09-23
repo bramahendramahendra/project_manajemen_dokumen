@@ -26,7 +26,7 @@ const MainPage = () => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: 'id',
+    sort_by: 'dinas',
     sort_dir: 'DESC',
     search: ''
   });
@@ -308,24 +308,6 @@ const MainPage = () => {
                 </button>
               )}
             </div>
-          </div>
-          
-          {/* Records count */}
-          <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-            {!loading && totalRecords > 0 && (
-              <>
-                {filters.search && (
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                    {totalRecords} hasil
-                  </span>
-                )}
-                {!filters.search && (
-                  <>Menampilkan {Math.min(totalRecords, itemsPerPage)} dari {totalRecords} data</>
-                )}
-              </>
-            )}
-            {!loading && totalRecords === 0 && !filters.search && "Tidak ada data"}
-            {!loading && totalRecords === 0 && filters.search && "Tidak ditemukan"}
           </div>
         </div>
 

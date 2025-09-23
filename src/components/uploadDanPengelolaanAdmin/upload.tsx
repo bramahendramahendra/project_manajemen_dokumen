@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
@@ -184,8 +184,8 @@ const UploadDokumen = () => {
     }
   };
 
-  // Fungsi untuk fetch officials dengan handling yang lebih baik
-  const fetchDinas = async () => {
+  // Fungsi untuk fetch dinas dengan handling yang lebih baik - dibungkus dengan useCallback
+  const fetchDinas = useCallback(async () => {
     setLoadingDinas(true);
     setError(null);
     setIsDinasEmpty(false);
@@ -219,10 +219,10 @@ const UploadDokumen = () => {
     } finally {
       setLoadingDinas(false);
     }
-  };
+  }, []); // Tidak ada dependency karena fungsi tidak bergantung pada state lain
 
-  // Fungsi untuk fetch jenis dengan handling yang lebih baik
-  const fetchOptionJenis = async () => {
+  // Fungsi untuk fetch jenis dengan handling yang lebih baik - dibungkus dengan useCallback
+  const fetchOptionJenis = useCallback(async () => {
     setLoadingJenis(true);
     setError(null);
     setIsJenisEmpty(false);
@@ -255,10 +255,10 @@ const UploadDokumen = () => {
     } finally {
       setLoadingJenis(false);
     }
-  };
+  }, [levelId]); // Hanya bergantung pada levelId
 
-  // Fungsi untuk fetch subjenis dengan handling yang lebih baik
-  const fetchOptionSubjenis = async () => {
+  // Fungsi untuk fetch subjenis dengan handling yang lebih baik - dibungkus dengan useCallback
+  const fetchOptionSubjenis = useCallback(async () => {
     setLoadingSubjenis(true);
     setError(null);
     setIsSubjenisEmpty(false);
@@ -291,22 +291,22 @@ const UploadDokumen = () => {
     } finally {
       setLoadingSubjenis(false);
     }
-  };
+  }, [jenis, levelId]); // Bergantung pada jenis dan levelId
 
   useEffect(() => {
     fetchDinas();
-  }, []);
+  }, [fetchDinas]);
 
   useEffect(() => {
     if (!dinas && !levelId) {
       setOptionJenis([]);
       setIsJenisEmpty(false);
-      setJenis(0); // Reset subjenis ketika jenis berubah
+      setJenis(0); // Reset jenis ketika dinas berubah
       return;
     }
     
     fetchOptionJenis();
-  }, [dinas, levelId]);
+  }, [dinas, levelId, fetchOptionJenis]);
 
   useEffect(() => {
     if (!jenis) {
@@ -317,7 +317,7 @@ const UploadDokumen = () => {
     }
 
     fetchOptionSubjenis();
-  }, [jenis]);
+  }, [jenis, fetchOptionSubjenis]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     // Cek apakah form bisa digunakan

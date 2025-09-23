@@ -149,7 +149,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
+  }, [searchTerm, currentPage, itemsPerPage, filters]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -278,9 +278,13 @@ const MainPage = () => {
   };
 
   // Handle navigasi ke detail dokumen
-  const handleDinasClick = (id: number, dinas: string) => {
+  const handleDinasClick = (dinas: number, nama_dinas: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
+
+    // console.log(id);
+    // console.log(dinas);
+    
 
     if (!user) {
       alert("Sesi Anda telah berakhir, silakan login kembali!");
@@ -293,9 +297,9 @@ const MainPage = () => {
     }
 
     try {
-      const encrypted = encryptObject({ id, dinas }, user);
+      const encrypted = encryptObject({ dinas, nama_dinas }, user);
       
-      const formattedDinasName = dinas.toLowerCase().replace(/\s+/g, "-");
+      const formattedDinasName = nama_dinas.toLowerCase().replace(/\s+/g, "-");
       router.push(`/dokumen_masuk/${formattedDinasName}?${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);

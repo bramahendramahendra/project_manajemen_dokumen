@@ -46,8 +46,8 @@ const MainPage = ({ id }: Props) => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: 'jenis,id',
-    sort_dir: 'ASC,DESC',
+    sort_by: 'tanggal_upload',
+    sort_dir: 'DESC',
     search: ''
   });
 
@@ -78,7 +78,7 @@ const MainPage = ({ id }: Props) => {
     return cleanup;
   }, [debounceSearch]);
 
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     if (!id) {
       setError("ID tidak ditemukan");
       setLoading(false);
@@ -144,7 +144,7 @@ const MainPage = ({ id }: Props) => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  },[id]);
 
   useEffect(() => {
     if (id) {
@@ -405,24 +405,6 @@ const MainPage = ({ id }: Props) => {
                 </button>
               )}
             </div>
-          </div>
-          
-          {/* Records count */}
-          <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-            {!loading && totalRecords > 0 && (
-              <>
-                {filters.search && (
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                    {totalRecords} hasil
-                  </span>
-                )}
-                {!filters.search && (
-                  <>Menampilkan {Math.min(totalRecords, itemsPerPage)} dari {totalRecords} data</>
-                )}
-              </>
-            )}
-            {!loading && totalRecords === 0 && !filters.search && "Tidak ada data"}
-            {!loading && totalRecords === 0 && filters.search && "Tidak ditemukan"}
           </div>
         </div>
 
