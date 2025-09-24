@@ -36,9 +36,6 @@ const DokumenMasukDetail = () => {
     setNamaDinas(nama_dinas);
     // setTotalPending(total);
   }, [encrypted, user]);
-
-  console.log(dinas);
-  console.log(namaDinas);
   
 
   const breadcrumbs = [
@@ -49,7 +46,7 @@ const DokumenMasukDetail = () => {
   return (
     <>
       <Breadcrumb breadcrumbs={breadcrumbs} />
-      <DokumenMasukDetailDokumen senderNamaDinas={namaDinas}/>
+      <DokumenMasukDetailDokumen dinas={dinas} namaDinas={namaDinas}/>
     </>
   );
 };

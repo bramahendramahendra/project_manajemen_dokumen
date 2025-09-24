@@ -1,10 +1,12 @@
 "use client";
-import Pagination from "../pagination/Pagination9";
-import { apiRequest, downloadFileRequest  } from "@/helpers/apiClient";
-import Cookies from "js-cookie";
-import { decryptObject } from "@/utils/crypto";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { apiRequest, downloadFileRequest  } from "@/helpers/apiClient";
+import { decryptObject } from "@/utils/crypto";
+import Cookies from "js-cookie";
+import { DokumenMasuk, DokumenMasukResponse } from "@/types/dokumenMasuk";
+import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
+import Pagination from "../pagination/Pagination";
 
 // Interface untuk data API response
 interface KirimanDokumen {
@@ -68,16 +70,22 @@ interface DownloadDetailResponse {
   }[];
   fileName: string;
 }
-
-const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: string | null }) => {
+const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null, namaDinas: string | null }) => {
+// const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null, namaDinas: string | null }) => {
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dataKiriman, setDataKiriman] = useState<FormattedKirimanDokumen[]>([]);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [dataList, setDataList] = useState<DokumenMasuk[]>([]);
+
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchLoading, setSearchLoading] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalRecords, setTotalRecords] = useState(0);
 
   // State untuk modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,25 +101,186 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
   const [downloadingGroupIndex, setDownloadingGroupIndex] = useState<number | null>(null);
   const [downloadingAllFiles, setDownloadingAllFiles] = useState(false);
 
-  const [dinas, setDinas] = useState<number | null>(null);
-  const [namaDinas, setNamaDinas] = useState<string | null>(null);
+  // const [dinas, setDinas] = useState<number | null>(null);
+  // const [namaDinas, setNamaDinas] = useState<string | null>(null);
 
-  const key = process.env.NEXT_PUBLIC_APP_KEY;
-  const encrypted = searchParams.get(`${key}`);
-  const user = Cookies.get("user");
+
+  // Filters state
+  const [filters, setFilters] = useState({
+    sort_by: '',
+    sort_dir: 'DESC',
+    search: ''
+  });
+
+  const user = JSON.parse(Cookies.get("user") || "{}");
+  const userDinas = user.dinas || "";
+
+  // Reset halaman ke 1 ketika melakukan pencarian
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
+  // Debounced search function
+  const debounceSearch = useCallback(() => {
+    if (searchTerm.trim() !== '') {
+      const timeoutId = setTimeout(() => {
+        setFilters(prev => ({ ...prev, search: searchTerm }));
+        setCurrentPage(1); // Reset to first page when searching
+      }, 500); // 500ms delay
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      // Jika searchTerm kosong, langsung clear search filter tanpa delay
+      setFilters(prev => ({ ...prev, search: '' }));
+      setCurrentPage(1);
+    }
+  }, [searchTerm]); // Menambahkan searchTerm ke dependency array
+
+  // Effect untuk debounced search
+  useEffect(() => {
+    const cleanup = debounceSearch();
+    return cleanup;
+  }, [debounceSearch]);
+
+  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+    if (!dinas) {
+      setError("ID tidak ditemukan");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // Buat query parameters
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        per_page: perPage.toString(),
+        ...filterParams
+      });
+
+      // Hapus parameter kosong
+      Array.from(queryParams.entries()).forEach(([key, value]) => {
+        if (!value || value.trim() === '') queryParams.delete(key);
+      });
+
+      const response = await apiRequest(`/inbox/detail/${userDinas}/${dinas}`, "GET");
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Data kiriman dokumen tidak ditemukan");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result : DokumenMasukResponse = await response.json();
+
+      if (!result.responseData || !result.responseData.items) {
+        throw new Error("Format data tidak valid");
+      }
+
+      if (!result.responseMeta) {
+        throw new Error("Format meta tidak valid");
+      }
+      
+      // Format data sesuai dengan interface
+      const res: DokumenMasuk[] = result.responseData.items.map((item: any) => ({
+        id: item.id_table,
+        senderDinas: namaDinas || "",
+        dinas_pengirim: item.pengirim_nama_dinas,
+        tanggal_pengirim: item.pengirim_date,
+        judul: item.judul,
+      }));
+
+        // const dateObject = new Date(item.pengirim_date);
+        
+        // // Format jenis dan subjenis menjadi array "jenis - subjenis"
+        // // const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
+        
+        // return {
+        //   id: `${dinas}_${index}`,
+        //   id_table: item.id_table,
+        //   sender: item.pengirim_nama_dinas,
+        //   senderDinas: namaDinas || senderNamaDinas || "",
+        //   date: dateObject.toLocaleDateString('id-ID'),
+        //   dateObject: dateObject, 
+        //   lampiran: item.judul,
+        // };
+    
+
+      setDataList(res);
+      setTotalPages(result.responseMeta.total_pages);
+      setTotalRecords(result.responseMeta.total_records);
+      
+    } catch (err: any) {
+      setError(
+        err.message === "Failed to fetch" 
+          ? "Tidak dapat terhubung ke server"
+          : err.message === "Document data not found"
+          ? "Data tidak ditemukan"
+          : err.message
+      );
+      setDataList([]);
+      setTotalPages(0);
+      setTotalRecords(0);
+    } finally {
+      setLoading(false);
+      setSearchLoading(false);
+    }
+  };
 
   // Filter data berdasarkan nama dinas
-  const filteredData = dataKiriman.filter(
-    (item) => item.senderDinas === senderNamaDinas
+  const filteredData = dataList.filter(
+    (item) => item.senderDinas === namaDinas
   );
 
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  // useEffect untuk fetch data
+  useEffect(() => {
+    if (dinas) {
+      if (filters.search !== searchTerm) {
+        setSearchLoading(true);
+      }
+      fetchData(currentPage, itemsPerPage, filters);
+    }
+  }, [dinas, searchTerm, currentPage, itemsPerPage, filters]);
 
-  // Data yang ditampilkan pada halaman saat ini
-  const currentData = filteredData.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // Auto hide success message after 5 seconds
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
+  // Handler untuk perubahan halaman
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Handler untuk perubahan items per page
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset ke halaman pertama
+  };
+
+  // Handler untuk retry ketika error
+  const handleRetry = () => {
+    fetchData(currentPage, itemsPerPage, filters);
+  };
+
+  // Handler untuk clear search
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setFilters(prev => ({ ...prev, search: "" }));
+    setCurrentPage(1);
+  };
+
+  // Handler untuk search input change
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  };
 
   // Fungsi untuk menghitung sisa hari sebelum terhapus otomatis
   const calculateDaysRemaining = (dateObject: Date): number => {
@@ -131,80 +300,6 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
     if (daysRemaining <= 10) return "bg-yellow-100 text-yellow-700 border-yellow-200";
     return "bg-green-100 text-green-700 border-green-200";
   };
-
-  // Dekripsi parameter URL
-  useEffect(() => {
-    if (!encrypted || !user) {
-      setError("Token atau data tidak tersedia.");
-      setLoading(false);
-      return;
-    }
-    const result = decryptObject(encrypted, user);
-    if (!result) {
-      setError("Gagal dekripsi atau data rusak.");
-      setLoading(false);
-      return;
-    }
-    const { dinas, nama_dinas } = result;
-    setDinas(dinas);
-    setNamaDinas(nama_dinas);
-  }, [encrypted, user]);
-
-  // Fetch data dari API
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!dinas) return;
-      
-      try {
-        setLoading(true);
-        const user = JSON.parse(Cookies.get("user") || "{}");
-
-        const response = await apiRequest(`/inbox/detail/${user.dinas}/${dinas}`, "GET");
-        
-        if (!response.ok) {
-          if (response.status === 404) {
-            throw new Error("Data kiriman dokumen tidak ditemukan");
-          }
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const result = await response.json();
-        
-        // Format data sesuai dengan interface
-        const formattedData: FormattedKirimanDokumen[] = result.responseData.items.map((item: KirimanDokumen, index: number) => {
-          const dateObject = new Date(item.pengirim_date);
-          
-          // Format jenis dan subjenis menjadi array "jenis - subjenis"
-          // const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
-          
-          return {
-            id: `${dinas}_${index}`,
-            id_table: item.id_table,
-            sender: item.pengirim_nama_dinas,
-            senderDinas: namaDinas || senderNamaDinas || "", // Menggunakan nama dinas dari parameter
-            date: dateObject.toLocaleDateString('id-ID'), // Format tanggal Indonesia
-            dateObject: dateObject, // Simpan object Date untuk perhitungan
-            lampiran: item.judul,
-            // messageTitle: item.judul,
-            // messageContent: item.lampiran,
-            // messageJenisSubjenis: jenisSubjenisArray,
-            // fileName: item.file_name,
-            // documentFiles: item.documnet || [], // Simpan data dokumen lengkap
-          };
-        });
-
-        setDataKiriman(formattedData);
-        
-      } catch (err: any) {
-        console.error("Error fetching data:", err);
-        setError(err.message === "Failed to fetch" ? "Gagal memuat data dari server" : err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [dinas, namaDinas, senderNamaDinas]);
 
   // Fungsi untuk fetch detail message dari API
   const fetchMessageDetail = async (id: number): Promise<MessageDetailResponse | null> => {
@@ -516,7 +611,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
   // Loading skeleton
   const LoadingSkeleton = () => (
     <div className="divide-y divide-gray-100">
-      {Array.from({ length: 3 }).map((_, index) => (
+      {Array.from({ length: itemsPerPage }).map((_, index) => (
         <div key={index} className="flex items-center justify-between py-5 px-4">
           <div>
             <div className="h-6 w-32 animate-pulse rounded bg-gray-200 mb-2"></div>
@@ -534,13 +629,59 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
     </div>
   );
 
+   // Render empty state
+  const renderEmptyState = () => (
+    <tr>
+      <td colSpan={6} className="px-4 py-20 text-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-gray-400 text-6xl mb-4">📄</div>
+          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+            {filters.search ? "Tidak ada hasil pencarian" : "Data belum tersedia"}
+          </p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+            {filters.search 
+              ? `Tidak ditemukan hasil untuk &quot;${filters.search}&quot;`
+              : "Belum ada dokumen yang diupload"
+            }
+          </p>
+          {filters.search && (
+            <button
+              onClick={handleClearSearch}
+              className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Hapus Pencarian
+            </button>
+          )}
+        </div>
+      </td>
+    </tr>
+  );
+
+  // Render error state
+  const renderErrorState = () => (
+    <tr>
+      <td colSpan={6} className="px-4 py-20 text-center">
+        <div className="flex flex-col items-center justify-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
+          <button 
+            onClick={handleRetry}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </td>
+    </tr>
+  );
+
   return (
     <div className="col-span-12 xl:col-span-12">
       <div className="rounded-xl bg-white px-8 pt-6 pb-4 shadow-md dark:bg-gray-dark">
         {/* Header dengan nama dinas */}
         <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{senderNamaDinas || namaDinas}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{namaDinas}</h2>
             <p className="mt-1 text-sm text-gray-500">
               Dokumen Masuk: <span className="font-medium text-blue-600">{filteredData.length}</span> item
             </p>
@@ -570,9 +711,10 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {currentData.length > 0 ? (
-              currentData.map((item) => {
-                const daysRemaining = calculateDaysRemaining(item.dateObject);
+            {dataList.length > 0 ? (
+              dataList.map((item) => {
+                // const daysRemaining = calculateDaysRemaining(item.dateObject);
+                const daysRemaining = calculateDaysRemaining(item.tanggal_pengirim);
                 const badgeColor = getBadgeColor(daysRemaining);
                 
                 return (
@@ -583,7 +725,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
                     {/* Informasi Utama */}
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <p className="text-xl font-medium text-blue-600">{item.lampiran}</p>
+                        <p className="text-xl font-medium text-blue-600">{item.judul}</p>
                         
                         {/* Badge Countdown dengan Tooltip */}
                         <div className="relative group">
@@ -622,14 +764,14 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
                             <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                           </svg>
                         </div>
-                        <span className="text-sm text-gray-600 mr-3">{item.sender}</span>
+                        <span className="text-sm text-gray-600 mr-3">{item.dinas_pengirim}</span>
                         
                         <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                             <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                           </svg>
                         </div>
-                        <span className="text-sm text-gray-600">{item.date}</span>
+                        <span className="text-sm text-gray-600">{formatIndonesianDateOnly(item.tanggal_pengirim)}</span>
                       </div>
                     </div>
                   
@@ -637,7 +779,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
                     <div className="flex space-x-3">
                       {/* Tombol Isi Pesan - UPDATED */}
                       <button
-                        onClick={() => openMessageModal(item.id_table)}
+                        onClick={() => openMessageModal(item.id)}
                         disabled={loadingMessage}
                         className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -658,7 +800,7 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
                       
                       {/* Tombol Download - UPDATED */}
                       <button
-                        onClick={() => openDownloadModal(item.id_table)}
+                        onClick={() => openDownloadModal(item.id)}
                         disabled={loadingDownload}
                         className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
@@ -695,14 +837,18 @@ const DokumenMasukDetailDokumen = ({ senderNamaDinas }: { senderNamaDinas: strin
         )}
         
         {/* Pagination - hanya tampil jika ada data */}
-        {currentData.length > 0 && !loading && (
+        {!loading && !error && totalPages > 0 && (
           <div className="mt-6 border-t border-gray-100 pt-4">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
               itemsPerPage={itemsPerPage}
-              onItemsPerPageChange={setItemsPerPage}
+              onItemsPerPageChange={handleItemsPerPageChange}
+              totalRecords={totalRecords}
+              loading={loading}
+              isSearchActive={!!filters.search}
+              searchTerm={filters.search}
             />
           </div>
         )}
