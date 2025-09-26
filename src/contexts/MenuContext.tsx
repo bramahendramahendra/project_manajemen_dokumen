@@ -73,6 +73,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
               route: child.url || "#",
               icon: iconMap[child.icon] || null,
               code_menu: child.code_menu,
+              notif: child.notif,
             }));
 
           return {
@@ -82,6 +83,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
             route: item.url || "#",
             icon: iconMap[item.icon] || null,
             code_menu: item.code_menu,
+            notif: item.notif,
             ...(children.length > 0 ? { children } : {}),
           };
         });
@@ -121,6 +123,8 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (json.responseCode === 200) {
         const transformed = transformMenuData(json.responseData.items);
+        console.log(transformed);
+        
         setMenuGroups(transformed);
         
         // Simpan ke localStorage untuk penggunaan selanjutnya
