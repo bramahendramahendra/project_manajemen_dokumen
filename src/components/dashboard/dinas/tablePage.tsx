@@ -58,8 +58,8 @@ const TablePage = () => {
     return cleanup;
   }, [debounceSearch]);
 
-  // Function untuk fetch data dengan parameter
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  // Function untuk fetch data dengan parameter - menggunakan useCallback
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
 
@@ -77,7 +77,6 @@ const TablePage = () => {
       });
 
       const response = await apiRequest(`/dashboard/document-dinas/list/${userDinas}?${queryParams.toString()}`, "GET");
-      
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data dokumen tidak ditemukan");
@@ -123,7 +122,7 @@ const TablePage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  }, [userDinas]); // Tambahkan userDinas sebagai dependency karena digunakan dalam function
 
   // Load data saat component mount atau parameter berubah
   useEffect(() => {
@@ -131,7 +130,7 @@ const TablePage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]); // Tambahkan fetchData ke dependency array
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -154,10 +153,10 @@ const TablePage = () => {
     setCurrentPage(1); // Reset ke halaman pertama saat mengubah items per page
   };
 
-  // Handler untuk retry ketika error
-  const handleRetry = () => {
-    fetchData(currentPage, itemsPerPage);
-  };
+  // Handler untuk retry ketika error - menggunakan useCallback
+  const handleRetry = useCallback(() => {
+    fetchData(currentPage, itemsPerPage, filters);
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
    // Handler untuk clear search
   const handleClearSearch = () => {

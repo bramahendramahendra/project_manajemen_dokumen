@@ -48,6 +48,9 @@ const MainPage = () => {
     search: ''
   });
 
+  const user = JSON.parse(Cookies.get("user") || "{}");
+  const userDinas = user.dinas || "";
+
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
     setCurrentPage(1);
@@ -75,12 +78,18 @@ const MainPage = () => {
     return cleanup;
   }, [debounceSearch]);
 
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
 
+    if (!userDinas) {
+      setError("ID Dinas tidak ditemukan");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
+      // const user = JSON.parse(Cookies.get("user") || "{}");
 
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -93,7 +102,7 @@ const MainPage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/reports/document-dinas/${user.dinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/document-dinas/${userDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data dokumen tidak ditemukan");
@@ -137,14 +146,14 @@ const MainPage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  },[userDinas]);
 
   useEffect(() => {
     if (filters.search !== searchTerm) {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -168,9 +177,9 @@ const MainPage = () => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {

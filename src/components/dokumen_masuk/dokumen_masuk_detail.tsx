@@ -142,16 +142,22 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
     return cleanup;
   }, [debounceSearch]);
 
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+    if (!userDinas) {
+      setError("ID Dinas tidak ditemukan");
+      setLoading(false);
+      return;
+    }
+
     if (!dinas) {
       setError("ID tidak ditemukan");
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    
     try {
       // Buat query parameters
       const queryParams = new URLSearchParams({
@@ -227,12 +233,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
       setLoading(false);
       setSearchLoading(false);
     }
-  };
-
-  // Filter data berdasarkan nama dinas
-  const filteredData = dataList.filter(
-    (item) => item.senderDinas === namaDinas
-  );
+  },[userDinas, dinas]);
 
   // useEffect untuk fetch data
   useEffect(() => {
@@ -242,7 +243,12 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
       }
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [dinas, searchTerm, currentPage, itemsPerPage, filters]);
+  }, [dinas, searchTerm, currentPage, itemsPerPage, filters, fetchData]);
+
+  // Filter data berdasarkan nama dinas
+  const filteredData = dataList.filter(
+    (item) => item.senderDinas === namaDinas
+  );
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -266,9 +272,9 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {

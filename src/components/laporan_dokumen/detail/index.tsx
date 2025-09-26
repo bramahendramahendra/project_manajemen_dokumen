@@ -79,14 +79,14 @@ const MainPage = ({ id }: Props) => {
   }, [debounceSearch]);
 
   const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
-    if (!id) {
+    setLoading(true);
+    setError(null);
+
+     if (!id) {
       setError("ID tidak ditemukan");
       setLoading(false);
       return;
     }
-
-    setLoading(true);
-    setError(null);
 
     try {
       const queryParams = new URLSearchParams({
@@ -177,9 +177,9 @@ const MainPage = ({ id }: Props) => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {

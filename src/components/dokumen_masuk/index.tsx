@@ -62,9 +62,15 @@ const MainPage = () => {
   }, [debounceSearch]);
 
   // Function untuk fetch data dengan parameter
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
+
+    if (!userDinas) {
+      setError("ID Dinas tidak ditemukan");
+      setLoading(false);
+      return;
+    }
 
     try {
       // Buat query parameters
@@ -122,7 +128,7 @@ const MainPage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  },[userDinas]);
 
   // useEffect untuk fetch data
   useEffect(() => {
@@ -130,7 +136,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -154,9 +160,9 @@ const MainPage = () => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {
