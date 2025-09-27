@@ -83,7 +83,7 @@ const DropdownNotification = () => {
     // Subscribe ke event error
     const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
       console.error('SSE Error in notification dropdown:', error);
-      setError('Koneksi notifikasi bermasalah');
+      // setError('Koneksi notifikasi bermasalah');
     });
 
     // Subscribe ke event connection untuk status
@@ -185,12 +185,14 @@ const DropdownNotification = () => {
             </span>
             
             {/* Connection status indicator */}
-            <span
-              className={`absolute -bottom-0.5 -right-0.5 z-1 h-2 w-2 rounded-full border border-gray-2 dark:border-dark-3 ${
-                connectionStatus === 'connected' ? 'bg-green-500' : 
-                connectionStatus === 'reconnecting' ? 'bg-yellow-500' : 'bg-red-500'
-              }`}
-            ></span>
+            {DEBUG_MODE && (
+              <span
+                className={`absolute -bottom-0.5 -right-0.5 z-1 h-2 w-2 rounded-full border border-gray-2 dark:border-dark-3 ${
+                  connectionStatus === 'connected' ? 'bg-green-500' : 
+                  connectionStatus === 'reconnecting' ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+              ></span>
+            )}
           </span>
         </Link>
 

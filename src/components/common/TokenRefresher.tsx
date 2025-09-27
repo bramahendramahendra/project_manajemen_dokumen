@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { checkAndRefreshTokenIfNeeded } from '@/helpers/tokenService';
-import { tokenConfig } from '@/utils/config';
+import { DEBUG_MODE, tokenConfig } from '@/utils/config';
 
 // Dynamic import untuk notificationClient untuk menghindari circular dependency
 const getNotificationClient = async () => {
@@ -109,7 +109,7 @@ const TokenRefresher = () => {
         try {
           const success = await checkAndRefreshTokenIfNeeded();
           if (success) {
-            console.log('Token refreshed on visibility change');
+            if (DEBUG_MODE) console.log('Token refreshed on visibility change');
             
             // Reconnect SSE jika diperlukan
             try {
@@ -141,7 +141,7 @@ const TokenRefresher = () => {
         try {
           const success = await checkAndRefreshTokenIfNeeded();
           if (success) {
-            console.log('Token refreshed on window focus');
+            if (DEBUG_MODE) console.log('Token refreshed on window focus');
             
             // Ensure SSE connection is active
             try {

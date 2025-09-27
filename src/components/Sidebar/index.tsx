@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import SidebarItem from "@/components/Sidebar/SidebarItem";
@@ -42,62 +42,106 @@ const iconMap: Record<string, JSX.Element> = {
   SettingIcon: <SettingIcon />,
 };
 
+// Mapping code_menu ke code_notif
+const menuNotifMapping: Record<string, number> = {
+  "0105": 1, // Validation Upload -> code_notif 1
+  "0110": 2, // Dokumen Masuk -> code_notif 2
+  // Tambahkan mapping lain sesuai kebutuhan
+};
+
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [pageName, setPageName] = useLocalStorage("selectedMenu", "dashboard");
-  const [notifCount, setNotifCount] = useState<number>(0);
+  const [notifCounts, setNotifCounts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Gunakan menu context
   const { menuGroups, loading: menuLoading, error: menuError } = useMenu();
+  
+  // Ref untuk tracking subscription
+  const subscriptionRefs = useRef<(() => void)[]>([]);
 
-  // Initial fetch untuk notification count
+  // Initial fetch untuk notification count semua menu
   useEffect(() => {
-    const fetchInitialNotifCount = async () => {
+    const fetchInitialNotifCounts = async () => {
       try {
         setLoading(true);
-        const res = await apiRequest(`/notifications/sidebar/1`, "GET");
+        const counts: Record<string, number> = {};
         
-        if (!res.ok) {
-          if (res.status === 404) {
-            throw new Error("Notification data not found");
+        // Fetch untuk setiap code_notif yang ada dalam mapping
+        const uniqueCodeNotifs = Array.from(new Set(Object.values(menuNotifMapping)));
+        
+        await Promise.all(uniqueCodeNotifs.map(async (codeNotif) => {
+          try {
+            const res = await apiRequest(`/notifications/sidebar/${codeNotif}`, "GET");
+            
+            if (res.ok) {
+              const json = await res.json();
+              if (json.responseCode === 200) {
+                // Map code_notif ke semua code_menu yang menggunakan code_notif ini
+                Object.entries(menuNotifMapping).forEach(([codeMenu, mappedCodeNotif]) => {
+                  if (mappedCodeNotif === codeNotif) {
+                    counts[codeMenu] = json.responseData.unread_count || 0;
+                  }
+                });
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to fetch notif count for code_notif ${codeNotif}:`, err);
           }
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        }));
         
-        const json = await res.json();
-        if (json.responseCode === 200) {
-          setNotifCount(json.responseData.unread_count || 0);
-        }
+        setNotifCounts(counts);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-        console.error("Failed to fetch initial notif count:", err);
+        console.error("Failed to fetch initial notif counts:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchInitialNotifCount();
+    fetchInitialNotifCounts();
   }, []);
 
-  // Efek untuk mengelola koneksi SSE
+  // Setup SSE connection dan subscriptions
   useEffect(() => {
+    // Clear previous subscriptions
+    subscriptionRefs.current.forEach(unsubscribe => unsubscribe());
+    subscriptionRefs.current = [];
+
     // Subscribe ke event sidebar untuk mendapatkan notification count secara real-time
-    const unsubscribe = notificationClient.subscribe('sidebar', (data: any) => {
-      if (data && typeof data.unread_count === 'number') {
-        setNotifCount(data.unread_count);
+    const unsubscribeSidebar = notificationClient.subscribe('sidebar', (data: any) => {
+      if (DEBUG_MODE) console.log('[SSE] Received sidebar data:', data); // Debug log
+      
+      if (data && typeof data.unread_count === 'number' && data.code_notif) {
+        // Update notif count berdasarkan code_notif yang diterima
+        setNotifCounts(prevCounts => {
+          const updatedCounts = { ...prevCounts };
+          
+          Object.entries(menuNotifMapping).forEach(([codeMenu, codeNotif]) => {
+            if (codeNotif === data.code_notif) {
+              updatedCounts[codeMenu] = data.unread_count;
+            }
+          });
+          
+          if (DEBUG_MODE) console.log('[SSE] Updated notif counts:', updatedCounts); // Debug log
+          return updatedCounts;
+        });
+        
         setError(null); // Clear error ketika berhasil menerima data
       }
     });
 
     // Subscribe ke event error untuk handling error
     const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
-      console.error('SSE Error in sidebar:', error);
-      setError('Koneksi notifikasi bermasalah');
+      if (DEBUG_MODE) console.error('SSE Error in sidebar:', error);
+      // setError('Koneksi notifikasi bermasalah');
     });
 
     // Subscribe ke event connection untuk status koneksi
     const unsubscribeConnection = notificationClient.subscribe('connection', (data: any) => {
+      if (DEBUG_MODE) console.log('[SSE] Connection status:', data); // Debug log
+      
       if (data.status === 'connected') {
         setError(null);
       } else if (data.status === 'disconnected') {
@@ -105,16 +149,18 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       }
     });
 
+    // Store unsubscribe functions
+    subscriptionRefs.current = [unsubscribeSidebar, unsubscribeError, unsubscribeConnection];
+
     // Mulai koneksi SSE jika belum terhubung
     notificationClient.connect();
 
-    // Cleanup: unsubscribe ketika komponen unmount
+    // Cleanup function
     return () => {
-      unsubscribe();
-      unsubscribeError();
-      unsubscribeConnection();
+      subscriptionRefs.current.forEach(unsubscribe => unsubscribe());
+      subscriptionRefs.current = [];
     };
-  }, []);
+  }, []); // Empty dependency array
 
   // Update menu groups dengan notification count
   const updateMenuWithNotifications = (groups: any[]) => {
@@ -122,11 +168,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       ...group,
       menuItems: group.menuItems.map((item: any) => ({
         ...item,
-        message: item.code_menu === "0105" ? notifCount : "",
+        message: notifCounts[item.code_menu] || "",
         icon: iconMap[item.icon] || null,
         children: item.children ? item.children.map((child: any) => ({
           ...child,
-          message: child.code_menu === "0105" ? notifCount : "",
+          message: notifCounts[child.code_menu] || "",
           icon: iconMap[child.icon] || null,
         })) : undefined,
       }))
@@ -135,6 +181,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
   // Update menu groups dengan notification count
   const displayMenuGroups = updateMenuWithNotifications(menuGroups);
+
+  // Debug log untuk tracking changes
+  useEffect(() => {
+    if (DEBUG_MODE) console.log('[Sidebar] Current notifCounts:', notifCounts);
+  }, [notifCounts]);
 
   if (menuLoading || loading) {
     return (
@@ -234,6 +285,20 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <div className="mb-4 px-4">
                 <div className="rounded-md bg-red-50 border border-red-200 p-2">
                   <p className="text-xs text-red-600">{error}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Debug info - hapus setelah testing */}
+            {DEBUG_MODE && (
+              <div className="mb-4 px-4">
+                <div className="rounded-md bg-blue-50 border border-blue-200 p-2">
+                  <p className="text-xs text-blue-600">
+                    Debug - Notif Counts: {JSON.stringify(notifCounts)}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    SSE Status: {notificationClient.getConnectionStatus()}
+                  </p>
                 </div>
               </div>
             )}

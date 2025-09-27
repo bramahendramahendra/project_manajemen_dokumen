@@ -21,7 +21,7 @@ type ProfileAkses = {
 };
 
 const MainPage = () => {
-  // const [dataDetail, setDataDetail] = useState('');
+  // Profile states
   const [userid, setUserid] = useState('');
   const [fullname, setFullname] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -32,88 +32,98 @@ const MainPage = () => {
   const [responsiblePerson, setResponsiblePerson] = useState('');
   const [role, setRole] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  // const [level, setLevel] = useState('');
-  const [profileAkses, setProfileAkses] = useState<ProfileAkses[]>([]); // Langsung gunakan data hardcode
+  const [profileAkses, setProfileAkses] = useState<ProfileAkses[]>([]);
   
-  // State untuk form nomor telepon
+  // Phone update states
   const [newPhoneNumber, setNewPhoneNumber] = useState('');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [phoneLoading, setPhoneLoading] = useState(false);
 
+  // Password update states
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [roles, setRoles] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  
+  // UI states
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [phoneError, setPhoneError] = useState<string | null>(null);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   
-  // State untuk modal
+  // Modal states
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isPhoneConfirmModalOpen, setIsPhoneConfirmModalOpen] = useState(false);
   const [isPhoneSuccessModalOpen, setIsPhoneSuccessModalOpen] = useState(false);
 
-  const fetchAksesData = useCallback(async (level : string) => {
-    // Simulasi data pengguna untuk demo
-    // Dalam implementasi sebenarnya, Anda akan mengambil data dari API
+  const fetchAksesData = useCallback(async (level: string) => {
     try {
       const response = await apiRequest(`/profile/akses/${level}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error("Jenis data not found");
+          throw new Error("Data akses tidak ditemukan");
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const result = await response.json();
-      // console.log(result);
-
-       const documents: ProfileAkses[] = result.responseData.items.map((item: any) => ({
+      
+      if (result.responseCode === 200) {
+        const documents: ProfileAkses[] = result.responseData.items.map((item: any) => ({
           menu: item.menu,
         }));
-
         setProfileAkses(documents);
-     
+      } else {
+        throw new Error(result.responseDesc || "Gagal mengambil data akses");
+      }
     } catch (err: any) {
+      console.error("Error fetching akses data:", err);
       setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   const fetchUserData = useCallback(async () => {
-    // Simulasi data pengguna untuk demo
-    // Dalam implementasi sebenarnya, Anda akan mengambil data dari API
     try {
+      setLoading(true);
       const user = JSON.parse(Cookies.get("user") || "{}");
 
-      // console.log(user);
+      if (!user.userid) {
+        throw new Error("User ID tidak ditemukan");
+      }
+
       const response = await apiRequest(`/profile/${user.userid}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error("Jenis data not found");
+          throw new Error("User tidak ditemukan");
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
       const result = await response.json();
-      // console.log(result.responseData);
-     
-      setUserid(result.responseData.userid);
-      setFullname(result.responseData.fullname);
-      setFirstName(result.responseData.firstname);
-      setLastName(result.responseData.lastname);
-      setUsername(result.responseData.username);
-      setPhoneNumber(result.responseData.phone_number);
-      setEmail(result.responseData.email);
-      setDinas(result.responseData.dinas);
-      setResponsiblePerson(result.responseData.responsible_person);
-      setRole(result.responseData.role);
-      // setLevel(result.responseData.level);
+      
+      if (result.responseCode === 200) {
+        const profileData = result.responseData;
+        
+        setUserid(profileData.userid || '');
+        setFullname(profileData.fullname || '');
+        setFirstName(profileData.firstname || '');
+        setLastName(profileData.lastname || '');
+        setUsername(profileData.username || '');
+        setPhoneNumber(profileData.phone_number || '');
+        setEmail(profileData.email || '');
+        setDinas(profileData.dinas || '');
+        setResponsiblePerson(profileData.responsible_person || '');
+        setRole(profileData.role || '');
 
-      // Panggil fetchAksesData setelah level di-set
-      if(result.responseData.level) {
-        await fetchAksesData(result.responseData.level);
+        // Fetch akses data setelah mendapat level
+        if (profileData.level) {
+          await fetchAksesData(profileData.level);
+        }
+      } else {
+        throw new Error(result.responseDesc || "Gagal mengambil data user");
       }
     } catch (err: any) {
+      console.error("Error fetching user data:", err);
       setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
     } finally {
       setLoading(false);
@@ -121,18 +131,61 @@ const MainPage = () => {
   }, [fetchAksesData]);
 
   useEffect(() => {
-    // fetchRoles();
     fetchUserData();
-    // if(level) fetchAksesData(level);
   }, [fetchUserData]);
 
-  // Handler untuk form nomor telepon
+  // Phone number validation
+  const validatePhoneNumber = (phone: string): string | null => {
+    if (!phone.trim()) {
+      return 'Nomor telepon tidak boleh kosong';
+    }
+    
+    if (phone.length < 8 || phone.length > 20) {
+      return 'Nomor telepon harus 8-20 karakter';
+    }
+
+    // Regex untuk format Indonesia: +62, 62, atau 0 diikuti 8-15 digit
+    const phoneRegex = /^(\+62|62|0)([0-9]{8,15})$/;
+    if (!phoneRegex.test(phone)) {
+      return 'Format nomor telepon tidak valid. Gunakan format +62, 62, atau 0 diikuti 8-15 digit';
+    }
+
+    if (phone === phoneNumber) {
+      return 'Nomor telepon baru sama dengan nomor telepon saat ini';
+    }
+
+    return null;
+  };
+
+  // Password validation
+  const validatePassword = (pwd: string): string | null => {
+    if (!pwd) {
+      return 'Password tidak boleh kosong';
+    }
+    
+    if (pwd.length < 8) {
+      return 'Password minimal 8 karakter';
+    }
+
+    // Check for at least one uppercase, lowercase, and number
+    const hasUppercase = /[A-Z]/.test(pwd);
+    const hasLowercase = /[a-z]/.test(pwd);
+    const hasNumber = /[0-9]/.test(pwd);
+
+    if (!hasUppercase || !hasLowercase || !hasNumber) {
+      return 'Password harus mengandung minimal 1 huruf besar, 1 huruf kecil, dan 1 angka';
+    }
+
+    return null;
+  };
+
+  // Phone number handlers
   const handlePhoneNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Hanya izinkan angka dan tanda +
-    const phoneRegex = /^[+]?[0-9]*$/;
-    if (phoneRegex.test(value)) {
-      setNewPhoneNumber(value);
+    setNewPhoneNumber(value);
+    
+    // Clear error when user starts typing
+    if (phoneError) {
       setPhoneError(null);
     }
   };
@@ -140,29 +193,18 @@ const MainPage = () => {
   const handlePhoneSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validasi nomor telepon
-    if (!newPhoneNumber.trim()) {
-      setPhoneError('Nomor telepon tidak boleh kosong');
-      return;
-    }
-    
-    if (newPhoneNumber.length < 8) {
-      setPhoneError('Nomor telepon minimal 8 digit');
+    const validationError = validatePhoneNumber(newPhoneNumber);
+    if (validationError) {
+      setPhoneError(validationError);
       return;
     }
 
-    if (newPhoneNumber === phoneNumber) {
-      setPhoneError('Nomor telepon baru sama dengan nomor telepon saat ini');
-      return;
-    }
-
-    // Jika valid, tampilkan modal konfirmasi
     setIsPhoneConfirmModalOpen(true);
   };
 
-  // Fungsi untuk mengkonfirmasi perubahan nomor telepon
-  const confirmPhoneChange = async() => {
+  const confirmPhoneChange = async () => {
     setIsPhoneConfirmModalOpen(false);
+    setPhoneLoading(true);
     
     const payload = {
       phone_number: newPhoneNumber,
@@ -176,28 +218,46 @@ const MainPage = () => {
         throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan nomor telepon');
       }
 
-      // Update state nomor telepon
-      setPhoneNumber(newPhoneNumber);
-      
-      // Reset form dan error
-      setNewPhoneNumber('');
-      setPhoneError(null);
-      
-      // Tampilkan modal sukses
-      setIsPhoneSuccessModalOpen(true);
+      if (result.responseCode === 200) {
+        // Update state nomor telepon
+        setPhoneNumber(newPhoneNumber);
+        
+        // Reset form dan error
+        setNewPhoneNumber('');
+        setPhoneError(null);
+        
+        // Tampilkan modal sukses
+        setIsPhoneSuccessModalOpen(true);
+      } else {
+        throw new Error(result.responseDesc || 'Gagal memperbarui nomor telepon');
+      }
     } catch (error: any) {
+      console.error('Error updating phone number:', error);
       setPhoneError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
-      setLoading(false);
+      setPhoneLoading(false);
     }
   };
 
+  // Password handlers
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPassword(e.target.value);
+    const value = e.target.value;
+    setPassword(value);
+    
+    // Clear error when user starts typing
+    if (passwordError) {
+      setPasswordError(null);
+    }
   };
 
   const handleConfirmPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setConfirmPassword(e.target.value);
+    const value = e.target.value;
+    setConfirmPassword(value);
+    
+    // Clear error when user starts typing
+    if (passwordError) {
+      setPasswordError(null);
+    }
   };
 
   const togglePasswordVisibility = () => {
@@ -208,53 +268,62 @@ const MainPage = () => {
     setConfirmPasswordVisible(!confirmPasswordVisible);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validasi password
-    if (password !== confirmPassword) {
-      setError('Password dan konfirmasi password tidak cocok');
+    // Validate password
+    const passwordValidationError = validatePassword(password);
+    if (passwordValidationError) {
+      setPasswordError(passwordValidationError);
       return;
     }
 
-    // Jika valid, tampilkan modal konfirmasi
+    // Check password confirmation
+    if (password !== confirmPassword) {
+      setPasswordError('Password dan konfirmasi password tidak cocok');
+      return;
+    }
+
     setIsConfirmModalOpen(true);
   };
   
-  // Fungsi untuk mengkonfirmasi perubahan password
-  const confirmPasswordChange = async() => {
-    // e.preventDefault();
-    // Tutup modal konfirmasi
+  const confirmPasswordChange = async () => {
     setIsConfirmModalOpen(false);
+    setPasswordLoading(true);
     
     const payload = {
       password,
     };
 
     try {
-      const response = await apiRequest(`/profile/${userid}`, 'PUT', payload);
+      // Update endpoint path to match backend route
+      const response = await apiRequest(`/profile/update/${userid}`, 'POST', payload);
       const result = await response.json();
 
       if (!response.ok) {
         throw new Error(result.responseDesc || 'Terjadi kesalahan saat menyimpan perubahan');
       }
 
-      // Reset form dan error
-      setPassword('');
-      setConfirmPassword('');
-      setError(null);
-      
-      // Tampilkan modal sukses
-      setIsSuccessModalOpen(true);
-      // setSuccess(true);
+      if (result.responseCode === 200) {
+        // Reset form dan error
+        setPassword('');
+        setConfirmPassword('');
+        setPasswordError(null);
+        
+        // Tampilkan modal sukses
+        setIsSuccessModalOpen(true);
+      } else {
+        throw new Error(result.responseDesc || 'Gagal memperbarui password');
+      }
     } catch (error: any) {
-      setError(error.message || 'Terjadi kesalahan saat mengirim data');
+      console.error('Error updating password:', error);
+      setPasswordError(error.message || 'Terjadi kesalahan saat mengirim data');
     } finally {
-      setLoading(false);
+      setPasswordLoading(false);
     }
   };
   
-  // Fungsi untuk menutup modal konfirmasi
+  // Modal handlers
   const closeConfirmModal = () => {
     setIsConfirmModalOpen(false);
   };
@@ -263,7 +332,6 @@ const MainPage = () => {
     setIsPhoneConfirmModalOpen(false);
   };
   
-  // Fungsi untuk menutup modal sukses
   const closeSuccessModal = () => {
     setIsSuccessModalOpen(false);
   };
@@ -272,21 +340,39 @@ const MainPage = () => {
     setIsPhoneSuccessModalOpen(false);
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#0C479F]"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 rounded-xl shadow-md">
+        <div className="text-red-800 text-center">
+          <h3 className="text-lg font-semibold mb-2">Error</h3>
+          <p>{error}</p>
+          <button 
+            onClick={fetchUserData}
+            className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 bg-gradient-to-b from-gray-50 to-white rounded-xl shadow-md">
-      {/* <div className="flex justify-between items-center mb-8">
-        <div className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-1 rounded-full">
-          <span className="text-white text-sm font-medium">{role}</span>
-        </div>
-      </div> */}
-
       <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
         {/* User Profile Header */}
         <div className="bg-gradient-to-r from-[#0C479F]/5 to-[#1D92F9]/5 p-6 border-b border-gray-100">
           <div className="flex items-center">
             <div className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] h-16 w-16 rounded-full flex items-center justify-center text-white text-2xl mr-4">
-              {firstName.charAt(0)}{lastName.charAt(0)} 
-              
+              {firstName?.charAt(0) || ''}{lastName?.charAt(0) || ''}
             </div>
             <div>
               <h3 className="text-xl font-semibold text-gray-800">{fullname}</h3>
@@ -418,16 +504,18 @@ const MainPage = () => {
                 className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1D92F9] focus:border-transparent"
                 placeholder="Masukkan nomor telepon baru (contoh: +6281234567890)"
                 required
+                disabled={phoneLoading}
               />
-              <p className="text-xs text-gray-500 mt-1">Format: +62 atau 08 diikuti dengan 8-12 digit angka</p>
+              <p className="text-xs text-gray-500 mt-1">Format: +62, 62, atau 0 diikuti dengan 8-15 digit angka</p>
             </div>
             
             <div className="flex justify-end">
               <button 
                 type="submit"
-                className="bg-gradient-to-r from-[#1D92F9] to-[#0C479F] text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+                disabled={phoneLoading}
+                className="bg-gradient-to-r from-[#1D92F9] to-[#0C479F] text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Ubah Nomor Telepon
+                {phoneLoading ? 'Memproses...' : 'Ubah Nomor Telepon'}
               </button>
             </div>
           </form>
@@ -437,10 +525,10 @@ const MainPage = () => {
         <div className="p-6 border-t border-gray-100">
           <h4 className="text-lg font-medium mb-4 text-gray-700">Ubah Password</h4>
           
-          <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto">
-            {error && (
+          <form onSubmit={handlePasswordSubmit} className="space-y-6 max-w-xl mx-auto">
+            {passwordError && (
               <div className="bg-red-50 text-red-700 p-3 rounded-lg text-sm">
-                {error}
+                {passwordError}
               </div>
             )}
             
@@ -462,15 +550,18 @@ const MainPage = () => {
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1D92F9] focus:border-transparent"
                   placeholder="Masukkan password baru"
                   required
+                  disabled={passwordLoading}
                 />
                 <button 
                   type="button" 
                   onClick={togglePasswordVisibility} 
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  disabled={passwordLoading}
                 >
                   {passwordVisible ? "Sembunyikan" : "Tampilkan"}
                 </button>
               </div>
+              <p className="text-xs text-gray-500 mt-1">Minimal 8 karakter dengan kombinasi huruf besar, kecil, dan angka</p>
             </div>
             
             <div className="bg-gray-50 rounded-lg p-4 transition-all hover:shadow-md">
@@ -491,11 +582,13 @@ const MainPage = () => {
                   className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1D92F9] focus:border-transparent"
                   placeholder="Konfirmasi password baru"
                   required
+                  disabled={passwordLoading}
                 />
                 <button 
                   type="button" 
                   onClick={toggleConfirmPasswordVisibility} 
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  disabled={passwordLoading}
                 >
                   {confirmPasswordVisible ? "Sembunyikan" : "Tampilkan"}
                 </button>
@@ -505,9 +598,10 @@ const MainPage = () => {
             <div className="flex justify-end">
               <button 
                 type="submit"
-                className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all"
+                disabled={passwordLoading}
+                className="bg-gradient-to-r from-[#0C479F] to-[#1D92F9] text-white px-6 py-2 rounded-lg shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Simpan Perubahan
+                {passwordLoading ? 'Memproses...' : 'Simpan Perubahan'}
               </button>
             </div>
           </form>

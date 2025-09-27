@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import { HiOutlineDocumentText, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { Document, DocumentResponse } from "@/types/dashboard";
 import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
-import { statusColor } from "@/utils/status";
+import { statusColor, statusIcon } from "@/utils/status";
 import Pagination from "@/components/pagination/Pagination";
 
 const TablePage = () => {
@@ -27,6 +27,9 @@ const TablePage = () => {
     sort_dir: 'DESC',
     search: ''
   });
+
+  const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+  const userDinas = user.dinas;
 
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
@@ -55,11 +58,8 @@ const TablePage = () => {
     return cleanup;
   }, [debounceSearch]);
 
-  // Function untuk fetch data dengan parameter
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
-    const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
-    const idDinas = user.dinas;
-
+  // Function untuk fetch data dengan parameter - menggunakan useCallback
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
 
@@ -76,8 +76,7 @@ const TablePage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/dashboard/document-dinas/list/${idDinas}?${queryParams.toString()}`, "GET");
-      
+      const response = await apiRequest(`/dashboard/document-dinas/list/${userDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data dokumen tidak ditemukan");
@@ -97,6 +96,7 @@ const TablePage = () => {
 
       const res: Document[] = result.responseData.items.map((item: any) => ({
           id: item.id,
+          jenis: item.jenis,
           subjenis: item.subjenis,
           maker_date: item.maker_date,
           status_code: item.status_code,
@@ -122,7 +122,7 @@ const TablePage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  }, [userDinas]); // Tambahkan userDinas sebagai dependency karena digunakan dalam function
 
   // Load data saat component mount atau parameter berubah
   useEffect(() => {
@@ -130,7 +130,7 @@ const TablePage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]); // Tambahkan fetchData ke dependency array
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -153,10 +153,10 @@ const TablePage = () => {
     setCurrentPage(1); // Reset ke halaman pertama saat mengubah items per page
   };
 
-  // Handler untuk retry ketika error
-  const handleRetry = () => {
-    fetchData(currentPage, itemsPerPage);
-  };
+  // Handler untuk retry ketika error - menggunakan useCallback
+  const handleRetry = useCallback(() => {
+    fetchData(currentPage, itemsPerPage, filters);
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
    // Handler untuk clear search
   const handleClearSearch = () => {
@@ -351,7 +351,7 @@ const TablePage = () => {
                       <div>
                         <p className="font-medium text-dark dark:text-white">{item.subjenis}</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          ID: {item.id}
+                          Jenis: {item.jenis}
                         </p>
                       </div>
                     </div>
@@ -363,7 +363,10 @@ const TablePage = () => {
                   </td>
                   <td className="px-4 py-4 xl:pr-7.5">
                     <div className={`${statusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}>
-                      <span>{item.status_doc}</span>
+                      <span>
+                        {statusIcon(item.status_code)}
+                        {item.status_doc}
+                      </span>
                     </div>
                   </td>
                 </tr>

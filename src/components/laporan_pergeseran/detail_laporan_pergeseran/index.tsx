@@ -70,8 +70,8 @@ const MainPage = ({ idDinas }: Props) => {
     return cleanup;
   }, [debounceSearch]);
 
-
-   const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  // Wrap fetchData dengan useCallback untuk mencegah re-render yang tidak perlu
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     if (!idDinas) {
       setError("ID tidak ditemukan");
       setLoading(false);
@@ -140,7 +140,7 @@ const MainPage = ({ idDinas }: Props) => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  }, [idDinas]); // Hanya idDinas yang menjadi dependency
 
   // Fetch data dari API
   useEffect(() => {
@@ -148,7 +148,7 @@ const MainPage = ({ idDinas }: Props) => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -172,9 +172,9 @@ const MainPage = ({ idDinas }: Props) => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {
@@ -305,7 +305,6 @@ const MainPage = ({ idDinas }: Props) => {
       //   id: id,
       //   deskripsi: deskripsi,
       // };
-
 
       try {
         const response = await apiRequest(`/direct-shipping/delete/${id}`, 'POST');
@@ -472,18 +471,6 @@ const MainPage = ({ idDinas }: Props) => {
             </button>
           </div>
         )}
-
-
-
-
-
-
-
-        
-
-
-
-
 
         <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">

@@ -32,6 +32,9 @@ const PengelolaanDokumen = () => {
     search: ''
   });
 
+  const user = JSON.parse(Cookies.get("user") || "{}");
+  const userDinas = user.dinas || "";
+
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
     setCurrentPage(1);
@@ -60,13 +63,19 @@ const PengelolaanDokumen = () => {
   }, [debounceSearch]);
 
   // Function untuk fetch data dengan parameter - PERSIS seperti master dinas
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
 
+    if (!userDinas) {
+      setError("ID Dinas tidak ditemukan");
+      setLoading(false);
+      return;
+    }
+
     try {
       // Get user data - PERSIS seperti master dinas
-      const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
+      // const user = Cookies.get("user") ? JSON.parse(Cookies.get("user") || "{}") : {};
 
       // Buat query parameters - PERSIS seperti master dinas
       const queryParams = new URLSearchParams({
@@ -81,7 +90,7 @@ const PengelolaanDokumen = () => {
       });
 
       // const response = await apiRequest(`/document_managements/all-data/verif-done/type/${dinas}?${queryParams.toString()}`, "GET");
-      const response = await apiRequest(`/document_managements/pengelolaan-dinas/${user.dinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/document_managements/pengelolaan-dinas/${userDinas}?${queryParams.toString()}`, "GET");
       
       if (!response.ok) {
         if (response.status === 404) {
@@ -126,7 +135,7 @@ const PengelolaanDokumen = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  },[userDinas]);
 
   // useEffect PERSIS seperti master dinas
   useEffect(() => {
@@ -134,7 +143,7 @@ const PengelolaanDokumen = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds - PERSIS seperti master dinas
   useEffect(() => {
@@ -158,9 +167,9 @@ const PengelolaanDokumen = () => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {
@@ -177,7 +186,7 @@ const PengelolaanDokumen = () => {
   // Handler untuk detail - disesuaikan dengan kebutuhan existing
   const handleDetailsClick = (typeID: number, uraian: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    const user = Cookies.get("user");
+    // const user = Cookies.get("user");
     
     if (!user) {
       alert("Sesi Anda telah berakhir, silakan login kembali!");
