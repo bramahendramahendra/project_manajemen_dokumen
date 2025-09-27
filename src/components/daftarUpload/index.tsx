@@ -195,7 +195,7 @@ const MainPage = () => {
   // Fungsi untuk menangani klik perbaikan dokumen
   const handlePerbaikanClick = (id: number) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
-    // const user = Cookies.get("user");
+    const user = Cookies.get("user");
     
     if (!user) {
       alert("Sesi Anda telah berakhir, silakan login kembali!");

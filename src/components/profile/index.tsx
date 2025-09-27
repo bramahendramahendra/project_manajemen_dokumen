@@ -211,7 +211,7 @@ const MainPage = () => {
     };
 
     try {
-      const response = await apiRequest(`/profile/phone/${userid}`, 'PUT', payload);
+      const response = await apiRequest(`/profile/phone/${userid}`, 'POST', payload);
       const result = await response.json();
 
       if (!response.ok) {
