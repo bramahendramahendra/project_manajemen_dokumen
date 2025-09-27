@@ -1,79 +1,15 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
 import { apiRequest, downloadFileRequest  } from "@/helpers/apiClient";
-import { decryptObject } from "@/utils/crypto";
 import Cookies from "js-cookie";
-import { DokumenMasuk, DokumenMasukResponse } from "@/types/dokumenMasuk";
+import { HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
+import { DokumenMasuk, DokumenMasukResponse, MessageDetailResponse, DownloadDetailResponse } from "@/types/dokumenMasuk";
 import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
 import Pagination from "../pagination/Pagination";
 
-// Interface untuk data API response
-interface KirimanDokumen {
-  id_table: number;
-  pengirim_nama_dinas: string;
-  pengirim_date: string;
-  judul: string;
-  lampiran: string;
-  file_name: string;
-  total_documents: number;
-  documnet: {
-    jenis: string;
-    subjenis: string;
-    total_files: number;
-    files: Array<{
-      file_doc: string;
-    }>;
-  }[];
-}
 
-// Interface untuk data yang sudah diformat
-interface FormattedKirimanDokumen {
-  id: string;
-  id_table: number;
-  sender: string;
-  senderDinas: string;
-  date: string;
-  dateObject: Date; // Tambahan untuk perhitungan countdown
-  lampiran: string;
-  messageTitle: string;
-  messageContent: string;
-  messageJenisSubjenis: string[]; // Array untuk menyimpan "jenis - subjenis"
-  fileName: string;
-  documentFiles: { // Data lengkap dokumen untuk download
-    jenis: string;
-    subjenis: string;
-    total_files: number;
-    files: Array<{
-      file_doc: string;
-    }>;
-  }[];
-}
 
-// Interface untuk response detail message
-interface MessageDetailResponse {
-  title: string;
-  content: string;
-  jenisSubjenis: string[];
-}
-
-// Interface untuk response detail download
-interface DownloadDetailResponse {
-  documentTitle: string;
-  documentFiles: {
-    jenis: string;
-    subjenis: string;
-    total_files: number;
-    files: Array<{
-      file_doc: string;
-    }>;
-  }[];
-  fileName: string;
-}
 const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null, namaDinas: string | null }) => {
-// const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null, namaDinas: string | null }) => {
-  const searchParams = useSearchParams();
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -101,13 +37,9 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
   const [downloadingGroupIndex, setDownloadingGroupIndex] = useState<number | null>(null);
   const [downloadingAllFiles, setDownloadingAllFiles] = useState(false);
 
-  // const [dinas, setDinas] = useState<number | null>(null);
-  // const [namaDinas, setNamaDinas] = useState<string | null>(null);
-
-
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: '',
+    sort_by: 'tanggal_pengirim',
     sort_dir: 'DESC',
     search: ''
   });
@@ -171,7 +103,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/inbox/detail/${userDinas}/${dinas}`, "GET");
+      const response = await apiRequest(`/inbox/detail/${userDinas}/${dinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data kiriman dokumen tidak ditemukan");
@@ -196,23 +128,10 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
         dinas_pengirim: item.pengirim_nama_dinas,
         tanggal_pengirim: item.pengirim_date,
         judul: item.judul,
+        statusMessage: item.status_message,
+        statusDownload: item.status_download,
+        statusOpen: item.status_open,
       }));
-
-        // const dateObject = new Date(item.pengirim_date);
-        
-        // // Format jenis dan subjenis menjadi array "jenis - subjenis"
-        // // const jenisSubjenisArray = item.documnet?.map(doc => `${doc.jenis} - ${doc.subjenis}`) || [];
-        
-        // return {
-        //   id: `${dinas}_${index}`,
-        //   id_table: item.id_table,
-        //   sender: item.pengirim_nama_dinas,
-        //   senderDinas: namaDinas || senderNamaDinas || "",
-        //   date: dateObject.toLocaleDateString('id-ID'),
-        //   dateObject: dateObject, 
-        //   lampiran: item.judul,
-        // };
-    
 
       setDataList(res);
       setTotalPages(result.responseMeta.total_pages);
@@ -397,8 +316,6 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
   // Fungsi untuk download file individual - VERSI YANG DIPERBAIKI
   const handleDownloadFile = async (filePath: string, documentName: string = '') => {
     try {
-      // console.log('Downloading file from path:', filePath);
-      
       // Pastikan filePath tidak kosong
       if (!filePath || filePath.trim() === '') {
         throw new Error('Path file tidak valid');
@@ -407,9 +324,6 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
       // Hapus leading slash jika ada dan encode path
       const cleanFilePath = filePath.startsWith('/') ? filePath.substring(1) : filePath;
       const encodedFilePath = encodeURIComponent(cleanFilePath);
-      
-      // console.log('Clean file path:', cleanFilePath);
-      // console.log('Encoded file path:', encodedFilePath);
       
       // Menggunakan downloadFileRequest helper untuk download dengan path yang sudah di-encode
       const response = await downloadFileRequest(`/files/download/${encodedFilePath}`);
@@ -481,11 +395,6 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
       // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-      
-      // console.log('Download completed successfully');
-      
-      // Tampilkan notifikasi sukses (opsional)
-      // alert(`File "${downloadFileName}" berhasil diunduh!`);
       
     } catch (error) {
       console.error('Error downloading file:', error);
@@ -614,21 +523,14 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
     }
   };
 
-  // Loading skeleton
+  // loading skeleton
   const LoadingSkeleton = () => (
-    <div className="divide-y divide-gray-100">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: itemsPerPage }).map((_, index) => (
-        <div key={index} className="flex items-center justify-between py-5 px-4">
-          <div>
-            <div className="h-6 w-32 animate-pulse rounded bg-gray-200 mb-2"></div>
-            <div className="flex items-center space-x-3">
-              <div className="h-4 w-24 animate-pulse rounded bg-gray-200"></div>
-              <div className="h-4 w-20 animate-pulse rounded bg-gray-200"></div>
-            </div>
-          </div>
-          <div className="flex space-x-3">
-            <div className="h-8 w-20 animate-pulse rounded bg-gray-200"></div>
-            <div className="h-8 w-24 animate-pulse rounded bg-gray-200"></div>
+        <div key={index} className="h-44 rounded-xl border border-stroke bg-white p-6 shadow-sm dark:border-dark-3 dark:bg-gray-800">
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="mb-4 h-8 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+            <div className="h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
           </div>
         </div>
       ))}
@@ -683,162 +585,206 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
 
   return (
     <div className="col-span-12 xl:col-span-12">
+      {/* Alert Messages */}
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-red-600 font-medium">{error}</p>
+        </div>
+      )}
+      
+      {success && (
+        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <p className="text-green-600 font-medium">{success}</p>
+        </div>
+      )}
+
       <div className="rounded-xl bg-white px-8 pt-6 pb-4 shadow-md dark:bg-gray-dark">
         {/* Header dengan nama dinas */}
-        <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
+        <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-4">
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">{namaDinas}</h2>
-            <p className="mt-1 text-sm text-gray-500">
+            <span className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white">
+              {namaDinas}
+            </span>
+            {/* <h2 className="text-2xl font-bold text-gray-800">{namaDinas}</h2> */}
+            <p className="mt-3 text-sm text-gray-500">
               Dokumen Masuk: <span className="font-medium text-blue-600">{filteredData.length}</span> item
             </p>
           </div>
-          <div className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white">
-            Dinas
+          {searchLoading && (
+            <div className="ml-3">
+              <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          )}
+          {/* Search Box */}
+          <div className="relative w-full sm:w-80">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                placeholder="Cari pesan..."
+                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+              />
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
+              </div>
+              {searchTerm && (
+                <button
+                  onClick={handleClearSearch}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+                >
+                  <HiOutlineXCircle className="h-5 w-5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Konten */}
-        {loading ? (
-          <LoadingSkeleton />
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-10">
-            <div className="h-16 w-16 text-red-300 mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
+        {/* Active Search Indicator */}
+        {filters.search && (
+          <div className="mb-4 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
+            <div className="flex items-center">
+              <HiMagnifyingGlass className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+              <span className="text-sm text-blue-800 dark:text-blue-300">
+                Menampilkan hasil pencarian untuk: <span className="font-semibold">&quot;{filters.search}&quot;</span>
+              </span>
+              {totalRecords > 0 && (
+                <span className="ml-2 text-xs bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 px-2 py-1 rounded-full">
+                  {totalRecords} hasil
+                </span>
+              )}
             </div>
-            <p className="text-red-500 font-medium text-center">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-colors"
+            <button
+              onClick={handleClearSearch}
+              className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors"
+              title="Hapus pencarian"
             >
-              Coba Lagi
+              <HiOutlineXCircle className="h-5 w-5" />
             </button>
           </div>
-        ) : (
+        )}
+
+        {/* Content Area */}
+        {loading && LoadingSkeleton()}
+        {!loading && error && renderErrorState()}
+        {!loading && !error && dataList.length === 0 && renderEmptyState()}
+
+        {/* Konten */}
+        {!loading && !error && dataList.length > 0 && (
           <div className="divide-y divide-gray-100">
-            {dataList.length > 0 ? (
-              dataList.map((item) => {
-                // const daysRemaining = calculateDaysRemaining(item.dateObject);
-                const daysRemaining = calculateDaysRemaining(item.tanggal_pengirim);
-                const badgeColor = getBadgeColor(daysRemaining);
-                
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between py-5 hover:bg-gray-50 transition rounded-lg px-4"
-                  >
-                    {/* Informasi Utama */}
-                    <div>
-                      <div className="flex items-center gap-3 mb-1">
-                        <p className="text-xl font-medium text-blue-600">{item.judul}</p>
-                        
-                        {/* Badge Countdown dengan Tooltip */}
-                        <div className="relative group">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColor} cursor-help`}>
-                            <svg 
-                              className="w-3 h-3 mr-1" 
-                              fill="none" 
-                              stroke="currentColor" 
-                              viewBox="0 0 24 24" 
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                strokeWidth={2} 
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
-                              />
-                            </svg>
-                            {daysRemaining === 0 ? 'Hari ini' : `${daysRemaining} hari`}
-                          </span>
-                          
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
-                            <div className="text-center">
-                              Pesan ini akan terhapus otomatis dalam {daysRemaining === 0 ? 'hari ini' : `${daysRemaining} hari lagi`}
-                            </div>
-                            {/* Arrow tooltip */}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
-                          </div>
-                        </div>
-                      </div>
+            {dataList.map((item) => {
+              // const daysRemaining = calculateDaysRemaining(item.dateObject);
+              const daysRemaining = calculateDaysRemaining(item.tanggal_pengirim);
+              const badgeColor = getBadgeColor(daysRemaining);
+              
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between py-5 hover:bg-gray-50 transition rounded-lg px-4"
+                >
+                  {/* Informasi Utama */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <p className="text-xl font-medium text-blue-600">{item.judul}</p>
                       
-                      <div className="flex items-center mt-1">
-                        <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      {/* Badge Countdown dengan Tooltip */}
+                      <div className="relative group">
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColor} cursor-help`}>
+                          <svg 
+                            className="w-3 h-3 mr-1" 
+                            fill="none" 
+                            stroke="currentColor" 
+                            viewBox="0 0 24 24" 
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <path 
+                              strokeLinecap="round" 
+                              strokeLinejoin="round" 
+                              strokeWidth={2} 
+                              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" 
+                            />
                           </svg>
-                        </div>
-                        <span className="text-sm text-gray-600 mr-3">{item.dinas_pengirim}</span>
+                          {daysRemaining === 0 ? 'Hari ini' : `${daysRemaining} hari`}
+                        </span>
                         
-                        <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                          </svg>
+                        {/* Tooltip */}
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-800 text-white text-sm rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                          <div className="text-center">
+                            Pesan ini akan terhapus otomatis dalam {daysRemaining === 0 ? 'hari ini' : `${daysRemaining} hari lagi`}
+                          </div>
+                          {/* Arrow tooltip */}
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
                         </div>
-                        <span className="text-sm text-gray-600">{formatIndonesianDateOnly(item.tanggal_pengirim)}</span>
                       </div>
                     </div>
-                  
-                    {/* Tombol Aksi */}
-                    <div className="flex space-x-3">
-                      {/* Tombol Isi Pesan - UPDATED */}
-                      <button
-                        onClick={() => openMessageModal(item.id)}
-                        disabled={loadingMessage}
-                        className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="flex items-center">
-                          {loadingMessage ? (
-                            <svg className="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          {loadingMessage ? 'Loading...' : 'Isi Pesan'}
-                        </div>
-                      </button>
+                    
+                    <div className="flex items-center mt-1">
+                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-600 mr-3">{item.dinas_pengirim}</span>
                       
-                      {/* Tombol Download - UPDATED */}
-                      <button
-                        onClick={() => openDownloadModal(item.id)}
-                        disabled={loadingDownload}
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <div className="flex items-center">
-                          {loadingDownload ? (
-                            <svg className="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                          {loadingDownload ? 'Loading...' : 'Download'}
-                        </div>
-                      </button>
+                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <span className="text-sm text-gray-600">{formatIndonesianDateOnly(item.tanggal_pengirim)}</span>
                     </div>
                   </div>
-                );
-              })
-            ) : (
-              <div className="flex flex-col items-center justify-center py-10">
-                <div className="h-16 w-16 text-gray-300 mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+                
+                  {/* Tombol Aksi */}
+                  <div className="flex space-x-3">
+                    {/* Tombol Isi Pesan - UPDATED */}
+                    <button
+                      onClick={() => openMessageModal(item.id)}
+                      disabled={loadingMessage}
+                      className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="flex items-center">
+                        {loadingMessage ? (
+                          <svg className="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {loadingMessage ? 'Loading...' : 'Isi Pesan'}
+                      </div>
+                    </button>
+                    
+                    {/* Tombol Download - UPDATED */}
+                    <button
+                      onClick={() => openDownloadModal(item.id)}
+                      disabled={loadingDownload}
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="flex items-center">
+                        {loadingDownload ? (
+                          <svg className="animate-spin h-4 w-4 mr-1.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {loadingDownload ? 'Loading...' : 'Download'}
+                      </div>
+                    </button>
+                  </div>
                 </div>
-                <p className="text-gray-500 font-medium">Tidak ada dokumen dari dinas ini</p>
-                <p className="text-gray-400 text-sm mt-1">Dokumen akan muncul saat dinas mengirimkan dokumen</p>
-              </div>
-            )}
+              );
+            })}
           </div>
         )}
         

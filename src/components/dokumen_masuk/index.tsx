@@ -311,7 +311,7 @@ const MainPage = () => {
   };
 
   // Render loading skeleton
-  const renderLoadingSkeleton = () => (
+  const LoadingSkeleton = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {Array.from({ length: itemsPerPage }).map((_, index) => (
         <div key={index} className="h-44 rounded-xl border border-stroke bg-white p-6 shadow-sm dark:border-dark-3 dark:bg-gray-800">
@@ -449,7 +449,7 @@ const MainPage = () => {
         )}
 
         {/* Content Area */}
-        {loading && renderLoadingSkeleton()}
+        {loading && LoadingSkeleton()}
         {!loading && error && renderErrorState()}
         {!loading && !error && dataList.length === 0 && renderEmptyState()}
         

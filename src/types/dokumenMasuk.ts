@@ -26,8 +26,9 @@ export type DokumenMasuk = {
   tanggal_pengirim: Date;
   judul: string;
   senderDinas: string;
-  // jumlah_dokumen_baru: number;
-  // icon?: string; // Opsional untuk ikon kustom
+  statusMessage: number;
+  statusDownload: number;
+  statusOpen: number;
 };
 
 // Tambahkan response type untuk konsistensi dengan master_dinas
@@ -43,4 +44,25 @@ export type DokumenMasukResponse = {
     total_pages: number;
     total_records: number;
   };
+};
+
+// Interface untuk response detail message
+export type MessageDetailResponse = {
+  title: string;
+  content: string;
+  jenisSubjenis: string[];
+};
+
+// Interface untuk response detail download
+export type DownloadDetailResponse = {
+  documentTitle: string;
+  documentFiles: {
+    jenis: string;
+    subjenis: string;
+    total_files: number;
+    files: Array<{
+      file_doc: string;
+    }>;
+  }[];
+  fileName: string;
 };

@@ -111,7 +111,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
     // Subscribe ke event sidebar untuk mendapatkan notification count secara real-time
     const unsubscribeSidebar = notificationClient.subscribe('sidebar', (data: any) => {
-      console.log('[SSE] Received sidebar data:', data); // Debug log
+      if (DEBUG_MODE) console.log('[SSE] Received sidebar data:', data); // Debug log
       
       if (data && typeof data.unread_count === 'number' && data.code_notif) {
         // Update notif count berdasarkan code_notif yang diterima
@@ -124,7 +124,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             }
           });
           
-          console.log('[SSE] Updated notif counts:', updatedCounts); // Debug log
+          if (DEBUG_MODE) console.log('[SSE] Updated notif counts:', updatedCounts); // Debug log
           return updatedCounts;
         });
         
@@ -134,13 +134,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
     // Subscribe ke event error untuk handling error
     const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
-      console.error('SSE Error in sidebar:', error);
+      if (DEBUG_MODE) console.error('SSE Error in sidebar:', error);
       // setError('Koneksi notifikasi bermasalah');
     });
 
     // Subscribe ke event connection untuk status koneksi
     const unsubscribeConnection = notificationClient.subscribe('connection', (data: any) => {
-      console.log('[SSE] Connection status:', data); // Debug log
+      if (DEBUG_MODE) console.log('[SSE] Connection status:', data); // Debug log
       
       if (data.status === 'connected') {
         setError(null);
@@ -184,7 +184,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
   // Debug log untuk tracking changes
   useEffect(() => {
-    console.log('[Sidebar] Current notifCounts:', notifCounts);
+    if (DEBUG_MODE) console.log('[Sidebar] Current notifCounts:', notifCounts);
   }, [notifCounts]);
 
   if (menuLoading || loading) {
