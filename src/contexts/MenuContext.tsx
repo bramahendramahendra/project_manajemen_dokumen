@@ -9,6 +9,7 @@ interface MenuContextType {
   error: string | null;
   fetchMenuData: () => Promise<void>;
   clearMenuData: () => void;
+  updateMenuWithNotifications: (notifCounts: Record<string, number>) => void;
 }
 
 const MenuContext = createContext<MenuContextType | undefined>(undefined);
@@ -34,6 +35,13 @@ const iconMap: Record<string, string> = {
   UserIcon: "UserIcon",
   MenuIcon: "MenuIcon",
   SettingIcon: "SettingIcon",
+};
+
+// Mapping code_menu ke code_notif
+const menuNotifMapping: Record<string, number> = {
+  "0105": 1, // Validation Upload -> code_notif 1
+  "0110": 2, // Dokumen Masuk -> code_notif 2
+  // Tambahkan mapping lain sesuai kebutuhan
 };
 
 export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -73,7 +81,10 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
               route: child.url || "#",
               icon: iconMap[child.icon] || null,
               code_menu: child.code_menu,
-              notif: child.notif,
+              // Tambahkan notif field jika ada mapping
+              ...(menuNotifMapping[child.code_menu] ? { 
+                notif: menuNotifMapping[child.code_menu].toString() 
+              } : {}),
             }));
 
           return {
@@ -83,7 +94,10 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
             route: item.url || "#",
             icon: iconMap[item.icon] || null,
             code_menu: item.code_menu,
-            notif: item.notif,
+            // Tambahkan notif field jika ada mapping
+            ...(menuNotifMapping[item.code_menu] ? { 
+              notif: menuNotifMapping[item.code_menu].toString() 
+            } : {}),
             ...(children.length > 0 ? { children } : {}),
           };
         });
@@ -123,8 +137,6 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (json.responseCode === 200) {
         const transformed = transformMenuData(json.responseData.items);
-        console.log(transformed);
-        
         setMenuGroups(transformed);
         
         // Simpan ke localStorage untuk penggunaan selanjutnya
@@ -139,6 +151,34 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
     }
   }, [transformMenuData]);
+
+  const updateMenuWithNotifications = useCallback((notifCounts: Record<string, number>) => {
+    const user = JSON.parse(Cookies.get("user") || "{}");
+    if (!user.level_id) return;
+
+    const updatedMenuGroups = menuGroups.map(group => ({
+      ...group,
+      menuItems: group.menuItems.map((item: any) => ({
+        ...item,
+        // Update notif field jika ada di mapping
+        ...(menuNotifMapping[item.code_menu] ? { 
+          notif: menuNotifMapping[item.code_menu].toString() 
+        } : {}),
+        children: item.children ? item.children.map((child: any) => ({
+          ...child,
+          // Update notif field jika ada di mapping  
+          ...(menuNotifMapping[child.code_menu] ? { 
+            notif: menuNotifMapping[child.code_menu].toString() 
+          } : {}),
+        })) : undefined,
+      }))
+    }));
+
+    setMenuGroups(updatedMenuGroups);
+    
+    // Update localStorage dengan data terbaru
+    localStorage.setItem(`menu_${user.level_id}`, JSON.stringify(updatedMenuGroups));
+  }, [menuGroups]);
 
   const clearMenuData = useCallback(() => {
     setMenuGroups([]);
@@ -165,6 +205,7 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error,
     fetchMenuData,
     clearMenuData,
+    updateMenuWithNotifications,
   };
 
   return (
