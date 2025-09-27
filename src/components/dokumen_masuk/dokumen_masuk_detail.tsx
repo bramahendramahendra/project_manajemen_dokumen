@@ -37,6 +37,10 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
   const [downloadingGroupIndex, setDownloadingGroupIndex] = useState<number | null>(null);
   const [downloadingAllFiles, setDownloadingAllFiles] = useState(false);
 
+  // State untuk tracking hover dan timeout
+  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // Filters state
   const [filters, setFilters] = useState({
     sort_by: 'tanggal_pengirim',
@@ -207,6 +211,61 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
     setSearchTerm(e.target.value);
   };
 
+  // Fungsi untuk update status open via API
+  const updateStatusOpen = async (id: number) => {
+    try {
+      const response = await apiRequest(`/inbox/hover/${userDinas}/${dinas}/${id}`, "POST");
+      if (response.ok) {
+        // Update local state to reflect the change
+        setDataList(prevData => 
+          prevData.map(item => 
+            item.id === id ? { ...item, statusOpen: 1 } : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating status_open:", error);
+    }
+  };
+
+  // Handler untuk hover - dengan debounce
+  const handleItemHover = (itemId: number, statusMessage: number, statusDownload: number) => {
+    setHoveredItem(itemId);
+
+    // Clear existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+    }
+
+    // Set new timeout untuk update status
+    const timeout = setTimeout(() => {
+      // Kondisi 4: Jika tidak ada aksi yang tersedia (statusMessage = 0 dan statusDownload = 0)
+      if (statusMessage === 0 && statusDownload === 0) {
+        updateStatusOpen(itemId);
+      }
+    }, 1000); // 1 detik delay
+
+    setHoverTimeout(timeout);
+  };
+
+  // Handler untuk mouse leave
+  const handleItemLeave = () => {
+    setHoveredItem(null);
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
+
   // Fungsi untuk menghitung sisa hari sebelum terhapus otomatis
   const calculateDaysRemaining = (dateObject: Date): number => {
     const now = new Date();
@@ -230,7 +289,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
   const fetchMessageDetail = async (id: number): Promise<MessageDetailResponse | null> => {
     try {
       setLoadingMessage(true);
-      const response = await apiRequest(`/inbox/message/${id}`, "GET");
+      const response = await apiRequest(`/inbox/message/${userDinas}/${dinas}/${id}`, "GET");
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -240,6 +299,13 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
       
       const jenisSubjenisArray = result.responseData.documents?.map((doc: any) => `${doc.jenis} - ${doc.subjenis}`) || [];
     
+      // Update local state - mark as opened
+      setDataList(prevData => 
+        prevData.map(item => 
+          item.id === id ? { ...item, statusOpen: 1 } : item
+        )
+      );
+
       // Sesuaikan dengan struktur response API Anda
       return {
         title: result.responseData.judul || "",
@@ -260,13 +326,20 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
   const fetchDownloadDetail = async (id: number): Promise<DownloadDetailResponse | null> => {
     try {
       setLoadingDownload(true);
-      const response = await apiRequest(`/inbox/download/${id}`, "GET");
+      const response = await apiRequest(`/inbox/download/${userDinas}/${dinas}/${id}`, "GET");
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const result = await response.json();
+      
+      // Update local state - mark as opened
+      setDataList(prevData => 
+        prevData.map(item => 
+          item.id === id ? { ...item, statusOpen: 1 } : item
+        )
+      );
       
       // Sesuaikan dengan struktur response API Anda
       return {
@@ -583,6 +656,11 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
     </tr>
   );
 
+  // Function to determine if "new" badge should be shown
+  const shouldShowNewBadge = (item: DokumenMasuk): boolean => {
+    return item.statusOpen === 0;
+  };
+
   return (
     <div className="col-span-12 xl:col-span-12">
       {/* Alert Messages */}
@@ -679,21 +757,26 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
               // const daysRemaining = calculateDaysRemaining(item.dateObject);
               const daysRemaining = calculateDaysRemaining(item.tanggal_pengirim);
               const badgeColor = getBadgeColor(daysRemaining);
+              const showNewBadge = shouldShowNewBadge(item);
               
               return (
                 <div
                   key={item.id}
-                  className={`flex items-center justify-between py-5 hover:bg-gray-50 transition rounded-lg px-4 ${
-                    item.statusOpen === 0 ? 'bg-blue-50 border border-blue-200' : ''
+                  className={`flex items-center justify-between py-5 transition rounded-lg px-4 ${
+                    showNewBadge ? 'bg-blue-50 border border-blue-200' : ''
+                  } ${
+                    hoveredItem === item.id ? 'bg-gray-50' : 'hover:bg-gray-50'
                   }`}
+                  onMouseEnter={() => handleItemHover(item.id, item.statusMessage, item.statusDownload)}
+                  onMouseLeave={handleItemLeave}
                 >
                   {/* Informasi Utama */}
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-1">
                       <p className="text-xl font-medium text-blue-600">{item.judul}</p>
                       
-                      {/* Badge Pesan Baru */}
-                      {item.statusOpen === 0 && (
+                      {/* Badge Pesan Baru - Updated with condition */}
+                      {showNewBadge && (
                         <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 animate-pulse">
                           <svg 
                             className="w-3 h-3 mr-1" 
