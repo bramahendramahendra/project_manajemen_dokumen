@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
@@ -168,7 +168,7 @@ const UploadDokumen = () => {
   }, []);
 
   // Fungsi untuk fetch jenis dengan handling yang lebih baik
-  const fetchOptionJenis = async () => {
+  const fetchOptionJenis = useCallback(async () => {
     setLoadingJenis(true);
     setError(null);
     setIsJenisEmpty(false);
@@ -202,10 +202,10 @@ const UploadDokumen = () => {
     } finally {
       setLoadingJenis(false);
     }
-  };
+  }, []); // Tidak ada dependency karena fungsi tidak bergantung pada state lain
 
-  // Fungsi untuk fetch subjenis dengan handling yang lebih baik
-  const fetchOptionSubjenis = async () => {
+  // Fungsi untuk fetch subjenis dengan handling yang lebih baik - dibungkus dengan useCallback
+  const fetchOptionSubjenis = useCallback(async () => {
     setLoadingSubjenis(true);
     setError(null);
     setIsSubjenisEmpty(false);
@@ -239,11 +239,11 @@ const UploadDokumen = () => {
     } finally {
       setLoadingSubjenis(false);
     }
-  };
+  }, [jenis]); // Hanya bergantung pada jenis
 
   useEffect(() => {
     fetchOptionJenis();
-  }, []);
+  }, [fetchOptionJenis]);
 
   useEffect(() => {
     if (!jenis) {
@@ -254,7 +254,7 @@ const UploadDokumen = () => {
     }
 
     fetchOptionSubjenis(); 
-  }, [jenis]);
+  }, [jenis, fetchOptionSubjenis]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     // Cek apakah form bisa digunakan

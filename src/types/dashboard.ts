@@ -12,6 +12,7 @@ export type DASHBOARD = {
 export type Document = {
   id: number;
   dinas?: string;
+  jenis: string;
   subjenis: string;
   maker_date: string;
   status_code: string;
@@ -34,6 +35,8 @@ export type DocumentResponse = {
 
 export type DocumentItem = {
   id: number;
+  dinas?: string;
+  jenis: string;
   subjenis: string;
   maker_date: string;
   status_code: string;

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import DocumentModal from "./documentModal";
 import { dataStats } from "@/types/dataStats";
 import { apiRequest } from "@/helpers/apiClient";
@@ -74,7 +74,7 @@ const DataStatsOne: React.FC<dataStats> = () => {
   };
 
   // Fetch count data dari API - konsisten dengan master dinas
-  const fetchCountData = async () => {
+  const fetchCountData = useCallback(async () => {
     if (!dinas) {
       setError("ID Dinas tidak ditemukan");
       setLoading(false);
@@ -118,12 +118,12 @@ const DataStatsOne: React.FC<dataStats> = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dinas]); // Dependency array hanya berisi dinas
 
   // Load data saat component mount
   useEffect(() => {
     fetchCountData();
-  }, [dinas]);
+  }, [fetchCountData]); // Sekarang fetchCountData sudah stabil
 
   // Auto hide error message after 5 seconds - konsisten dengan master dinas
   useEffect(() => {

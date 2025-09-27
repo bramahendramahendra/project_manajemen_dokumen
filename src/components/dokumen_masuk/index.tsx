@@ -24,32 +24,15 @@ const MainPage = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
 
-    // Fungsi untuk menentukan icon berdasarkan nama dinas
-  const getIconByDinasName = (namaDinas: string): string => {
-    const dinasName = namaDinas.toLowerCase();
-    
-    if (dinasName.includes('pendidikan') || dinasName.includes('sekolah')) return 'school';
-    if (dinasName.includes('kesehatan') || dinasName.includes('medis')) return 'medical';
-    if (dinasName.includes('lingkungan') || dinasName.includes('hidup')) return 'leaf';
-    if (dinasName.includes('perhubungan') || dinasName.includes('transport')) return 'transport';
-    if (dinasName.includes('sosial') || dinasName.includes('masyarakat')) return 'people';
-    if (dinasName.includes('pekerjaan umum') || dinasName.includes('pu')) return 'building';
-    if (dinasName.includes('pariwisata') || dinasName.includes('budaya')) return 'landmark';
-    if (dinasName.includes('industri') || dinasName.includes('perdagangan')) return 'shop';
-    if (dinasName.includes('pangan') || dinasName.includes('ketahanan')) return 'food';
-    if (dinasName.includes('kependudukan') || dinasName.includes('sipil')) return 'id-card';
-    if (dinasName.includes('tenaga kerja') || dinasName.includes('ketenagakerjaan')) return 'briefcase';
-    if (dinasName.includes('ekonomi kreatif') || dinasName.includes('kreatif')) return 'camera';
-    
-    return 'default';
-  };
-
   // Filters state
   const [filters, setFilters] = useState({
     sort_by: 'total_open,pengirim_dinas',
     sort_dir: 'DESC,ASC',
     search: ''
   });
+
+  const user = JSON.parse(Cookies.get("user") || "{}");
+  const userDinas = user.dinas || "";
 
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
@@ -79,13 +62,17 @@ const MainPage = () => {
   }, [debounceSearch]);
 
   // Function untuk fetch data dengan parameter
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
 
-    try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
+    if (!userDinas) {
+      setError("ID Dinas tidak ditemukan");
+      setLoading(false);
+      return;
+    }
 
+    try {
       // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -98,7 +85,7 @@ const MainPage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/inbox/dinas/${user.dinas}`, "GET");
+      const response = await apiRequest(`/inbox/dinas/${userDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data dokumen masuk tidak ditemukan");
@@ -106,7 +93,7 @@ const MainPage = () => {
         throw new Error(`Terjadi kesalahan: ${response.status}`);
       }
       
-      const result : DokumenMasukDinasResponse = await response.json();
+      const result: DokumenMasukDinasResponse = await response.json();
 
       if (!result.responseData || !result.responseData.items) {
         throw new Error("Format data tidak valid");
@@ -141,15 +128,15 @@ const MainPage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
-  
+  },[userDinas]);
+
   // useEffect untuk fetch data
   useEffect(() => {
     if (filters.search !== searchTerm) {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -173,9 +160,9 @@ const MainPage = () => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {
@@ -187,6 +174,26 @@ const MainPage = () => {
   // Handler untuk search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  };
+
+  // Fungsi untuk menentukan icon berdasarkan nama dinas
+  const getIconByDinasName = (namaDinas: string): string => {
+    const dinasName = namaDinas.toLowerCase();
+    
+    if (dinasName.includes('pendidikan') || dinasName.includes('sekolah')) return 'school';
+    if (dinasName.includes('kesehatan') || dinasName.includes('medis')) return 'medical';
+    if (dinasName.includes('lingkungan') || dinasName.includes('hidup')) return 'leaf';
+    if (dinasName.includes('perhubungan') || dinasName.includes('transport')) return 'transport';
+    if (dinasName.includes('sosial') || dinasName.includes('masyarakat')) return 'people';
+    if (dinasName.includes('pekerjaan umum') || dinasName.includes('pu')) return 'building';
+    if (dinasName.includes('pariwisata') || dinasName.includes('budaya')) return 'landmark';
+    if (dinasName.includes('industri') || dinasName.includes('perdagangan')) return 'shop';
+    if (dinasName.includes('pangan') || dinasName.includes('ketahanan')) return 'food';
+    if (dinasName.includes('kependudukan') || dinasName.includes('sipil')) return 'id-card';
+    if (dinasName.includes('tenaga kerja') || dinasName.includes('ketenagakerjaan')) return 'briefcase';
+    if (dinasName.includes('ekonomi kreatif') || dinasName.includes('kreatif')) return 'camera';
+    
+    return 'default';
   };
 
   // Fungsi untuk mendapatkan ikon berdasarkan tipe dinas
@@ -278,7 +285,7 @@ const MainPage = () => {
   };
 
   // Handle navigasi ke detail dokumen
-  const handleDinasClick = (id: number, dinas: string) => {
+  const handleDinasClick = (dinas: number, nama_dinas: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
 
@@ -293,9 +300,9 @@ const MainPage = () => {
     }
 
     try {
-      const encrypted = encryptObject({ id, dinas }, user);
+      const encrypted = encryptObject({ dinas, nama_dinas }, user);
       
-      const formattedDinasName = dinas.toLowerCase().replace(/\s+/g, "-");
+      const formattedDinasName = nama_dinas.toLowerCase().replace(/\s+/g, "-");
       router.push(`/dokumen_masuk/${formattedDinasName}?${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);
@@ -304,71 +311,60 @@ const MainPage = () => {
   };
 
   // Render loading skeleton
-  const renderLoadingSkeleton = () => (
-    Array.from({ length: itemsPerPage }).map((_, index) => (
-      <tr key={index} className="border-b border-stroke dark:border-dark-3">
-        <td className="px-4 py-4">
-          <div className="h-4 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-        </td>
-        <td className="px-4 py-4">
-          <div className="h-4 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-        </td>
-        <td className="px-4 py-4">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-        </td>
-      </tr>
-    ))
+  const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {Array.from({ length: itemsPerPage }).map((_, index) => (
+        <div key={index} className="h-44 rounded-xl border border-stroke bg-white p-6 shadow-sm dark:border-dark-3 dark:bg-gray-800">
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="mb-4 h-8 w-8 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+            <div className="h-6 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 
   // Render empty state
   const renderEmptyState = () => (
-    <tr>
-      <td colSpan={6} className="px-4 py-20 text-center">
-        <div className="flex flex-col items-center justify-center">
-          <div className="text-gray-400 text-6xl mb-4">📄</div>
-          <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
-            {filters.search ? "Tidak ada hasil pencarian" : "Dokumen masuk belum tersedia"}
-          </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
-            {filters.search 
-              ? `Tidak ditemukan hasil untuk &quot;${filters.search}&quot;`
-              : "Belum ada dokumen masuk yang diterima"
-            }
-          </p>
-          {filters.search && (
-            <button
-              onClick={handleClearSearch}
-              className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Hapus Pencarian
-            </button>
-          )}
-        </div>
-      </td>
-    </tr>
+    <div className="col-span-3 flex flex-col items-center justify-center py-12">
+      <div className="text-gray-400 text-6xl mb-4">📄</div>
+      <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+        {filters.search ? "Tidak ada hasil pencarian" : "Dokumen masuk belum tersedia"}
+      </p>
+      <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+        {filters.search 
+          ? `Tidak ditemukan hasil untuk "${filters.search}"`
+          : "Belum ada dokumen masuk yang diterima"
+        }
+      </p>
+      {filters.search && (
+        <button
+          onClick={handleClearSearch}
+          className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Hapus Pencarian
+        </button>
+      )}
+    </div>
   );
 
   // Render error state
   const renderErrorState = () => (
-    <tr>
-      <td colSpan={6} className="px-4 py-20 text-center">
-        <div className="flex flex-col items-center justify-center">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
-          <button 
-            onClick={handleRetry}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Coba Lagi
-          </button>
-        </div>
-      </td>
-    </tr>
+    <div className="col-span-3 flex flex-col items-center justify-center py-12">
+      <div className="text-red-500 text-4xl mb-4">⚠️</div>
+      <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
+      <button 
+        onClick={handleRetry}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      >
+        Coba Lagi
+      </button>
+    </div>
   );
 
   return (
     <div className="col-span-12 xl:col-span-12">
-      {/* Alert Messages - sinkron dengan master_dinas */}
+      {/* Alert Messages */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 font-medium">{error}</p>
@@ -382,36 +378,6 @@ const MainPage = () => {
       )}
 
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-        {/* Header dengan judul dan pencarian */}
-        {/* <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Daftar Dinas</h2>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              Pilih dinas untuk melihat dokumen yang telah dikirimkan
-            </p>
-          </div>
-          
-          <div className="mt-4 md:mt-0 relative w-full md:w-64">
-            <input
-              type="text"
-              placeholder="Cari dinas..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1); // Reset halaman saat pencarian
-              }}
-              className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 pl-10 pr-4 text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
-            />
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <svg className="w-5 h-5 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-              </svg>
-            </div>
-          </div>
-        </div> */}
-
-       
-
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
@@ -482,54 +448,49 @@ const MainPage = () => {
           </div>
         )}
 
-        {/* Grid Layout */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {dataList.length > 0 ? dataList.map((item) => (
-            <div
-              key={item.id}
-              className="relative flex flex-col h-44 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition duration-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 cursor-pointer overflow-hidden"
-              onClick={() => handleDinasClick(item.id, item.nama_dinas)}
-            >
-              {/* Badge notifikasi - hanya tampil jika ada notifikasi */}
-              {item.jumlah_dokumen_baru > 0 && (
-                <div className="absolute right-4 top-4 bg-red-500 text-white rounded-full min-w-6 h-6 px-1.5 flex items-center justify-center text-xs font-bold">
-                  {item.jumlah_dokumen_baru}
+        {/* Content Area */}
+        {loading && LoadingSkeleton()}
+        {!loading && error && renderErrorState()}
+        {!loading && !error && dataList.length === 0 && renderEmptyState()}
+        
+        {/* Grid Layout untuk Data */}
+        {!loading && !error && dataList.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {dataList.map((item) => (
+              <div
+                key={item.id}
+                className="relative flex flex-col h-44 rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition duration-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 cursor-pointer overflow-hidden"
+                onClick={() => handleDinasClick(item.id, item.nama_dinas)}
+              >
+                {/* Badge notifikasi - hanya tampil jika ada notifikasi */}
+                {item.jumlah_dokumen_baru > 0 && (
+                  <div className="absolute right-4 top-4 bg-red-500 text-white rounded-full min-w-6 h-6 px-1.5 flex items-center justify-center text-xs font-bold">
+                    {item.jumlah_dokumen_baru}
+                  </div>
+                )}
+                
+                {/* Ikon dan konten */}
+                <div className="flex flex-col items-center justify-center h-full">
+                  <div className="mb-4 text-blue-600 dark:text-blue-400">
+                    {item.icon ? getIcon(item.icon) : getIcon('default')}
+                  </div>
+                  <div className="text-center">
+                    <h3 className="text-xl font-medium text-gray-800 dark:text-white">
+                      {item.nama_dinas}
+                    </h3>
+                  </div>
                 </div>
-              )}
-              
-              {/* Ikon dan konten */}
-              <div className="flex flex-col items-center justify-center h-full">
-                <div className="mb-4 text-blue-600 dark:text-blue-400">
-                  {item.icon ? getIcon(item.icon) : getIcon('default')}
-                </div>
-                <div className="text-center">
-                  <h3 className="text-xl font-medium text-gray-800 dark:text-white">
-                    {item.nama_dinas}
-                  </h3>
-                </div>
+                
+                {/* Hiasan kustom - lingkaran dekoratif */}
+                <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-blue-50 opacity-50 dark:bg-blue-900 dark:opacity-20"></div>
               </div>
-              
-              {/* Hiasan kustom - lingkaran dekoratif */}
-              <div className="absolute -right-10 -bottom-10 h-32 w-32 rounded-full bg-blue-50 opacity-50 dark:bg-blue-900 dark:opacity-20"></div>
-            </div>
-          )) : !loading && !error ? (
-            <div className="col-span-3 flex flex-col items-center justify-center py-12">
-              <div className="h-24 w-24 text-gray-300 mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                </svg>
-              </div>
-              <h3 className="mb-1 text-xl font-medium text-gray-700">Tidak Ada Dinas Ditemukan</h3>
-              <p className="text-gray-500">
-                {searchTerm ? "Tidak ada dinas yang sesuai dengan pencarian Anda" : "Belum ada data dinas tersedia"}
-              </p>
-            </div>
-          ) : null}
-        </div>
+            ))}
+          </div>
+        )}
 
-        {/* Pagination */}
+        {/* Pagination - hanya tampil jika ada data dan tidak loading */}
         {!loading && !error && totalPages > 0 && (
-          <div className="mt-8 border-t border-gray-100 pt-6 dark:border-gray-700">
+          <div className="mt-8">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}

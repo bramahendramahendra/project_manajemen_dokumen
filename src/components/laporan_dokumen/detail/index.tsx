@@ -46,8 +46,8 @@ const MainPage = ({ id }: Props) => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: 'jenis,id',
-    sort_dir: 'ASC,DESC',
+    sort_by: 'tanggal_upload',
+    sort_dir: 'DESC',
     search: ''
   });
 
@@ -78,15 +78,15 @@ const MainPage = ({ id }: Props) => {
     return cleanup;
   }, [debounceSearch]);
 
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
-    if (!id) {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
+    setLoading(true);
+    setError(null);
+
+     if (!id) {
       setError("ID tidak ditemukan");
       setLoading(false);
       return;
     }
-
-    setLoading(true);
-    setError(null);
 
     try {
       const queryParams = new URLSearchParams({
@@ -144,7 +144,7 @@ const MainPage = ({ id }: Props) => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  },[id]);
 
   useEffect(() => {
     if (id) {
@@ -153,7 +153,7 @@ const MainPage = ({ id }: Props) => {
       }
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [id, searchTerm, currentPage, itemsPerPage, filters]);
+  }, [id, searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -177,9 +177,9 @@ const MainPage = ({ id }: Props) => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {
@@ -405,24 +405,6 @@ const MainPage = ({ id }: Props) => {
                 </button>
               )}
             </div>
-          </div>
-          
-          {/* Records count */}
-          <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
-            {!loading && totalRecords > 0 && (
-              <>
-                {filters.search && (
-                  <span className="text-blue-600 dark:text-blue-400 font-medium">
-                    {totalRecords} hasil
-                  </span>
-                )}
-                {!filters.search && (
-                  <>Menampilkan {Math.min(totalRecords, itemsPerPage)} dari {totalRecords} data</>
-                )}
-              </>
-            )}
-            {!loading && totalRecords === 0 && !filters.search && "Tidak ada data"}
-            {!loading && totalRecords === 0 && filters.search && "Tidak ditemukan"}
           </div>
         </div>
 

@@ -22,14 +22,6 @@ interface Props {
 
 type BulkAction = 'validate' | 'reject' | 'delete';
 
-// const formatDate = (date: Date): string => {
-//   return date.toLocaleDateString("id-ID", {
-//     day: "numeric",
-//     month: "long",
-//     year: "numeric",
-//   });
-// };
-
 const ValidationUploadTable = ({ id }: Props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -110,7 +102,8 @@ const ValidationUploadTable = ({ id }: Props) => {
     return cleanup;
   }, [debounceSearch]);
 
-  const fetchData = async (page = 1, perPage = 5, filterParams = {}) => {
+  // Wrap fetchData dengan useCallback untuk mencegah re-render yang tidak perlu
+  const fetchData = useCallback(async (page = 1, perPage = 5, filterParams = {}) => {
     if (!id) {
       setError("ID tidak ditemukan");
       setLoading(false);
@@ -177,7 +170,7 @@ const ValidationUploadTable = ({ id }: Props) => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  }, [id]); // Hanya id yang menjadi dependency
 
   useEffect(() => {
     if (id) {
@@ -186,7 +179,7 @@ const ValidationUploadTable = ({ id }: Props) => {
       }
       fetchData(currentPage, itemsPerPage, filters);
     }
-  }, [id, searchTerm, currentPage, itemsPerPage, filters]);
+  }, [id, searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -210,9 +203,9 @@ const ValidationUploadTable = ({ id }: Props) => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {
@@ -225,7 +218,6 @@ const ValidationUploadTable = ({ id }: Props) => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
-
 
   useEffect(() => {
     setCheckedItems(new Array(dataDetail.length).fill(false));
@@ -657,7 +649,7 @@ const ValidationUploadTable = ({ id }: Props) => {
           </p>
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
             {filters.search 
-              ? `Tidak ditemukan hasil untuk &quot;${filters.search}&quot;`
+              ? `Tidak ditemukan hasil untuk "${filters.search}"`
               : "Belum ada dokumen yang perlu divalidasi"
             }
           </p>
