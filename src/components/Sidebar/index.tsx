@@ -22,7 +22,7 @@ import UserIcon from "@/components/Icons/UserIcon";
 import MenuIcon from "@/components/Icons/MenuIcon";
 import SettingIcon from "@/components/Icons/SettingIcon";
 import { FaDownload } from "react-icons/fa";
-import { DEBUG_MODE } from "@/utils/config";
+import { DEBUG_MODE, BASE_PATH, getAssetPath } from "@/utils/config";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -67,20 +67,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   // Ref untuk tracking subscription
   const subscriptionRefs = useRef<(() => void)[]>([]);
 
-  // Function untuk download manual book - KONSISTEN DENGAN REFERENSI
+  // Function untuk download manual book
   const downloadManualBook = async () => {
     setIsDownloading(true);
     try {
-      // console.log('Downloading manual book from API: /auths/manual-book');
-      
-      // Menggunakan downloadFileRequest helper untuk konsistensi dengan referensi
       const response = await downloadFileRequest("/auths/manual-book");
-      
-      // console.log('Download response status:', response.status);
       
       if (!response.ok) {
         if (response.status === 404) {
-          // Coba ambil detail error dari response
           try {
             const errorData = await response.json();
             console.error('Manual book not found details:', errorData);
@@ -102,22 +96,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         }
       }
 
-      // Membuat blob dari response
       const blob = await response.blob();
       
       if (blob.size === 0) {
         throw new Error('File manual book kosong atau tidak dapat dibaca');
       }
       
-      // console.log('Blob size:', blob.size, 'bytes');
-      
-      // Membuat URL object untuk blob
       const blobUrl = window.URL.createObjectURL(blob);
       
-      // Tentukan nama file untuk download
       let downloadFileName = 'Manual_Book.pdf';
       
-      // Coba dapatkan nama file dari header Content-Disposition
       const contentDisposition = response.headers.get('Content-Disposition');
       if (contentDisposition) {
         const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -126,29 +114,18 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         }
       }
       
-      // console.log('Download filename:', downloadFileName);
-      
-      // Membuat link download
       const link = document.createElement('a');
       link.href = blobUrl;
       link.download = downloadFileName;
-      link.style.display = 'none'; // Sembunyikan link
+      link.style.display = 'none';
       
-      // Tambahkan ke DOM, klik, lalu hapus
       document.body.appendChild(link);
       link.click();
       
-      // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
       
-      // console.log('Manual book download completed successfully');
-      
-      // Tutup popup setelah berhasil download
       setShowGuidePopup(false);
-      
-      // Tampilkan notifikasi sukses (opsional)
-      // alert(`Manual book "${downloadFileName}" berhasil diunduh!`);
       
     } catch (error) {
       console.error('Error downloading manual book:', error);
@@ -167,7 +144,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         setLoading(true);
         const counts: Record<string, number> = {};
         
-        // Fetch untuk setiap code_notif yang ada dalam mapping
         const uniqueCodeNotifs = Array.from(new Set(Object.values(menuNotifMapping)));
         
         await Promise.all(uniqueCodeNotifs.map(async (codeNotif) => {
@@ -177,7 +153,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             if (res.ok) {
               const json = await res.json();
               if (json.responseCode === 200) {
-                // Map code_notif ke semua code_menu yang menggunakan code_notif ini
                 Object.entries(menuNotifMapping).forEach(([codeMenu, mappedCodeNotif]) => {
                   if (mappedCodeNotif === codeNotif) {
                     counts[codeMenu] = json.responseData.unread_count || 0;
@@ -204,16 +179,13 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
   // Setup SSE connection dan subscriptions
   useEffect(() => {
-    // Clear previous subscriptions
     subscriptionRefs.current.forEach(unsubscribe => unsubscribe());
     subscriptionRefs.current = [];
 
-    // Subscribe ke event sidebar untuk mendapatkan notification count secara real-time
     const unsubscribeSidebar = notificationClient.subscribe('sidebar', (data: any) => {
-      if (DEBUG_MODE) console.log('[SSE] Received sidebar data:', data); // Debug log
+      if (DEBUG_MODE) console.log('[SSE] Received sidebar data:', data);
       
       if (data && typeof data.unread_count === 'number' && data.code_notif) {
-        // Update notif count berdasarkan code_notif yang diterima
         setNotifCounts(prevCounts => {
           const updatedCounts = { ...prevCounts };
           
@@ -223,23 +195,20 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             }
           });
           
-          if (DEBUG_MODE) console.log('[SSE] Updated notif counts:', updatedCounts); // Debug log
+          if (DEBUG_MODE) console.log('[SSE] Updated notif counts:', updatedCounts);
           return updatedCounts;
         });
         
-        setError(null); // Clear error ketika berhasil menerima data
+        setError(null);
       }
     });
 
-    // Subscribe ke event error untuk handling error
     const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
       if (DEBUG_MODE) console.error('SSE Error in sidebar:', error);
-      // setError('Koneksi notifikasi bermasalah');
     });
 
-    // Subscribe ke event connection untuk status koneksi
     const unsubscribeConnection = notificationClient.subscribe('connection', (data: any) => {
-      if (DEBUG_MODE) console.log('[SSE] Connection status:', data); // Debug log
+      if (DEBUG_MODE) console.log('[SSE] Connection status:', data);
       
       if (data.status === 'connected') {
         setError(null);
@@ -248,18 +217,15 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       }
     });
 
-    // Store unsubscribe functions
     subscriptionRefs.current = [unsubscribeSidebar, unsubscribeError, unsubscribeConnection];
 
-    // Mulai koneksi SSE jika belum terhubung
     notificationClient.connect();
 
-    // Cleanup function
     return () => {
       subscriptionRefs.current.forEach(unsubscribe => unsubscribe());
       subscriptionRefs.current = [];
     };
-  }, []); // Empty dependency array
+  }, []);
 
   // Update menu groups dengan notification count
   const updateMenuWithNotifications = (groups: any[]) => {
@@ -278,10 +244,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     }));
   };
 
-  // Update menu groups dengan notification count
   const displayMenuGroups = updateMenuWithNotifications(menuGroups);
 
-  // Debug log untuk tracking changes
   useEffect(() => {
     if (DEBUG_MODE) console.log('[Sidebar] Current notifCounts:', notifCounts);
   }, [notifCounts]);
@@ -323,7 +287,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <Image
                 width={176}
                 height={32}
-                src={"/images/logo/logo-dark.png"}
+                src={getAssetPath("/images/logo/logo-dark.png")}
                 alt="Logo"
                 priority
                 className="dark:hidden"
@@ -332,7 +296,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
               <Image
                 width={176}
                 height={32}
-                src={"/images/logo/logo.png"}
+                src={getAssetPath("/images/logo/logo.png")}
                 alt="Logo"
                 priority
                 className="hidden dark:block"
@@ -399,11 +363,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     <p className="text-xs text-blue-600">
                       SSE Status: {notificationClient.getConnectionStatus()}
                     </p>
+                    <p className="text-xs text-blue-600">
+                      BASE_PATH: {BASE_PATH || '(root)'}
+                    </p>
                   </div>
                 </div>
               )}
 
-              {/* Modified Guide Book Section */}
+              {/* Guide Book Section */}
               <div className="mt-6 px-4">
                 <button
                   onClick={() => setShowGuidePopup(true)}
@@ -436,7 +403,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             transition={{ duration: 0.3 }}
             className="relative max-w-sm w-full mx-4 rounded-lg bg-white p-6 text-center shadow-lg"
           >
-            {/* Gambar Manual Book - sekarang button untuk download */}
             <button
               onClick={downloadManualBook}
               disabled={isDownloading}
@@ -449,7 +415,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 height={150}
                 className="mx-auto h-auto w-full cursor-pointer transition-all duration-200 group-hover:opacity-80 rounded-lg group-hover:scale-105"
               />
-              {/* Overlay download icon */}
               <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg">
                 {isDownloading ? (
                   <svg
