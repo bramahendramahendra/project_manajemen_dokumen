@@ -31,7 +31,7 @@ export default function ProtectedLayout({
     const user = Cookies.get('user');
     if (!user) {
       // console.log('No user found, redirecting to login...');
-      router.push('/login');
+      router.push('/login2');
     } else {
       setIsInitialized(true);
     }
@@ -72,7 +72,7 @@ export default function ProtectedLayout({
         // console.log('User logged out, cleaning up...');
         setIsInitialized(false);
         closeNotificationConnection();
-        router.push('/login');
+        router.push('/login3');
       }
     };
 

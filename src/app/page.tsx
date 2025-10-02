@@ -10,6 +10,6 @@ export default function HomePage() {
     redirect("/dashboard");
   } else {
     // Jika belum login, redirect ke login
-    redirect("/login");
+    redirect("/login1");
   }
 }

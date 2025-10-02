@@ -13,7 +13,6 @@ const generateYearOptions = () => {
   const currentYear = new Date().getFullYear();
   const years = [];
   
-  // Generate dari tahun sekarang mundur 16 tahun (total 17 tahun termasuk tahun sekarang)
   for (let i = 0; i < 17; i++) {
     years.push({ name: currentYear - i });
   }
@@ -592,8 +591,6 @@ const UploadDokumen = () => {
         </div>
       );
     } else if(!isFormUsable()) {
-
-    // if (jenis !== 0 && !loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0 && subjenis === 0) {
       return (
         <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
           <div className="flex items-center">
@@ -969,7 +966,6 @@ const UploadDokumen = () => {
         onClose={handleCloseModal}
         title="Berhasil!"
         message="Dokumen berhasil diupload ke dalam sistem."
-        // buttonText="Kembali ke Upload & Pengelolaan Dokumen"
         buttonText="Kembali"
         onButtonClick={handleSuccessButtonClick}
       />

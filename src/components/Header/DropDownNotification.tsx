@@ -4,7 +4,7 @@ import ClickOutside from "@/components/ClickOutside";
 import Image from "next/image";
 import { apiRequest } from "@/helpers/apiClient";
 import notificationClient from "@/helpers/notificationClient";
-import { DEBUG_MODE } from "@/utils/config";
+import { DEBUG_MODE, getAssetPath } from "@/utils/config";
 
 type NotificationItem = {
   url: string;
@@ -263,7 +263,7 @@ const DropdownNotification = () => {
                         <Image
                           width={112}
                           height={112}
-                          src={item.image}
+                          src={getAssetPath(item.image)}
                           style={{
                             width: "auto",
                             height: "auto",
@@ -274,9 +274,7 @@ const DropdownNotification = () => {
 
                       <span className="block">
                         <span className="block font-medium text-dark dark:text-white">
-                          {/* bram ini masukinnya berdasarkan nama menunya aja ya */}
-                          Pengiriman Langsung
-                          {/* {item.title} */}
+                          {item.title}
                         </span>
                         <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
                           {item.subTitle}

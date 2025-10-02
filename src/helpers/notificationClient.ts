@@ -1,4 +1,14 @@
 import { refreshAccessToken } from "./tokenService";
+import { BASE_PATH, DEBUG_MODE } from "@/utils/config";
+
+// Helper function untuk redirect dengan base path
+const redirectToLogin = () => {
+  const loginPath = BASE_PATH ? `${BASE_PATH}/login` : '/login';
+  if (DEBUG_MODE) {
+    console.log('[NotificationClient] Redirecting to:', loginPath);
+  }
+  window.location.href = loginPath;
+};
 
 // Tipe data untuk event notifikasi
 export type NotificationEvent = {
@@ -27,6 +37,9 @@ export class NotificationClient {
   // Memulai koneksi SSE
   connect() {
     if (this.eventSource || this.isConnecting) {
+      if (DEBUG_MODE) {
+        console.log('[NotificationClient] Connection already exists or is connecting');
+      }
       return;
     }
 
@@ -34,14 +47,19 @@ export class NotificationClient {
     this.shouldReconnect = true;
 
     try {
-      // console.log('Establishing SSE connection...');
+      if (DEBUG_MODE) {
+        console.log('[NotificationClient] Establishing SSE connection...');
+      }
+
       this.eventSource = new EventSource(`${this.baseUrl}/notifications/stream`, { 
         withCredentials: true // Penting untuk mengirim cookies
       });
 
       // Event ketika koneksi terbuka
       this.eventSource.onopen = () => {
-        // console.log('SSE connection established successfully');
+        if (DEBUG_MODE) {
+          console.log('[NotificationClient] SSE connection established successfully');
+        }
         this.isConnecting = false;
         this.reconnectAttempt = 0;
         this.notifySubscribers('connection', { status: 'connected' });
@@ -52,9 +70,12 @@ export class NotificationClient {
       this.eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data) as NotificationEvent;
+          if (DEBUG_MODE) {
+            console.log('[NotificationClient] Received message:', data.type);
+          }
           this.notifySubscribers(data.type, data.data);
         } catch (error) {
-          console.error('Failed to parse SSE message:', error);
+          console.error('[NotificationClient] Failed to parse SSE message:', error);
         }
       };
 
@@ -62,9 +83,12 @@ export class NotificationClient {
       this.eventSource.addEventListener('header', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
+          if (DEBUG_MODE) {
+            console.log('[NotificationClient] Received header event:', data);
+          }
           this.notifySubscribers('header', data);
         } catch (error) {
-          console.error('Failed to parse header event:', error);
+          console.error('[NotificationClient] Failed to parse header event:', error);
         }
       });
 
@@ -72,9 +96,12 @@ export class NotificationClient {
       this.eventSource.addEventListener('sidebar', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
+          if (DEBUG_MODE) {
+            console.log('[NotificationClient] Received sidebar event:', data);
+          }
           this.notifySubscribers('sidebar', data);
         } catch (error) {
-          console.error('Failed to parse sidebar event:', error);
+          console.error('[NotificationClient] Failed to parse sidebar event:', error);
         }
       });
 
@@ -82,15 +109,18 @@ export class NotificationClient {
       this.eventSource.addEventListener('connection', (event: MessageEvent) => {
         try {
           const data = JSON.parse(event.data);
+          if (DEBUG_MODE) {
+            console.log('[NotificationClient] Connection status event:', data);
+          }
           this.notifySubscribers('connection', data);
         } catch (error) {
-          console.error('Failed to parse connection event:', error);
+          console.error('[NotificationClient] Failed to parse connection event:', error);
         }
       });
 
       // Handle error dan reconnection
       this.eventSource.onerror = async (error) => {
-        console.error('SSE connection error:', error);
+        console.error('[NotificationClient] SSE connection error:', error);
         this.isConnecting = false;
         this.stopHeartbeat();
         
@@ -104,13 +134,13 @@ export class NotificationClient {
         if (this.shouldReconnect && this.reconnectAttempt < this.maxReconnectAttempt) {
           this.attemptReconnect();
         } else if (this.reconnectAttempt >= this.maxReconnectAttempt) {
-          console.error('Max reconnect attempts reached');
+          console.error('[NotificationClient] Max reconnect attempts reached');
           this.notifySubscribers('connection', { status: 'failed', reason: 'Max attempts reached' });
         }
       };
 
     } catch (error) {
-      console.error('Failed to establish SSE connection:', error);
+      console.error('[NotificationClient] Failed to establish SSE connection:', error);
       this.isConnecting = false;
       this.notifySubscribers('error', error);
     }
@@ -121,7 +151,10 @@ export class NotificationClient {
     if (!this.shouldReconnect) return;
 
     this.reconnectAttempt++;
-    // console.log(`Attempting to reconnect (attempt ${this.reconnectAttempt}/${this.maxReconnectAttempt})...`);
+    
+    if (DEBUG_MODE) {
+      console.log(`[NotificationClient] Attempting to reconnect (${this.reconnectAttempt}/${this.maxReconnectAttempt})...`);
+    }
     
     this.notifySubscribers('connection', { 
       status: 'reconnecting', 
@@ -133,7 +166,10 @@ export class NotificationClient {
       const refreshResponse = await refreshAccessToken();
       
       if (refreshResponse.ok) {
-        // console.log('Token refreshed successfully, reconnecting SSE...');
+        if (DEBUG_MODE) {
+          console.log('[NotificationClient] Token refreshed successfully, reconnecting SSE...');
+        }
+        
         // Tunggu sebentar sebelum reconnect
         setTimeout(() => {
           if (this.shouldReconnect) {
@@ -141,7 +177,8 @@ export class NotificationClient {
           }
         }, this.reconnectTimeout);
       } else {
-        console.error('Failed to refresh token during reconnect');
+        console.error('[NotificationClient] Failed to refresh token during reconnect');
+        
         // Jika refresh token gagal, redirect ke login
         this.shouldReconnect = false;
         this.notifySubscribers('connection', { 
@@ -149,15 +186,15 @@ export class NotificationClient {
           message: 'Session expired, please login again'
         });
         
-        // Redirect ke login page
+        // Redirect ke login page dengan base path
         setTimeout(() => {
-          window.location.href = "/login";
+          redirectToLogin();
         }, 1000);
       }
     } catch (refreshError) {
-      console.error('Error during token refresh for reconnect:', refreshError);
+      console.error('[NotificationClient] Error during token refresh for reconnect:', refreshError);
       
-      // Jika ada error dalam refresh, coba reconnect tanpa refresh
+      // Jika ada error dalam refresh, coba reconnect tanpa refresh dengan exponential backoff
       setTimeout(() => {
         if (this.shouldReconnect) {
           this.connect();
@@ -171,12 +208,20 @@ export class NotificationClient {
     if (this.eventSource) {
       this.eventSource.close();
       this.eventSource = null;
+      
+      if (DEBUG_MODE) {
+        console.log('[NotificationClient] Connection closed');
+      }
     }
     this.stopHeartbeat();
   }
 
   // Menutup koneksi SSE dan hentikan reconnect
   close() {
+    if (DEBUG_MODE) {
+      console.log('[NotificationClient] Closing connection and stopping reconnect...');
+    }
+    
     this.shouldReconnect = false;
     this.closeConnection();
     this.notifySubscribers('connection', { status: 'disconnected' });
@@ -186,10 +231,16 @@ export class NotificationClient {
   private startHeartbeat() {
     this.stopHeartbeat();
     
+    if (DEBUG_MODE) {
+      console.log('[NotificationClient] Starting heartbeat monitor...');
+    }
+    
     this.heartbeatInterval = setInterval(() => {
       // Check if connection is still alive
       if (this.eventSource && this.eventSource.readyState === EventSource.CLOSED) {
-        // console.log('Detected closed SSE connection, attempting reconnect...');
+        if (DEBUG_MODE) {
+          console.log('[NotificationClient] Detected closed SSE connection, attempting reconnect...');
+        }
         this.closeConnection();
         this.attemptReconnect();
       }
@@ -201,6 +252,10 @@ export class NotificationClient {
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = null;
+      
+      if (DEBUG_MODE) {
+        console.log('[NotificationClient] Heartbeat monitor stopped');
+      }
     }
   }
 
@@ -211,12 +266,20 @@ export class NotificationClient {
     }
     this.subscribers.get(eventType)?.push(callback);
 
+    if (DEBUG_MODE) {
+      console.log(`[NotificationClient] New subscriber for event: ${eventType}`);
+    }
+
     // Return unsubscribe function
     return () => {
       const callbacks = this.subscribers.get(eventType) || [];
       const index = callbacks.indexOf(callback);
       if (index !== -1) {
         callbacks.splice(index, 1);
+        
+        if (DEBUG_MODE) {
+          console.log(`[NotificationClient] Unsubscribed from event: ${eventType}`);
+        }
       }
     };
   }
@@ -224,18 +287,26 @@ export class NotificationClient {
   // Kirim notifikasi ke semua subscriber
   private notifySubscribers(eventType: string, data: any) {
     const callbacks = this.subscribers.get(eventType) || [];
+    
+    if (DEBUG_MODE && callbacks.length > 0) {
+      console.log(`[NotificationClient] Notifying ${callbacks.length} subscriber(s) for event: ${eventType}`);
+    }
+    
     callbacks.forEach(callback => {
       try {
         callback(data);
       } catch (error) {
-        console.error('Error in notification callback:', error);
+        console.error('[NotificationClient] Error in notification callback:', error);
       }
     });
   }
 
   // Method untuk manual reconnect (dipanggil dari luar setelah token refresh)
   reconnect() {
-    // console.log('Manual reconnect requested...');
+    if (DEBUG_MODE) {
+      console.log('[NotificationClient] Manual reconnect requested...');
+    }
+    
     this.close();
     this.reconnectAttempt = 0;
     this.shouldReconnect = true;
@@ -265,6 +336,10 @@ export class NotificationClient {
   // Reset reconnect attempt counter
   resetReconnectAttempts() {
     this.reconnectAttempt = 0;
+    
+    if (DEBUG_MODE) {
+      console.log('[NotificationClient] Reconnect attempts counter reset');
+    }
   }
 }
 

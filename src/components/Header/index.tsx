@@ -2,6 +2,7 @@ import Link from "next/link";
 import DropdownUser from "./DropdownUser";
 import Image from "next/image";
 import DropdownNotification from "./DropDownNotification";
+import { getAssetPath } from "@/utils/config";
 
 const Header = (props: {
   sidebarOpen: string | boolean | undefined;
@@ -56,7 +57,7 @@ const Header = (props: {
             <Image
               width={176}
               height={32}
-              src={"/images/logo/logo-dark.png"}
+              src={getAssetPath("/images/logo/logo-dark.png")}
               alt="Logo"
             />
           </Link>

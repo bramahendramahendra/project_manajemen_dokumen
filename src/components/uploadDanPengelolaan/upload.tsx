@@ -877,7 +877,7 @@ const UploadDokumen = () => {
 
               {/* Error and Success Messages */}
               {error && <p className="text-red-500 mt-2">{error}</p>}
-              {success && (<p className="mt-2 text-green-500">Upload Dokumen berhasil ditambahkan!</p>)}
+              {/* {success && (<p className="mt-2 text-green-500">Upload Dokumen berhasil ditambahkan!</p>)} */}
             </div>
           </form>
         </div>
@@ -889,7 +889,6 @@ const UploadDokumen = () => {
         onClose={handleCloseModal}
         title="Berhasil!"
         message="Dokumen berhasil diupload ke dalam sistem."
-        // buttonText="Kembali ke Daftar Dokumen"
         buttonText="Kembali"
         onButtonClick={handleSuccessButtonClick}
       />
