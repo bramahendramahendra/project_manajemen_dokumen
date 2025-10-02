@@ -274,7 +274,9 @@ const DropdownNotification = () => {
 
                       <span className="block">
                         <span className="block font-medium text-dark dark:text-white">
-                          {item.title}
+                          {/* bram ini masukinnya berdasarkan nama menunya aja ya */}
+                          Pengiriman Langsung
+                          {/* {item.title} */}
                         </span>
                         <span className="block text-body-sm font-medium text-dark-5 dark:text-dark-6">
                           {item.subTitle}
