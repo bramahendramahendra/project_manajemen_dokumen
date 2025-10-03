@@ -470,7 +470,7 @@ const PengirimanLangsung = () => {
                       value={judul}
                       onChange={(e) => setJudul(e.target.value)}
                       className="w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset ring-[#1D92F9] transition placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary"
-                      required
+                      // required
                     />
                   </div>
 

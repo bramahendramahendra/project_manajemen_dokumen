@@ -1,4 +1,5 @@
-import React from 'react';
+// src/components/modals/successModal.tsx
+import React, { useEffect } from 'react';
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -17,28 +18,60 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
   buttonText,
   onButtonClick
 }) => {
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-3xl max-w-md w-full mx-4 overflow-hidden shadow-xl">
-        <div className="flex flex-col items-center px-6 pt-8 pb-6 text-center">
-          {/* Icon container with green background */}
-          <div className="relative mb-6">
-            {/* Background circular gradient */}
-            <div className="absolute inset-0 bg-green-500 rounded-full opacity-20"></div>
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white dark:bg-gray-dark rounded-3xl max-w-md w-full shadow-2xl transform transition-all animate-scaleIn"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col items-center px-8 pt-10 pb-8 text-center">
+          {/* Success Icon with Animation */}
+          <div className="relative mb-8">
+            {/* Pulsing background circles */}
+            <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping"></div>
+            <div className="absolute inset-0 bg-green-500/10 rounded-full scale-125 animate-pulse"></div>
             
-            {/* Small dots around the circle */}
-            <div className="absolute w-2 h-2 bg-green-500 rounded-full -top-1 left-1/2 -translate-x-1/2"></div>
-            <div className="absolute w-2 h-2 bg-green-500 rounded-full top-1/4 -right-1"></div>
-            <div className="absolute w-2 h-2 bg-green-500 rounded-full -bottom-1 left-1/2 -translate-x-1/2"></div>
-            <div className="absolute w-2 h-2 bg-green-500 rounded-full top-1/4 -left-1"></div>
+            {/* Decorative dots */}
+            <div className="absolute w-2 h-2 bg-green-500 rounded-full -top-2 left-1/2 -translate-x-1/2 animate-bounce"></div>
+            <div className="absolute w-2 h-2 bg-green-500 rounded-full top-1/4 -right-2 animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+            <div className="absolute w-2 h-2 bg-green-500 rounded-full -bottom-2 left-1/2 -translate-x-1/2 animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+            <div className="absolute w-2 h-2 bg-green-500 rounded-full top-1/4 -left-2 animate-bounce" style={{ animationDelay: '0.3s' }}></div>
             
             {/* Main circle with checkmark */}
-            <div className="w-16 h-16 flex items-center justify-center bg-green-500 rounded-full relative z-10">
+            <div className="relative w-20 h-20 flex items-center justify-center bg-gradient-to-br from-green-500 to-green-600 rounded-full shadow-lg shadow-green-500/50">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                className="h-8 w-8 text-white" 
+                className="h-10 w-10 text-white animate-checkmark" 
                 fill="none" 
                 viewBox="0 0 24 24" 
                 stroke="currentColor"
@@ -54,27 +87,75 @@ const SuccessModal: React.FC<SuccessModalProps> = ({
           </div>
           
           {/* Title */}
-          <h2 className="text-3xl font-bold mb-6 text-gray-800">
+          <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
             {title}
           </h2>
           
           {/* Message */}
-          <p className="text-gray-600 text-lg mb-8">
+          <p className="text-gray-600 dark:text-gray-300 text-base mb-8 leading-relaxed">
             {message}
           </p>
           
-          {/* Small dot indicator */}
-          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full mb-6"></div>
+          {/* Decorative divider */}
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+            <div className="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full"></div>
+            <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full"></div>
+          </div>
           
           {/* Button */}
           <button
             onClick={onButtonClick}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white text-xl font-medium rounded-xl transition-colors"
+            className="w-full py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white text-lg font-semibold rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 hover:scale-[1.02] active:scale-[0.98]"
           >
             {buttonText}
           </button>
         </div>
       </div>
+
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes checkmark {
+          0% {
+            stroke-dasharray: 0, 100;
+          }
+          100% {
+            stroke-dasharray: 100, 0;
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        .animate-scaleIn {
+          animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .animate-checkmark {
+          stroke-dasharray: 100;
+          animation: checkmark 0.5s ease-in-out 0.3s forwards;
+        }
+      `}</style>
     </div>
   );
 };

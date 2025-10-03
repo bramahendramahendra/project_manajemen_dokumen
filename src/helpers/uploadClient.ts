@@ -6,13 +6,13 @@ import { BASE_PATH, DEBUG_MODE } from "@/utils/config";
 let notificationClient: any = null;
 
 // Dynamic import untuk menghindari circular dependency
-const getNotificationClient = async () => {
-  if (!notificationClient) {
-    const notificationModule = await import('./notificationClient');
-    notificationClient = notificationModule.default;
-  }
-  return notificationClient;
-};
+// const getNotificationClient = async () => {
+//   if (!notificationClient) {
+//     const notificationModule = await import('./notificationClient');
+//     notificationClient = notificationModule.default;
+//   }
+//   return notificationClient;
+// };
 
 // Helper function untuk redirect dengan base path
 const redirectToLogin = () => {
@@ -108,12 +108,12 @@ export const apiRequestUpload = async (
             }
             
             // Notify SSE client untuk reconnect dengan token baru
-            try {
-              const notifClient = await getNotificationClient();
-              notifClient.reconnect();
-            } catch (sseError) {
-              console.error('[apiRequestUpload] Error notifying SSE client:', sseError);
-            }
+            // try {
+            //   // const notifClient = await getNotificationClient();
+            //   // notifClient.reconnect();
+            // } catch (sseError) {
+            //   console.error('[apiRequestUpload] Error notifying SSE client:', sseError);
+            // }
             
             // Retry semua request yang gagal
             processFailedRequests(true);
@@ -130,12 +130,12 @@ export const apiRequestUpload = async (
             }
             
             // Close SSE connection
-            try {
-              const notifClient = await getNotificationClient();
-              notifClient.close();
-            } catch (sseError) {
-              console.error('[apiRequestUpload] Error closing SSE connection:', sseError);
-            }
+            // try {
+            //   const notifClient = await getNotificationClient();
+            //   notifClient.close();
+            // } catch (sseError) {
+            //   console.error('[apiRequestUpload] Error closing SSE connection:', sseError);
+            // }
             
             redirectToLogin();
             throw new Error("Session expired, please log in again.");
@@ -147,12 +147,12 @@ export const apiRequestUpload = async (
           console.error('[apiRequestUpload] Error during token refresh:', refreshError);
           
           // Close SSE connection
-          try {
-            const notifClient = await getNotificationClient();
-            notifClient.close();
-          } catch (sseError) {
-            console.error('[apiRequestUpload] Error closing SSE connection:', sseError);
-          }
+          // try {
+          //   const notifClient = await getNotificationClient();
+          //   notifClient.close();
+          // } catch (sseError) {
+          //   console.error('[apiRequestUpload] Error closing SSE connection:', sseError);
+          // }
           
           redirectToLogin();
           throw refreshError;

@@ -1,264 +1,116 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
+import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
 import { apiRequestUpload } from "@/helpers/uploadClient";
-import ElementCombobox from "../elements/ElementCombobox";
-import SuccessModal from "../modals/successModal";
-
-// Fungsi untuk generate tahun dinamis (tahun sekarang mundur 16 tahun)
-const generateYearOptions = () => {
-  const currentYear = new Date().getFullYear();
-  const years = [];
-  
-  // Generate dari tahun sekarang mundur 16 tahun (total 17 tahun termasuk tahun sekarang)
-  for (let i = 0; i < 17; i++) {
-    years.push({ name: currentYear - i });
-  }
-  
-  return years;
-};
+import ElementCombobox from "@/components/elements/ElementCombobox";
+import SuccessModal from "@/components/modals/successModal";
+import { Alert, LoadingAlert } from "@/components/alerts/Alert";
+import { FileUpload } from "@/components/elements/ElementFileUploadMultiple";
+import { Input } from "@/components/elements/ElementInput";
+import { Button } from "@/components/elements/ElementButton";
+import { DinasCard } from "@/components/uploadDanPengelolaan/DinasCard";
+import { useJenisData, useSubjenisData } from "@/hooks/useMasterData";
+import { useFormValidation } from "@/hooks/useFormValidation";
+import { 
+  isValidFileType, 
+  validateFileSize,
+  formatFileSize 
+} from "@/utils/uploadUtils";
+import { generateYearOptions } from "@/utils/enums";
 
 const dataTahun = generateYearOptions();
 
 const UploadDokumen = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<boolean>(false);
-
+  // Form State
   const [dinas, setDinas] = useState<number>(0);
+  const [levelId, setLevelId] = useState<string>('');
   const [jenis, setJenis] = useState<number>(0);
   const [subjenis, setSubjenis] = useState<number>(0);
   const [tahun, setTahun] = useState<string | number>('');
   const [keterangan, setKeterangan] = useState('');
-  const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
-
+  const [namaDinas, setNamaDinas] = useState<string>('');
+  
+  // File Upload State
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number[]>([]);
+  const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isUploadComplete, setIsUploadComplete] = useState(false);
-
-  const [optionJenis, setOptionJenis] = useState<any[]>([]);
-  const [optionSubjenis, setOptionSubjenis] = useState<any[]>([]);
-  const [resetKey, setResetKey] = useState(0);
   
-  // State untuk Success Modal
+  // UI State
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
-  // State untuk tracking loading data master
-  const [loadingJenis, setLoadingJenis] = useState(false);
-  const [loadingSubjenis, setLoadingSubjenis] = useState(false);
-
-  // State untuk tracking apakah data master kosong
-  const [isJenisEmpty, setIsJenisEmpty] = useState(false);
-  const [isSubjenisEmpty, setIsSubjenisEmpty] = useState(false);
-
-  // Fungsi untuk mengecek apakah form bisa digunakan
-  const isFormUsable = () => {
-    // Form bisa digunakan jika:
-    // 1. Data jenis sudah tersedia (tidak kosong dan tidak loading)
-    // 2. User sudah memilih jenis
-    const basicDataAvailable = !loadingJenis && !isJenisEmpty;
-    const basicSelectionMade = jenis !== 0;
-    
-    return basicDataAvailable && basicSelectionMade;
-  };
-
-  // Fungsi untuk mengecek apakah subjenis wajib dan sudah dipilih
-  const isSubjenisRequiredAndSelected = () => {
-    // Jika ada data subjenis tersedia, maka subjenis wajib dipilih
-    if (jenis !== 0 && !loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0) {
-      return subjenis !== 0;
-    }
-    // Jika tidak ada data subjenis atau sedang loading, tidak perlu dipilih
-    return true;
-  };
-
-  // Fungsi untuk mengecek apakah semua data master sudah lengkap
-  const isMasterDataComplete = () => {
-    return isFormUsable() && isSubjenisRequiredAndSelected();
-  };
-
-  // Fungsi untuk mendapatkan icon berdasarkan tipe file
-  const getFileIcon = (file: File) => {
-    const fileName = file.name.toLowerCase();
-    const fileType = file.type;
-
-    if (fileType.startsWith('image/')) {
-      return '🖼️';
-    } else if (fileName.endsWith('.zip')) {
-      return '📦';
-    } else if (fileName.endsWith('.rar')) {
-      return '🗜️';
-    } else if (fileName.endsWith('.pdf') || fileType === 'application/pdf') {
-      return '📄';
-    } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx') || 
-               fileType === 'application/msword' || 
-               fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-      return '📝';
-    } else if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) {
-      return '📊';
-    } else {
-      return '📎';
-    }
-  };
-
-  // Fungsi untuk memvalidasi tipe file
-  const isValidFileType = (file: File) => {
-    const allowedTypes = [
-      'image/png',
-      'image/jpg', 
-      'image/jpeg',
-      'image/gif',
-      'image/svg+xml',
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/zip',
-      'application/x-zip-compressed',
-      'application/x-rar-compressed',
-      'application/vnd.rar',
-      'application/octet-stream' // Untuk RAR di beberapa browser
-    ];
-    
-    const allowedExtensions = ['.zip', '.rar', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.pdf', '.doc', '.docx'];
-    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-    
-    return allowedTypes.includes(file.type) || allowedExtensions.includes(fileExtension);
-  };
-
-  // Fungsi untuk format ukuran file
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  // Fungsi untuk retry fetch data
-  const retryFetchJenis = () => {
-      fetchOptionJenis();
-  };
-
-  const retryFetchSubjenis = () => {
-    if (jenis) {
-      fetchOptionSubjenis();
-    }
-  };
-
-  // Tambahkan useEffect untuk debugging js-cookie
+  // Load user data from cookie
   useEffect(() => {
     try {
       const userCookie = Cookies.get("user");
       if (userCookie) {
         const userData = JSON.parse(userCookie);
-
-        // Set nilai dinas dengan userData.userid
         if (userData.userid) {
-          setDinas(typeof userData.userid === 'number' ? userData.userid : userData.userid);
+          setDinas(userData.userid);
         }
-      } else {
-        console.error("User cookie tidak ditemukan");
+        if (userData.level_id) {
+          setLevelId(userData.level_id);
+        }
+        if (userData.nama_dinas) {
+          setNamaDinas(userData.nama_dinas);
+        }
       }
     } catch (error) {
-      console.error("Error saat parsing user cookie:", error);
+      console.error("Error parsing user cookie:", error);
     }
   }, []);
 
-  // Fungsi untuk fetch jenis dengan handling yang lebih baik
-  const fetchOptionJenis = useCallback(async () => {
-    setLoadingJenis(true);
-    setError(null);
-    setIsJenisEmpty(false);
+  // Custom Hooks for Master Data
+  const {
+    data: optionJenis,
+    loading: loadingJenis,
+    error: errorJenis,
+    isEmpty: isJenisEmpty,
+    refetch: refetchJenis,
+  } = useJenisData(levelId);
 
-    try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-      const response = await apiRequest(`/master_jenis/all-data/by-role/${user.level_id}`,"GET");
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Jenis data not found");
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const result = await response.json();
+  const {
+    data: optionSubjenis,
+    loading: loadingSubjenis,
+    error: errorSubjenis,
+    isEmpty: isSubjenisEmpty,
+    refetch: refetchSubjenis,
+  } = useSubjenisData(jenis, levelId);
 
-      // Check jika items null atau array kosong
-      if (!result.responseData?.items || result.responseData.items.length === 0) {
-        setIsJenisEmpty(true);
-        setOptionJenis([]);
-      } else {
-        const resJenis = result.responseData.items.map((item: any) => ({
-          id: item.jenis,
-          jenis: item.nama_jenis,
-        }));
-        setOptionJenis(resJenis);
-        setIsJenisEmpty(false);
-      }
-    } catch (err: any) {
-      setError(err.message === "Failed to fetch" ? "Gagal mengambil data jenis." : err.message);
-      setIsJenisEmpty(true);
-    } finally {
-      setLoadingJenis(false);
-    }
-  }, []); // Tidak ada dependency karena fungsi tidak bergantung pada state lain
+  // Form Validation Hook
+  const { 
+    isMasterDataComplete,
+    isFormJenisUsable,
+    isFormSubjenisUsable,
+    formStatus 
+  } = useFormValidation({
+    dinas,
+    levelId,
+    jenis,
+    subjenis,
+    loadingDinas: false,
+    loadingJenis,
+    loadingSubjenis,
+    isDinasEmpty: false,
+    isJenisEmpty,
+    isSubjenisEmpty,
+    optionJenis,
+    optionSubjenis,
+  });
 
-  // Fungsi untuk fetch subjenis dengan handling yang lebih baik - dibungkus dengan useCallback
-  const fetchOptionSubjenis = useCallback(async () => {
-    setLoadingSubjenis(true);
-    setError(null);
-    setIsSubjenisEmpty(false);
-
-    try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
-      const response = await apiRequest(`/master_subjenis/all-data/by-role/${jenis}/${user.level_id}`,"GET");
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error("Subjenis data not found");
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const result = await response.json();
-
-       if (!result.responseData?.items || result.responseData.items.length === 0) {
-        setIsSubjenisEmpty(true);
-        setOptionSubjenis([]);
-      } else {
-        const resSubjenis = result.responseData.items.map((item: any) => ({
-          id: item.subjenis,
-          subjenis: item.nama_subjenis,
-        }));
-
-        setOptionSubjenis(resSubjenis);
-        setIsSubjenisEmpty(false);
-      }
-    } catch (err: any) {
-      setError(err.message === "Failed to fetch" ? "Gagal mengambil data subjenis. Periksa koneksi internet." : err.message);
-      setIsSubjenisEmpty(true);
-    } finally {
-      setLoadingSubjenis(false);
-    }
-  }, [jenis]); // Hanya bergantung pada jenis
-
+  // Reset subjenis when jenis changes
   useEffect(() => {
-    fetchOptionJenis();
-  }, [fetchOptionJenis]);
+    setSubjenis(0);
+  }, [jenis]);
 
-  useEffect(() => {
-    if (!jenis) {
-      setOptionSubjenis([]);
-      setIsSubjenisEmpty(false);
-      setSubjenis(0); // Reset subjenis ketika jenis berubah
-      return;
-    }
-
-    fetchOptionSubjenis(); 
-  }, [jenis, fetchOptionSubjenis]);
-
+  // Handle file change with validation
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    // Cek apakah form bisa digunakan
-    if (!isMasterDataComplete()) {
+    if (!isMasterDataComplete) {
       setError("Lengkapi data master terlebih dahulu sebelum upload file.");
       return;
     }
@@ -266,41 +118,19 @@ const UploadDokumen = () => {
     if (event.target.files && event.target.files.length > 0) {
       const selectedFiles = Array.from(event.target.files);
       
-      // Validasi tipe file
+      // Validate file types
       const invalidFiles = selectedFiles.filter(file => !isValidFileType(file));
       if (invalidFiles.length > 0) {
         setError(`File tidak didukung: ${invalidFiles.map(f => f.name).join(', ')}. Hanya mendukung PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, dan RAR.`);
         return;
       }
 
-      // Validasi ukuran file (maksimal 100MB per file untuk ZIP/RAR, 25MB untuk PDF/DOC, 10MB untuk image)
-      const oversizedFiles = selectedFiles.filter(file => {
-        const fileName = file.name.toLowerCase();
-        let maxSize = 10 * 1024 * 1024; // Default 10MB untuk image
-        
-        if (fileName.match(/\.(zip|rar)$/)) {
-          maxSize = 100 * 1024 * 1024; // 100MB untuk ZIP/RAR
-        } else if (fileName.match(/\.(pdf|doc|docx)$/)) {
-          maxSize = 25 * 1024 * 1024; // 25MB untuk PDF/DOC
-        } else {
-          maxSize = 10 * 1024 * 1024; // 10MB untuk gambar dan file lainnya
-        }
-        
-        return file.size > maxSize;
-      });
-      
+      // Validate file sizes
+      const oversizedFiles = selectedFiles.filter(file => !validateFileSize(file).isValid);
       if (oversizedFiles.length > 0) {
         const oversizedFileInfo = oversizedFiles.map(f => {
-          const fileName = f.name.toLowerCase();
-          let maxSizeText;
-          if (fileName.match(/\.(zip|rar)$/)) {
-            maxSizeText = "100MB";
-          } else if (fileName.match(/\.(pdf|doc|docx)$/)) {
-            maxSizeText = "25MB";
-          } else {
-            maxSizeText = "10MB";
-          }
-          return `${f.name} (${formatFileSize(f.size)}, maks: ${maxSizeText})`;
+          const { maxSize } = validateFileSize(f);
+          return `${f.name} (${formatFileSize(f.size)}, maks: ${maxSize})`;
         }).join(', ');
         
         setError(`File terlalu besar: ${oversizedFileInfo}.`);
@@ -347,6 +177,7 @@ const UploadDokumen = () => {
     }
   };
 
+  // Handle remove file
   const handleRemoveFile = async () => {
     if (tempFilePaths.length > 0) {
       for (const path of tempFilePaths) {
@@ -362,28 +193,21 @@ const UploadDokumen = () => {
     setTempFilePaths([]);
     setIsUploading(false);
     setIsUploadComplete(false);
+    
+    // Reset file input
+    const fileInput = document.getElementById('documentFile') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
   };
 
-  // Fungsi untuk menutup modal
-  const handleCloseModal = () => {
-    setIsSuccessModalOpen(false);
-  };
-
-  // Fungsi untuk aksi tombol pada modal
-  const handleSuccessButtonClick = () => {
-    setIsSuccessModalOpen(false);
-    // Optional: Navigasi ke halaman lain jika diperlukan
-    // router.push('/documents');
-  };
-
+  // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setSuccess(false);
 
-    // Validasi data master kosong
-    if (!isMasterDataComplete()) {
+    if (!isMasterDataComplete) {
       setError("Data master belum lengkap. Pastikan semua data yang diperlukan telah dipilih.");
       setLoading(false);
       return;
@@ -416,16 +240,12 @@ const UploadDokumen = () => {
     };
 
     try {
-      const response = await apiRequest("/document_managements/","POST", payload);
+      const response = await apiRequest("/document_managements/", "POST", payload);
 
       if (response.ok) {
-        setSuccess(true);
-        
-        // Tampilkan modal sukses
         setIsSuccessModalOpen(true);
         
         // Reset form
-        setDinas(0);
         setJenis(0);
         setSubjenis(0);
         setTahun('');
@@ -437,14 +257,10 @@ const UploadDokumen = () => {
         setIsUploading(false);
         setResetKey((prev) => prev + 1);
 
-        // PENTING: Reset file input element
-        const fileInput = document.getElementById('documentFIle') as HTMLInputElement;
+        const fileInput = document.getElementById('documentFile') as HTMLInputElement;
         if (fileInput) {
           fileInput.value = '';
         }
-
-         setOptionJenis([]);
-        setOptionSubjenis([]);
       } else {
         const result = await response.json();
         setError(result.responseDesc || "Terjadi kesalahan saat menyimpan dokumen");
@@ -456,441 +272,206 @@ const UploadDokumen = () => {
     }
   };
 
-  // Komponen untuk menampilkan pesan data kosong
-  const EmptyDataMessage = ({ type, onRetry }: { type: string, onRetry: () => void }) => (
-    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-900/20 dark:border-yellow-800">
-      <div className="flex items-center">
-        <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-        </svg>
-        <div className="flex-1">
-          <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-            Data {type} belum tersedia
-          </p>
-          <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-            Hubungi administrator untuk menambahkan data {type} terlebih dahulu.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="ml-3 text-xs bg-yellow-600 text-white px-3 py-1 rounded hover:bg-yellow-700"
-        >
-          Coba Lagi
-        </button>
-      </div>
-    </div>
-  );
-
-  // Komponen untuk menampilkan status form
-  const FormStatusMessage = () => {
-    if (loadingJenis) {
-      return (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-900/20 dark:border-blue-800">
-          <div className="flex items-center">
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-2"></div>
-            <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-              Memuat data master...
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (isJenisEmpty) {
-      return null; // EmptyDataMessage akan ditampilkan
-    }
-
-    if (!isFormUsable()) {
-      return (
-        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
-              Pilih Dinas dan Jenis terlebih dahulu untuk melanjutkan.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (jenis !== 0 && !loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0 && subjenis === 0) {
-      return (
-        <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-900/20 dark:border-orange-800">
-          <div className="flex items-center">
-            <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-            </svg>
-            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
-              Pilih Sub Jenis untuk melanjutkan.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
-        <div className="flex items-center">
-          <svg className="w-5 h-5 text-green-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-          <p className="text-sm font-medium text-green-800 dark:text-green-200">
-            Form siap digunakan. Silakan lengkapi data dan upload dokumen.
-          </p>
-        </div>
-      </div>
-    );
-  };
+  // Determine if submit button should be disabled
+  const isSubmitDisabled = 
+    loading || 
+    isUploading || 
+    !isUploadComplete || 
+    !isMasterDataComplete || 
+    !tahun || 
+    !keterangan;
 
   return (
     <div className="col-span-12 xl:col-span-6">
-      <div className="rounded-[10px] bg-white px-7.5 pb-4 pt-7.5 shadow-1 dark:bg-gray-dark dark:shadow-card">
-        <h4 className="mb-5.5 font-medium text-dark dark:text-white">
-          Upload dokumenmu sekarang juga
-        </h4>
+      <div className="rounded-2xl bg-white px-8 pb-6 pt-8 shadow-lg dark:bg-gray-dark dark:shadow-card">
+        {/* Header */}
+        <div className="mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
+          <h4 className="text-2xl font-bold text-dark dark:text-white">
+            Upload Dokumen
+          </h4>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            Lengkapi formulir di bawah ini untuk mengupload dokumen Anda
+          </p>
+        </div>
 
-        {/* Status pesan form */}
-        <FormStatusMessage />
-        
-        {/* Pesan jika data master kosong */}
-        {isJenisEmpty && (
-          <EmptyDataMessage type="Jenis" onRetry={retryFetchJenis} />
+        {/* Form Status Messages */}
+        {formStatus.type === 'loading' && (
+          <LoadingAlert message={formStatus.message} />
         )}
         
-        {jenis !== 0 && isSubjenisEmpty && (
-          <EmptyDataMessage type="Sub Jenis" onRetry={retryFetchSubjenis} />
+        {formStatus.type === 'info' && (
+          <Alert type="info" message={formStatus.message} />
+        )}
+        
+        {formStatus.type === 'success' && (
+          <Alert type="success" message={formStatus.message} />
         )}
 
-        <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
-          <form onSubmit={handleSubmit}>
-            <div className="p-6.5">
-              {/* Dinas */}
-              <div className="mb-6">
-                <div className="relative w-full overflow-hidden">
-                  <div className="flex items-center rounded-lg border border-gray-200 bg-gray-50 px-4 py-3.5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
-                    <div className="mr-3 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[#0C479F] to-[#1D92F9] text-white">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-[14px] font-medium text-gray-500 dark:text-gray-400">
-                        Dinas
-                      </p>
-                      <p className="text-lg font-bold text-gray-800 dark:text-white">
-                        {(() => {
-                          try {
-                            const userCookie = Cookies.get("user");
-                            if (userCookie) {
-                              const userData = JSON.parse(userCookie);
-                              if (userData.nama_dinas) {
-                                return userData.nama_dinas;
-                              }
-                            }
-                          } catch (e) {
-                            console.error("Error parsing user cookie:", e);
-                          }
-                          return "Nama Instansi Dinas";
-                        })()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+        {/* Empty Data Alerts */}
+        {isJenisEmpty && levelId && (
+          <Alert
+            type="warning"
+            title="Data Jenis Belum Tersedia"
+            message="Hubungi administrator untuk menambahkan data jenis terlebih dahulu."
+            onRetry={refetchJenis}
+          />
+        )}
+
+        {isSubjenisEmpty && jenis !== 0 && (
+          <Alert
+            type="warning"
+            title="Data Sub Jenis Belum Tersedia"
+            message="Hubungi administrator untuk menambahkan data sub jenis terlebih dahulu."
+            onRetry={refetchSubjenis}
+          />
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <Alert type="error" message={error} />
+        )}
+
+        {/* Form */}
+        <div className="rounded-xl border border-white-200 bg-white-50 dark:border-dark-3 dark:bg-dark-2 p-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Dinas Card */}
+            <DinasCard namaDinas={namaDinas} />
+
+            {/* Jenis Combobox */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-dark dark:text-white">
+                  Jenis <span className="text-red-500">*</span>
+                </label>
+                {loadingJenis && (
+                  <span className="text-xs text-blue-500 animate-pulse">Memuat data...</span>
+                )}
               </div>
+              <ElementCombobox
+                label=""
+                placeholder={
+                  loadingJenis 
+                    ? "Memuat data jenis..." 
+                    : isJenisEmpty 
+                    ? "Data jenis belum tersedia" 
+                    : "Pilih jenis"
+                }
+                options={optionJenis.map((t) => ({ name: t.jenis, id: t.id }))}
+                onChange={(value) => setJenis(Number(value))}
+                resetKey={resetKey}
+                disabled={loadingJenis || isJenisEmpty}
+              />
+            </div>
 
-              {/* Jenis Combobox */}
-              <div className="mb-4.5">
+            {/* Sub Jenis Combobox */}
+            {jenis !== 0 && (
+              <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-body-sm font-medium text-dark dark:text-white">
-                    Jenis <span className="text-red-500">*</span>
+                  <label className="block text-sm font-semibold text-dark dark:text-white">
+                    Sub Jenis
+                    {!loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0 && (
+                      <span className="text-red-500 ml-1">*</span>
+                    )}
                   </label>
-                  {loadingJenis && (
-                    <span className="text-xs text-blue-500">Memuat data...</span>
+                  {loadingSubjenis && (
+                    <span className="text-xs text-blue-500 animate-pulse">Memuat data...</span>
                   )}
                 </div>
                 <ElementCombobox
                   label=""
                   placeholder={
-                    loadingJenis 
-                      ? "Memuat data jenis..." 
-                      : isJenisEmpty 
-                      ? "Data jenis belum tersedia" 
-                      : "Pilih jenis"
+                    loadingSubjenis 
+                      ? "Memuat data sub jenis..." 
+                      : isSubjenisEmpty 
+                      ? "Data sub jenis belum tersedia" 
+                      : "Pilih sub jenis"
                   }
-                  options={optionJenis.map((t) => ({ name: t.jenis, id: t.id }))}
-                  onChange={(value) => setJenis(Number(value))}
+                  options={optionSubjenis.map((t) => ({ name: t.subjenis, id: t.id }))}
+                  onChange={(value) => setSubjenis(Number(value))}
                   resetKey={resetKey}
-                  disabled={loadingJenis || isJenisEmpty}
+                  disabled={loadingSubjenis || isSubjenisEmpty || !isFormSubjenisUsable}
                 />
               </div>
-              
-              {/* Sub Jenis Combobox - hanya muncul jika jenis dipilih */}
-              {jenis != 0 && (
-                <div className="mb-4.5">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-body-sm font-medium text-dark dark:text-white">
-                      Sub Jenis
-                      {!loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0 && (
-                        <span className="text-red-500">*</span>
-                      )}
-                    </label>
-                    {loadingSubjenis && (
-                      <span className="text-xs text-blue-500">Memuat data...</span>
-                    )}
-                  </div>
-                  <ElementCombobox
-                    label=""
-                    placeholder={
-                      loadingSubjenis 
-                        ? "Memuat data sub jenis..." 
-                        : isSubjenisEmpty 
-                        ? "Data sub jenis belum tersedia" 
-                        : "Pilih sub jenis"
-                    }
-                    options={optionSubjenis.map((t) => ({ name: t.subjenis, id: t.id }))}
-                    onChange={(value) => setSubjenis(Number(value))}
-                    resetKey={resetKey}
-                    disabled={loadingSubjenis || isSubjenisEmpty || !isFormUsable()}
-                  />
-                </div>
-              )}
+            )}
 
-              {/* Tahun Combobox */}
-              <div className="mb-4.5">
-                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                  Tahun <span className="text-red-500">*</span>
-                </label>
-                <ElementCombobox
-                  label=""
-                  placeholder={!isMasterDataComplete() ? "Lengkapi data master terlebih dahulu" : "Pilih tahun"}
-                  options={dataTahun}
-                  onChange={(value) => setTahun(value)}
-                  resetKey={resetKey}
-                  disabled={!isMasterDataComplete()}
-                />
-              </div>
-              
-              {/* Keterangan Input */}
-              <div className="mb-4.5">
-                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                  Keterangan
-                </label>
-                <input
-                  type="text"
-                  value={keterangan}
-                  onChange={(e) => setKeterangan(e.target.value)}
-                  placeholder={!isMasterDataComplete() ? "Lengkapi data master terlebih dahulu" : "Masukkan Keterangan..."}
-                  className={`w-full rounded-[7px] bg-transparent px-5 py-3 text-dark ring-1 ring-inset transition placeholder:text-gray-400 focus:ring-1 focus:ring-inset dark:border-dark-3 dark:bg-dark-2 dark:text-white ${
-                    !isMasterDataComplete()
-                      ? "ring-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:ring-gray-600 dark:bg-gray-800 dark:text-gray-400"
-                      : "ring-[#1D92F9] focus:ring-indigo-600 dark:focus:border-primary"
-                  }`}
-                  required
-                  disabled={!isMasterDataComplete()}
-                />
-              </div>
-
-              {/* Upload File */}
-              <div className="mb-4.5">
-                <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
-                  Upload File <span className="text-red-500">*</span>
-                </label>
-                <div
-                  className={`relative block w-full appearance-none rounded-xl border border-dashed px-4 py-4 transition sm:py-7.5 ${
-                    !isMasterDataComplete()
-                      ? "border-gray-300 bg-gray-50 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800"
-                      : "border-gray-4 bg-gray-2 cursor-pointer hover:border-[#1D92F9] dark:border-dark-3 dark:bg-dark-2 dark:hover:border-primary"
-                  }`}
-                >
-                  <input
-                    type="file"
-                    multiple
-                    name="documentFIle"
-                    id="documentFIle"
-                    accept="image/png, image/jpg, image/jpeg, image/gif, image/svg+xml, .pdf, .doc, .docx, .zip, .rar, application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/zip, application/x-zip-compressed, application/x-rar-compressed, application/vnd.rar"
-                    className="absolute inset-0 z-50 m-0 h-full w-full cursor-pointer p-0 opacity-0 outline-none"
-                    onChange={handleFileChange}
-                    disabled={!isMasterDataComplete()}
-                  />
-                  <div className="flex flex-col items-center justify-center">
-                    <span className={`flex h-13.5 w-13.5 items-center justify-center rounded-full border bg-white dark:border-dark-3 dark:bg-gray-dark ${
-                      !isMasterDataComplete() ? "border-gray-300" : "border-stroke"
-                    }`}>
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M10.4613 2.07827C10.3429 1.94876 10.1755 1.875 10 1.875C9.82453 1.875 9.65714 1.94876 9.53873 2.07827L6.2054 5.7241C5.97248 5.97885 5.99019 6.37419 6.24494 6.6071C6.49969 6.84002 6.89502 6.82232 7.12794 6.56756L9.375 4.10984V13.3333C9.375 13.6785 9.65482 13.9583 10 13.9583C10.3452 13.9583 10.625 13.6785 10.625 13.3333V4.10984L12.8721 6.56756C13.105 6.82232 13.5003 6.84002 13.7551 6.6071C14.0098 6.37419 14.0275 5.97885 13.7946 5.7241L10.4613 2.07827Z"
-                          fill={!isMasterDataComplete() ? "#9CA3AF" : "#1D92F9"}
-                        />
-                        <path
-                          d="M3.125 12.5C3.125 12.1548 2.84518 11.875 2.5 11.875C2.15482 11.875 1.875 12.1548 1.875 12.5V12.5457C1.87498 13.6854 1.87497 14.604 1.9721 15.3265C2.07295 16.0765 2.2887 16.7081 2.79029 17.2097C3.29189 17.7113 3.92345 17.9271 4.67354 18.0279C5.39602 18.125 6.31462 18.125 7.45428 18.125H12.5457C13.6854 18.125 14.604 18.125 15.3265 18.0279C16.0766 17.9271 16.7081 17.7113 17.2097 17.2097C17.7113 16.7081 17.9271 16.0765 18.0279 15.3265C18.125 14.604 18.125 13.6854 18.125 12.5457V12.5C18.125 12.1548 17.8452 11.875 17.5 11.875C17.1548 11.875 16.875 12.1548 16.875 12.5C16.875 13.6962 16.8737 14.5304 16.789 15.1599C16.7068 15.7714 16.5565 16.0952 16.3258 16.3258C16.0952 16.5565 15.7714 16.7068 15.1599 16.789C14.5304 16.8737 13.6962 16.875 12.5 16.875H7.5C6.30382 16.875 5.46956 16.8737 4.8401 16.789C4.22862 16.7068 3.90481 16.5565 3.67418 16.3258C3.44354 16.0952 3.29317 15.7714 3.21096 15.1599C3.12633 14.5304 3.125 13.6962 3.125 12.5Z"
-                          fill={!isMasterDataComplete() ? "#9CA3AF" : "#1D92F9"}
-                        />
-                      </svg>
-                    </span>
-                    <p className={`mt-2.5 text-body-sm font-medium ${
-                      !isMasterDataComplete() ? "text-gray-500" : ""
-                    }`}>
-                      {!isMasterDataComplete() ? (
-                        "Lengkapi data master terlebih dahulu"
-                      ) : (
-                        <>
-                          <span className="text-[#1D92F9]">Click to upload</span> atau drag and drop
-                        </>
-                      )}
-                    </p>
-                    {isMasterDataComplete() && (
-                      <>
-                        <p className="mt-1 text-body-xs">
-                          PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, RAR<br/>
-                        </p>
-                        <p className="mt-1 text-body-xs text-gray-500">
-                          (Maksimal 100MB untuk arsip, 25MB untuk dokumen, 10MB untuk gambar)
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {files.length > 0 && (
-                <div className="mt-4">
-                  <h5 className="text-dark dark:text-white font-semibold mb-3">
-                    File Terpilih
-                  </h5>
-                  {files.map((file, index) => {
-                    const isImage = file.type.startsWith("image/");
-                    const percent = uploadProgress[index];
-                    const fileIcon = getFileIcon(file);
-
-                    return (
-                      <div key={index} className="relative p-3 border rounded-md bg-white dark:bg-dark-2 shadow-sm flex gap-4 items-center mb-2">
-                        {isImage ? (
-                          <Image
-                            src={URL.createObjectURL(file)}
-                            alt="preview"
-                            width={48}
-                            height={48}
-                            className="object-cover rounded-md border"
-                          />
-                        ) : (
-                          <div className="flex h-12 w-12 items-center justify-center rounded-md border bg-gray-50 dark:bg-gray-700 text-2xl">
-                            {fileIcon}
-                          </div>
-                        )}
-
-                        <div className="flex-1 overflow-hidden">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-sm font-medium truncate max-w-[70%]">
-                              {file.name}
-                            </span>
-                            <span className="text-xs text-gray-500">{percent}%</span>
-                          </div>
-                          <div className="mb-1 text-xs text-gray-400">
-                            {formatFileSize(file.size)}
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 overflow-hidden">
-                            <div
-                              className={`h-2.5 rounded-full transition-all duration-300 ${
-                                percent === 100 ? "bg-green-500" : "bg-blue-600"
-                              }`}
-                              style={{ width: `${percent}%` }}
-                            ></div>
-                          </div>
-                        </div>
-
-                        {/* Cancel Button */}
-                        {!isUploadComplete && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setFiles([]);
-                              setUploadProgress([]);
-                              setTempFilePaths([]);
-                              setIsUploading(false);
-                              setIsUploadComplete(false);
-                            }}
-                            className="ml-2 text-red-500 hover:text-red-700 text-sm"
-                            title="Batalkan Upload"
-                          >
-                            ✖
-                          </button>
-                        )}
-
-                        {/* Tombol Hapus setelah upload selesai */}
-                        {isUploadComplete && (
-                          <button
-                            type="button"
-                            onClick={handleRemoveFile}
-                            className="text-red-500 hover:text-red-700 text-sm mt-1 flex-shrink-0"
-                            title="Hapus File"
-                          >
-                            🗑️
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                className={`flex w-full justify-center rounded-[7px] p-[13px] font-medium text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 ${
-                  loading || isUploading || !isUploadComplete || !isMasterDataComplete() || !tahun || !keterangan
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-[#0C479F] to-[#1D92F9] hover:bg-opacity-90 hover:from-[#0C479F] hover:to-[#0C479F]"
-                }`}
-                disabled={loading || isUploading || !isUploadComplete || !isMasterDataComplete() || !tahun || !keterangan}
-              >
-                {isUploading
-                  ? "Uploading..."
-                  : !isMasterDataComplete()
-                    ? "Lengkapi Data Master"
-                    : !tahun || !keterangan
-                    ? "Lengkapi Semua Field"
-                    : !isUploadComplete
-                    ? "Upload File Terlebih Dahulu"
-                    : loading
-                    ? "Menambahkan..."
-                    : "Simpan Document"}
-              </button>
-
-              {/* Error and Success Messages */}
-              {error && <p className="text-red-500 mt-2">{error}</p>}
-              {/* {success && (<p className="mt-2 text-green-500">Upload Dokumen berhasil ditambahkan!</p>)} */}
+            {/* Tahun Combobox */}
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+                Tahun <span className="text-red-500">*</span>
+              </label>
+              <ElementCombobox
+                label=""
+                placeholder={
+                  !isMasterDataComplete 
+                    ? "Lengkapi data master terlebih dahulu" 
+                    : "Pilih tahun"
+                }
+                options={dataTahun}
+                onChange={(value) => setTahun(value)}
+                resetKey={resetKey}
+                disabled={!isMasterDataComplete}
+              />
             </div>
+            
+            {/* Keterangan Input */}
+            <Input
+              label="Keterangan"
+              required
+              type="text"
+              value={keterangan}
+              onChange={(e) => setKeterangan(e.target.value)}
+              placeholder={
+                !isMasterDataComplete 
+                  ? "Lengkapi data master terlebih dahulu" 
+                  : "Masukkan keterangan dokumen..."
+              }
+              disabled={!isMasterDataComplete}
+            />
+
+            {/* File Upload Component */}
+            <FileUpload
+              files={files}
+              uploadProgress={uploadProgress}
+              isUploading={isUploading}
+              isUploadComplete={isUploadComplete}
+              disabled={!isMasterDataComplete}
+              onFileChange={handleFileChange}
+              onRemoveFile={handleRemoveFile}
+            />
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              isLoading={loading}
+              disabled={isSubmitDisabled}
+            >
+              {isUploading
+                ? "Mengupload File..."
+                : !isMasterDataComplete
+                ? "Lengkapi Data Master"
+                : !tahun || !keterangan
+                ? "Lengkapi Semua Field"
+                : !isUploadComplete
+                ? "Upload File Terlebih Dahulu"
+                : loading
+                ? "Menyimpan..."
+                : "Simpan Dokumen"}
+            </Button>
           </form>
         </div>
       </div>
       
-      {/* Success Modal Component */}
+      {/* Success Modal */}
       <SuccessModal
         isOpen={isSuccessModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => setIsSuccessModalOpen(false)}
         title="Berhasil!"
         message="Dokumen berhasil diupload ke dalam sistem."
         buttonText="Kembali"
-        onButtonClick={handleSuccessButtonClick}
+        onButtonClick={() => setIsSuccessModalOpen(false)}
       />
     </div>
   );
