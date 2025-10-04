@@ -542,7 +542,7 @@ const MainPage = () => {
                       </button>
 
                       {/* Tombol Delete */}
-                      <button
+                      {/* <button
                         id={`delete-btn-${index}`}
                         className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
                         onClick={() => handleDeleteClick(item.id, item.deskripsi)}
@@ -553,7 +553,7 @@ const MainPage = () => {
                         <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
                           Delete
                         </span>
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>
