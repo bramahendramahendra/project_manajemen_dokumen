@@ -1,4 +1,3 @@
-
 export interface UploadFormState {
   dinas: number;
   levelId: string;
@@ -13,8 +12,8 @@ export interface YearOption {
   name: number;
 }
 
-
-
+// Type ini sudah tidak digunakan di component, sudah dipindah ke hook
+// Tapi tetap dipertahankan untuk backward compatibility
 export interface FileUploadState {
   files: File[];
   uploadProgress: number[];

@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from "react";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
-import { apiRequestUpload } from "@/helpers/uploadClient";
 
 import ElementCombobox from "@/components/elements/ElementCombobox";
 import ElementComboboxAutocomplete from "@/components/elements/ElementComboboxAutocomplate";
+
 import SuccessModal from "@/components/modals/successModal";
 import { Alert, LoadingAlert } from "@/components/alerts/Alert";
 import { FileUpload } from "@/components/elements/ElementFileUploadMultiple";
@@ -16,15 +16,9 @@ import { useDinasData, useJenisData, useSubjenisData } from "@/hooks/useMasterDa
 import { useFormValidation } from "@/hooks/useFormValidation";
 import { useUploadPengelolaanFileUpload } from "@/hooks/useFileUpload";
 
-import { 
-  isValidFileType, 
-  validateFileSize,
-  formatFileSize 
-} from "@/utils/uploadUtils";
 import { generateYearOptions } from "@/utils/enums";
 import type { 
   UploadFormState, 
-  FileUploadState, 
   YearOption 
 } from "@/types/formUploadPengelolaan";
 import type { UserCookie } from "@/types/userCookie";
@@ -40,15 +34,6 @@ const UploadDokumen = () => {
     subjenis: 0,
     tahun: '',
     keterangan: '',
-  });
-  
-  // File Upload State - Using FileUploadState type
-  const [fileState, setFileState] = useState<FileUploadState>({
-    files: [],
-    uploadProgress: [],
-    tempFilePaths: [],
-    isUploading: false,
-    isUploadComplete: false,
   });
   
   // UI State
@@ -81,6 +66,19 @@ const UploadDokumen = () => {
     isEmpty: isSubjenisEmpty,
     refetch: refetchSubjenis,
   } = useSubjenisData(formState.jenis, formState.levelId);
+
+  // File Upload Hook
+  const {
+    files,
+    uploadProgress,
+    tempFilePaths,
+    isUploading,
+    isUploadComplete,
+    error: uploadError,
+    handleFileChange,
+    handleRemoveFile,
+    resetFileState,
+  } = useUploadPengelolaanFileUpload("/document_managements/upload-file");
 
   // Form Validation Hook
   const { 
@@ -122,111 +120,22 @@ const UploadDokumen = () => {
     updateFormField('subjenis', 0);
   }, [formState.jenis]);
 
-  // Handle file change with validation
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Sync upload error with component error state
+  useEffect(() => {
+    if (uploadError) {
+      setError(uploadError);
+    }
+  }, [uploadError]);
+
+  // Handle file change wrapper with master data validation
+  const handleFileChangeWithValidation = async (event: React.ChangeEvent<HTMLInputElement>) => {
     if (!isMasterDataComplete) {
       setError("Lengkapi data master terlebih dahulu sebelum upload file.");
       return;
     }
-
-    if (event.target.files && event.target.files.length > 0) {
-      const selectedFiles = Array.from(event.target.files);
-      
-      // Validate file types
-      const invalidFiles = selectedFiles.filter(file => !isValidFileType(file));
-      if (invalidFiles.length > 0) {
-        setError(`File tidak didukung: ${invalidFiles.map(f => f.name).join(', ')}. Hanya mendukung PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, dan RAR.`);
-        return;
-      }
-
-      // Validate file sizes
-      const oversizedFiles = selectedFiles.filter(file => !validateFileSize(file).isValid);
-      if (oversizedFiles.length > 0) {
-        const oversizedFileInfo = oversizedFiles.map(f => {
-          const { maxSize } = validateFileSize(f);
-          return `${f.name} (${formatFileSize(f.size)}, maks: ${maxSize})`;
-        }).join(', ');
-        
-        setError(`File terlalu besar: ${oversizedFileInfo}.`);
-        return;
-      }
-
-      setFileState({
-        files: selectedFiles,
-        uploadProgress: new Array(selectedFiles.length).fill(0),
-        tempFilePaths: [],
-        isUploading: true,
-        isUploadComplete: false,
-      });
-      setError(null);
-
-      const uploadedPaths: string[] = [];
-      const progresses: number[] = [];
-
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
-        try {
-          const { response, status } = await apiRequestUpload(
-            "/document_managements/upload-file",
-            file,
-            (progress) => {
-              progresses[i] = progress;
-              setFileState(prev => ({ ...prev, uploadProgress: [...progresses] }));
-            }
-          );
-
-          if (status === 200 && response.responseData?.temp_file_path) {
-            uploadedPaths.push(response.responseData.temp_file_path);
-          } else {
-            throw new Error(response.responseDesc || "Upload gagal.");
-          }
-        } catch (error: any) {
-          setError(`Gagal upload ${file.name}: ${error.message}`);
-          setFileState({
-            files: [],
-            uploadProgress: [],
-            tempFilePaths: [],
-            isUploading: false,
-            isUploadComplete: false,
-          });
-          return;
-        }
-      }
-
-      setFileState(prev => ({
-        ...prev,
-        tempFilePaths: uploadedPaths,
-        isUploadComplete: true,
-        isUploading: false,
-      }));
-    }
-  };
-
-  // Handle remove file
-  const handleRemoveFile = async () => {
-    if (fileState.tempFilePaths.length > 0) {
-      for (const path of fileState.tempFilePaths) {
-        try {
-          await apiRequest("/document_managements/delete-file", "POST", { file_path: path });
-        } catch (error) {
-          console.warn("Gagal hapus file:", error);
-        }
-      }
-    }
     
-    setFileState({
-      files: [],
-      uploadProgress: [],
-      tempFilePaths: [],
-      isUploading: false,
-      isUploadComplete: false,
-    });
-    
-    // Reset file input
-    const fileInput = document.getElementById('documentFile') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.value = '';
-    }
+    setError(null);
+    await handleFileChange(event);
   };
 
   // Handle form submit
@@ -241,7 +150,7 @@ const UploadDokumen = () => {
       return;
     }
 
-    if (!fileState.isUploadComplete || fileState.tempFilePaths.length === 0) {
+    if (!isUploadComplete || tempFilePaths.length === 0) {
       setError("Belum ada file yang berhasil diupload.");
       setLoading(false);
       return;
@@ -262,7 +171,7 @@ const UploadDokumen = () => {
       subjenis: formState.subjenis,
       tahun: formState.tahun,
       keterangan: formState.keterangan,
-      file_paths: fileState.tempFilePaths,
+      file_paths: tempFilePaths,
       maker: userData.userid || "",
       maker_role: userData.level_id || "",
     };
@@ -283,14 +192,7 @@ const UploadDokumen = () => {
           keterangan: '',
         });
         
-        setFileState({
-          files: [],
-          uploadProgress: [],
-          tempFilePaths: [],
-          isUploading: false,
-          isUploadComplete: false,
-        });
-        
+        resetFileState();
         setResetKey((prev) => prev + 1);
 
         const fileInput = document.getElementById('documentFile') as HTMLInputElement;
@@ -311,8 +213,8 @@ const UploadDokumen = () => {
   // Determine if submit button should be disabled
   const isSubmitDisabled = 
     loading || 
-    fileState.isUploading || 
-    !fileState.isUploadComplete || 
+    isUploading || 
+    !isUploadComplete || 
     !isMasterDataComplete || 
     !formState.tahun || 
     !formState.keterangan;
@@ -511,12 +413,12 @@ const UploadDokumen = () => {
 
             {/* File Upload Component */}
             <FileUpload
-              files={fileState.files}
-              uploadProgress={fileState.uploadProgress}
-              isUploading={fileState.isUploading}
-              isUploadComplete={fileState.isUploadComplete}
+              files={files}
+              uploadProgress={uploadProgress}
+              isUploading={isUploading}
+              isUploadComplete={isUploadComplete}
               disabled={!isMasterDataComplete}
-              onFileChange={handleFileChange}
+              onFileChange={handleFileChangeWithValidation}
               onRemoveFile={handleRemoveFile}
             />
 
@@ -529,13 +431,13 @@ const UploadDokumen = () => {
               isLoading={loading}
               disabled={isSubmitDisabled}
             >
-              {fileState.isUploading
+              {isUploading
                 ? "Mengupload File..."
                 : !isMasterDataComplete
                 ? "Lengkapi Data Master"
                 : !formState.tahun || !formState.keterangan
                 ? "Lengkapi Semua Field"
-                : !fileState.isUploadComplete
+                : !isUploadComplete
                 ? "Upload File Terlebih Dahulu"
                 : loading
                 ? "Menyimpan..."

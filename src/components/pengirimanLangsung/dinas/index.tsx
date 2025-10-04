@@ -15,7 +15,8 @@ import FileUploadSection from "@/components/pengirimanLangsung/fileUploadSection
 
 import { useDinasAllDataPengirimanLangsung } from "@/hooks/useMasterData";
 import { useDocumentSelection } from "@/hooks/useDocumentSelection";
-import { useFileUpload } from "@/hooks/useFileUpload";
+import { usePengirimanLangsungFileUpload } from "@/hooks/useFileUpload";
+
 import type { 
   PengirimanLangsungFormState
 } from "@/types/formPengirimanLangsung";
@@ -81,7 +82,7 @@ const FormPengirimanLangsung = () => {
     handleFileChange,
     handleRemoveFile,
     resetFileState,
-  } = useFileUpload("/direct-shipping/upload-file");
+  } = usePengirimanLangsungFileUpload("/direct-shipping/upload-file");
 
   const {
     data: optionDinas,
