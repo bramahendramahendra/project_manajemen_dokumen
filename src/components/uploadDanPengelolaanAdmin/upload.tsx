@@ -67,14 +67,13 @@ const UploadDokumen = () => {
     refetch: refetchSubjenis,
   } = useSubjenisData(formState.jenis, formState.levelId);
 
-  // File Upload Hook
+  // File Upload Hook - removed error prop handling
   const {
     files,
     uploadProgress,
     tempFilePaths,
     isUploading,
     isUploadComplete,
-    error: uploadError,
     handleFileChange,
     handleRemoveFile,
     resetFileState,
@@ -119,13 +118,6 @@ const UploadDokumen = () => {
   useEffect(() => {
     updateFormField('subjenis', 0);
   }, [formState.jenis]);
-
-  // Sync upload error with component error state
-  useEffect(() => {
-    if (uploadError) {
-      setError(uploadError);
-    }
-  }, [uploadError]);
 
   // Handle file change wrapper with master data validation
   const handleFileChangeWithValidation = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -411,7 +403,7 @@ const UploadDokumen = () => {
               disabled={!isMasterDataComplete}
             />
 
-            {/* File Upload Component */}
+            {/* File Upload Component - No error prop */}
             <FileUpload
               files={files}
               uploadProgress={uploadProgress}

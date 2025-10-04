@@ -23,17 +23,11 @@ import type {
 
 const FormPengirimanLangsung = () => {
   // Form State
-  // const [judul, setJudul] = useState<string>("");
-  // const [dinas, setDinas] = useState<number>(0);
-  // const [lampiran, setLampiran] = useState<string>("");
   const [formState, setFormState] = useState<PengirimanLangsungFormState>({
     judul: '',
     dinas: 0,
     lampiran: '',
   });
-
-
-  // const [optionDinas, setOptionDinas] = useState<Dinas[]>([]);
 
   const [loading, setLoading] = useState<boolean>(false);
   const [resetKey, setResetKey] = useState(0);
@@ -77,8 +71,6 @@ const FormPengirimanLangsung = () => {
     tempFilePath,
     isUploading,
     isUploadComplete,
-    error: uploadError,
-    success: uploadSuccess,
     handleFileChange,
     handleRemoveFile,
     resetFileState,
@@ -226,7 +218,6 @@ const FormPengirimanLangsung = () => {
                       label=""
                       placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
                       options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
-                      // onChange={(value) => setDinas(Number(value))}
                       onChange={(value) => pengirimanLangsungFormField('dinas', Number(value))}
                       resetKey={resetKey}
                     />
@@ -238,7 +229,6 @@ const FormPengirimanLangsung = () => {
                     required
                     type="text"
                     value={formState.judul}
-                    // onChange={(e) => setJudul(e.target.value)}
                     onChange={(e) => pengirimanLangsungFormField('judul', e.target.value)}
                     placeholder="Masukkan judul pengiriman..."
                   />
@@ -255,7 +245,6 @@ const FormPengirimanLangsung = () => {
                     label="Lampiran"
                     rows={6}
                     value={formState.lampiran}
-                    // onChange={(e) => setLampiran(e.target.value)}
                     onChange={(e) => pengirimanLangsungFormField('lampiran', e.target.value)}
                     placeholder="Isi keterangan tambahan jika diperlukan..."
                     helpText="Opsional - Tambahkan keterangan jika diperlukan"
@@ -267,8 +256,6 @@ const FormPengirimanLangsung = () => {
                     uploadProgress={uploadProgress}
                     isUploading={isUploading}
                     isUploadComplete={isUploadComplete}
-                    error={uploadError}
-                    success={uploadSuccess}
                     onFileChange={handleFileChange}
                     onRemoveFile={handleRemoveFile}
                   />

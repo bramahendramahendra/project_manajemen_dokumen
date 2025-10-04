@@ -1,4 +1,3 @@
-
 export interface MasterDataHookReturn<T> {
   data: T[];
   loading: boolean;
@@ -12,10 +11,8 @@ export interface FileUploadSingleSectionProps {
   uploadProgress: number;
   isUploading: boolean;
   isUploadComplete: boolean;
-  error: string | null;
-  success: boolean;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveFile: () => void;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onRemoveFile: () => Promise<void>;
 }
 
 export interface FileUploadMultiSectionProps {
@@ -24,6 +21,6 @@ export interface FileUploadMultiSectionProps {
   isUploading: boolean;
   isUploadComplete: boolean;
   disabled?: boolean;
-  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveFile: () => void;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onRemoveFile: () => Promise<void>;
 }

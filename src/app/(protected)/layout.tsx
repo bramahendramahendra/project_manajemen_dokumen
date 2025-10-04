@@ -8,6 +8,7 @@ import Cookies from 'js-cookie';
 import { initNotificationManager, closeNotificationConnection } from "@/utils/notificationManager";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { MenuProvider } from "@/contexts/MenuContext";
+import { ToastProvider } from '@/components/Toast';
 
 export default function ProtectedLayout({
   children,
@@ -117,15 +118,17 @@ export default function ProtectedLayout({
       
       {/* Render children dengan atau tanpa RouteGuard */}
       <DefaultLayout>
-        {isPublicPage ? (
-          // Halaman public tidak perlu route guard
-          children
-        ) : (
-          // Halaman yang memerlukan akses khusus menggunakan route guard
-          <RouteGuard>
-            {children}
-          </RouteGuard>
-        )}
+        <ToastProvider>
+          {isPublicPage ? (
+            // Halaman public tidak perlu route guard
+            children
+          ) : (
+            // Halaman yang memerlukan akses khusus menggunakan route guard
+            <RouteGuard>
+              {children}
+            </RouteGuard>
+          )}
+        </ToastProvider>
       </DefaultLayout>
     </MenuProvider>
   );

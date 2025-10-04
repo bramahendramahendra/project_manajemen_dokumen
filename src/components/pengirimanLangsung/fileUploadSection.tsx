@@ -8,8 +8,6 @@ const FileUploadSection: React.FC<FileUploadSingleSectionProps> = ({
   uploadProgress,
   isUploading,
   isUploadComplete,
-  error,
-  success,
   onFileChange,
   onRemoveFile,
 }) => {
@@ -128,18 +126,6 @@ const FileUploadSection: React.FC<FileUploadSingleSectionProps> = ({
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
             )}
           </div>
-        </div>
-      )}
-
-      {/* Status Messages */}
-      {error && (
-        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg dark:bg-red-900/20 dark:border-red-800">
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        </div>
-      )}
-      {success && isUploadComplete && (
-        <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-900/20 dark:border-green-800">
-          <p className="text-sm text-green-600 dark:text-green-400">File berhasil diupload!</p>
         </div>
       )}
     </div>
