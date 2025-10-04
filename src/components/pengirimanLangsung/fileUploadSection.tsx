@@ -1,9 +1,9 @@
 import React from 'react';
 import Image from 'next/image';
-import { FileUploadSectionProps } from '@/types/formPengirimanLangsung';
+import { FileUploadSingleSectionProps } from '@/types/general';
 import { getFileIcon, formatFileSize } from '@/utils/uploadUtils';
 
-const FileUploadSection: React.FC<FileUploadSectionProps> = ({
+const FileUploadSection: React.FC<FileUploadSingleSectionProps> = ({
   file,
   uploadProgress,
   isUploading,

@@ -3,7 +3,7 @@ import { apiRequest } from '@/helpers/apiClient';
 import { apiRequestUpload } from '@/helpers/uploadClient';
 import { isValidFileType, validateFileSize, formatFileSize } from '@/utils/uploadUtils';
 
-interface UseFileUploadReturn {
+interface UsePengirimanLangsungFileUploadReturn {
   file: File | null;
   uploadProgress: number;
   tempFilePath: string;
@@ -16,7 +16,7 @@ interface UseFileUploadReturn {
   resetFileState: () => void;
 }
 
-export const useFileUpload = (uploadEndpoint: string = "/direct-shipping/upload-file"): UseFileUploadReturn => {
+export const usePengirimanLangsungFileUpload = (uploadEndpoint: string = "/direct-shipping/upload-file"): UsePengirimanLangsungFileUploadReturn => {
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [tempFilePath, setTempFilePath] = useState<string>("");
@@ -111,4 +111,7 @@ export const useFileUpload = (uploadEndpoint: string = "/direct-shipping/upload-
     handleRemoveFile,
     resetFileState,
   };
+};
+
+export const useUploadPengelolaanFileUpload = (): UseFileUploadReturn => {
 };

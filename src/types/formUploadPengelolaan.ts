@@ -1,22 +1,3 @@
-export interface DinasOption {
-  id: number;
-  dinas: string;
-  level_id: string;
-}
-
-export interface JenisOption {
-  id: number;
-  jenis: string;
-}
-
-export interface SubjenisOption {
-  id: number;
-  subjenis: string;
-}
-
-export interface YearOption {
-  name: number;
-}
 
 export interface UploadFormState {
   dinas: number;
@@ -28,20 +9,18 @@ export interface UploadFormState {
   namaDinas?: string;
 }
 
+export interface YearOption {
+  name: number;
+}
+
+
+
 export interface FileUploadState {
   files: File[];
   uploadProgress: number[];
   tempFilePaths: string[];
   isUploading: boolean;
   isUploadComplete: boolean;
-}
-
-export interface MasterDataHookReturn<T> {
-  data: T[];
-  loading: boolean;
-  error: string | null;
-  isEmpty: boolean;
-  refetch: () => void;
 }
 
 export interface FormValidationReturn {

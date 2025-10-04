@@ -1,8 +1,7 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
-import { Dinas } from "@/types/formPengirimanLangsung";
 import ElementComboboxAutocomplete from "@/components/elements/ElementComboboxAutocomplate";
 import { Input } from "@/components/elements/ElementInput";
 import { Textarea } from "@/components/elements/ElementInput";
@@ -12,18 +11,33 @@ import ErrorModal from "@/components/modals/errorModal";
 import DocumentList from "@/components/pengirimanLangsung/documentList";
 import SelectedDocumentsDisplay from "../selectedDocuments";
 import FileUploadSection from "@/components/pengirimanLangsung/fileUploadSection";
+
+import { useDinasAllDataPengirimanLangsung } from "@/hooks/useMasterData";
 import { useDocumentSelection } from "@/hooks/useDocumentSelection";
-import { useFileUpload } from "@/hooks/useFileUpload";
+import { usePengirimanLangsungFileUpload } from "@/hooks/useFileUpload";
+
+import type { 
+  PengirimanLangsungFormState
+} from "@/types/formPengirimanLangsung";
 
 const FormPengirimanLangsung = () => {
   // Form State
-  const [judul, setJudul] = useState<string>("");
-  const [dinas, setDinas] = useState<number>(0);
-  const [lampiran, setLampiran] = useState<string>("");
-  const [optionDinas, setOptionDinas] = useState<Dinas[]>([]);
+  // const [judul, setJudul] = useState<string>("");
+  // const [dinas, setDinas] = useState<number>(0);
+  // const [lampiran, setLampiran] = useState<string>("");
+  // const [optionDinas, setOptionDinas] = useState<Dinas[]>([]);
+
+  // Form State - Using UploadFormState type
+  const [formState, setFormState] = useState<PengirimanLangsungFormState>({
+    judul: '',
+    dinas: 0,
+    lampiran: '',
+  });
+
+  // UI State
   const [loading, setLoading] = useState<boolean>(false);
   const [resetKey, setResetKey] = useState(0);
-
+  
   // Modal State
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
   const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
@@ -55,33 +69,25 @@ const FormPengirimanLangsung = () => {
     handleFileChange,
     handleRemoveFile,
     resetFileState,
-  } = useFileUpload("/direct-shipping/upload-file");
+  } = usePengirimanLangsungFileUpload("/direct-shipping/upload-file");
 
-  // Fetch Dinas Options
-  useEffect(() => {
-    const fetchOptionDinas = async () => {
-      try {
-        const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM,PGW", "GET");
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const result = await response.json();
-        
-        if (result.responseData?.items) {
-          const fetchDinas = result.responseData.items.map((item: any) => ({
-            id: item.dinas,
-            dinas: item.nama_dinas,
-          }));
-          setOptionDinas(fetchDinas);
-        }
-      } catch (err: any) {
-        console.error("Gagal memuat data dinas:", err.message);
-        showErrorModal("Kesalahan", "Gagal memuat daftar dinas. Silakan refresh halaman.");
-      }
-    };
+  const {
+    data: optionDinas,
+    loading: loadingDinas,
+    error: errorDinas,
+    isEmpty: isDinasEmpty,
+    refetch: refetchDinas,
+  } = useDinasAllDataPengirimanLangsung();
 
-    fetchOptionDinas();
-  }, []);
+  
+  // Update form field helper
+  const pengirimanLangsungFormField = <K extends keyof PengirimanLangsungFormState>(
+    field: K,
+    value: PengirimanLangsungFormState[K]
+  ) => {
+    setFormState(prev => ({ ...prev, [field]: value }));
+  };
+  
 
   // Helper Functions
   const showErrorModal = (title: string, message: string) => {
@@ -98,12 +104,12 @@ const FormPengirimanLangsung = () => {
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!dinas) {
+    if (!formState.dinas) {
       showErrorModal("Validasi Gagal", "Kepada Dinas harus dipilih");
       return;
     }
     
-    if (!judul.trim()) {
+    if (!formState.judul.trim()) {
       showErrorModal("Validasi Gagal", "Judul harus diisi");
       return;
     }
@@ -118,7 +124,7 @@ const FormPengirimanLangsung = () => {
         return;
       }
 
-      const foundNamaDinas = optionDinas.find((item) => item.id === dinas);
+      const foundNamaDinas = optionDinas.find((item) => item.id === formState.dinas);
       
       if (!foundNamaDinas) {
         showErrorModal("Validasi Gagal", "Dinas yang dipilih tidak valid");
@@ -128,11 +134,11 @@ const FormPengirimanLangsung = () => {
       const documentIds = selectedDocuments.map(doc => doc.id);
       
       const payload = {
-        kepada_id: dinas,
+        kepada_id: formState.dinas,
         kepada_dinas: foundNamaDinas.dinas,
-        judul: judul.trim(),
+        judul: formState.judul.trim(),
         dokumen_ids: documentIds,
-        lampiran: lampiran.trim() || "",
+        lampiran: formState.lampiran.trim() || "",
         file_path: tempFilePath || "",
         file_name: file ? file.name : "",
         pengirim_userid: user.userid,
@@ -164,9 +170,12 @@ const FormPengirimanLangsung = () => {
     setIsSuccessModalOpen(false);
     
     // Reset all form fields
-    setDinas(0);
-    setJudul("");
-    setLampiran("");
+    setFormState({
+      judul: '',
+      dinas: 0,
+      lampiran: '',
+    });
+    
     resetSelection();
     
     if (tempFilePath) {
@@ -205,9 +214,16 @@ const FormPengirimanLangsung = () => {
                     </label>
                     <ElementComboboxAutocomplete
                       label=""
-                      placeholder="Ketik minimal 3 huruf untuk mencari dinas..."
+                      placeholder={
+                        loadingDinas 
+                          ? "Memuat data dinas..." 
+                          : isDinasEmpty 
+                          ? "Data dinas belum tersedia" 
+                          : "Ketik minimal 3 huruf untuk mencari dinas..."
+                      }
                       options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
-                      onChange={(value) => setDinas(Number(value))}
+                      // onChange={(value) => setDinas(Number(value))}
+                      onChange={(value) => pengirimanLangsungFormField('dinas', Number(value))}
                       resetKey={resetKey}
                     />
                   </div>
@@ -217,8 +233,9 @@ const FormPengirimanLangsung = () => {
                     label="Judul"
                     required
                     type="text"
-                    value={judul}
-                    onChange={(e) => setJudul(e.target.value)}
+                    value={formState.judul}
+                    // onChange={(e) => setJudul(e.target.value)}
+                    onChange={(e) => pengirimanLangsungFormField('judul', e.target.value)}
                     placeholder="Masukkan judul pengiriman..."
                   />
 
@@ -233,8 +250,9 @@ const FormPengirimanLangsung = () => {
                   <Textarea
                     label="Lampiran"
                     rows={6}
-                    value={lampiran}
-                    onChange={(e) => setLampiran(e.target.value)}
+                    value={formState.lampiran}
+                    // onChange={(e) => setLampiran(e.target.value)}
+                    onChange={(e) => pengirimanLangsungFormField('lampiran', e.target.value)}
                     placeholder="Isi keterangan tambahan jika diperlukan..."
                     helpText="Opsional - Tambahkan keterangan jika diperlukan"
                   />

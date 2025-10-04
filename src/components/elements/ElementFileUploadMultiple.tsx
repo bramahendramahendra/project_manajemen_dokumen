@@ -1,18 +1,10 @@
 // src/components/upload/FileUpload.tsx
 import React from 'react';
 import Image from 'next/image';
+import { FileUploadMultiSectionProps } from '@/types/general';
+import { getFileIcon, formatFileSize } from '@/utils/uploadUtils';
 
-interface FileUploadProps {
-  files: File[];
-  uploadProgress: number[];
-  isUploading: boolean;
-  isUploadComplete: boolean;
-  disabled?: boolean;
-  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveFile: () => void;
-}
-
-export const FileUpload: React.FC<FileUploadProps> = ({
+export const FileUpload: React.FC<FileUploadMultiSectionProps> = ({
   files,
   uploadProgress,
   isUploading,
@@ -21,29 +13,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   onFileChange,
   onRemoveFile,
 }) => {
-  const getFileIcon = (file: File) => {
-    const fileName = file.name.toLowerCase();
-    const fileType = file.type;
-
-    if (fileType.startsWith('image/')) return '🖼️';
-    if (fileName.endsWith('.zip')) return '📦';
-    if (fileName.endsWith('.rar')) return '🗜️';
-    if (fileName.endsWith('.pdf') || fileType === 'application/pdf') return '📄';
-    if (fileName.endsWith('.doc') || fileName.endsWith('.docx') || 
-        fileType === 'application/msword' || 
-        fileType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return '📝';
-    if (fileName.endsWith('.xls') || fileName.endsWith('.xlsx')) return '📊';
-    return '📎';
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
     <div className="space-y-4">
       {/* Upload Area */}

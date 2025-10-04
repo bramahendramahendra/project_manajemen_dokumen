@@ -1,12 +1,14 @@
-// src/hooks/useMasterData.ts
 import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '@/helpers/apiClient';
 import type { 
   DinasOption, 
+  DinasOptionPengirimanLangsung,
   JenisOption, 
-  SubjenisOption,
+  SubjenisOption
+} from '@/types/masterData';
+import type {
   MasterDataHookReturn 
-} from '@/types/formUploadPengelolaan';
+} from '@/types/general';
 
 /**
  * Hook for fetching Dinas data
@@ -46,6 +48,64 @@ export const useDinasData = (): MasterDataHookReturn<DinasOption> => {
           id: item.dinas,
           dinas: item.nama_dinas,
           level_id: item.level_id,
+        }));
+        setState({ data: resDinas, loading: false, error: null, isEmpty: false });
+      }
+    } catch (err: any) {
+      const errorMessage = err.message === "Failed to fetch" 
+        ? "Gagal mengambil data dinas. Periksa koneksi internet." 
+        : err.message;
+      setState({ data: [], loading: false, error: errorMessage, isEmpty: true });
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchDinas();
+  }, [fetchDinas]);
+
+  return {
+    ...state,
+    refetch: fetchDinas,
+  };
+};
+
+/**
+ * Hook for fetching Dinas data
+ */
+export const useDinasAllDataPengirimanLangsung = (): MasterDataHookReturn<DinasOptionPengirimanLangsung> => {
+  const [state, setState] = useState<{
+    data: DinasOptionPengirimanLangsung[];
+    loading: boolean;
+    error: string | null;
+    isEmpty: boolean;
+  }>({
+    data: [],
+    loading: false,
+    error: null,
+    isEmpty: false,
+  });
+
+  const fetchDinas = useCallback(async () => {
+    setState(prev => ({ ...prev, loading: true, error: null, isEmpty: false }));
+    
+    try {
+      const response = await apiRequest("/master_dinas/opt-dinas?level_id=DNS,ADM,PGW", "GET");
+      
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error("Dinas data not found");
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const result = await response.json();
+
+      if (!result.responseData?.items || result.responseData.items.length === 0) {
+        setState({ data: [], loading: false, error: null, isEmpty: true });
+      } else {
+        const resDinas: DinasOptionPengirimanLangsung[] = result.responseData.items.map((item: any) => ({
+          id: item.dinas,
+          dinas: item.nama_dinas,
         }));
         setState({ data: resDinas, loading: false, error: null, isEmpty: false });
       }

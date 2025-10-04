@@ -1,4 +1,14 @@
-// src/types/pengirimanLangsung.ts
+export interface PengirimanLangsungFormState {
+  judul: string;
+  dinas: number;
+  lampiran: string;
+}
+
+
+
+
+
+
 
 export interface Document {
   id: number;
@@ -8,27 +18,27 @@ export interface Document {
   tahun: string | number;
 }
 
-export interface Dinas {
-  id: number;
-  dinas: string;
-}
+// export interface Dinas {
+//   id: number;
+//   dinas: string;
+// }
 
-export interface FormState {
-  judul: string;
-  dinas: number;
-  lampiran: string;
-  selectedDocuments: Document[];
-  file: File | null;
-  tempFilePath: string;
-}
+// export interface FormState {
+//   judul: string;
+//   dinas: number;
+//   lampiran: string;
+//   selectedDocuments: Document[];
+//   file: File | null;
+//   tempFilePath: string;
+// }
 
-export interface FileUploadState {
-  file: File | null;
-  uploadProgress: number;
-  tempFilePath: string;
-  isUploading: boolean;
-  isUploadComplete: boolean;
-}
+// export interface FileUploadState {
+//   file: File | null;
+//   uploadProgress: number;
+//   tempFilePath: string;
+//   isUploading: boolean;
+//   isUploadComplete: boolean;
+// }
 
 export interface ErrorModalProps {
   isOpen: boolean;
@@ -55,13 +65,4 @@ export interface SelectedDocumentsDisplayProps {
   getDisplayName: (doc: Document) => string;
 }
 
-export interface FileUploadSectionProps {
-  file: File | null;
-  uploadProgress: number;
-  isUploading: boolean;
-  isUploadComplete: boolean;
-  error: string | null;
-  success: boolean;
-  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onRemoveFile: () => void;
-}
+
