@@ -1,5 +1,5 @@
-// src/hooks/useFormValidation.ts
 import { useMemo } from 'react';
+import type { FormValidationReturn } from '@/types/formUploadPengelolaan';
 
 interface FormValidationProps {
   dinas: number;
@@ -29,7 +29,7 @@ export const useFormValidation = ({
   isSubjenisEmpty,
   optionJenis,
   optionSubjenis,
-}: FormValidationProps) => {
+}: FormValidationProps): FormValidationReturn => {
   
   const isFormJenisUsable = useMemo(() => {
     const basicDataAvailable = !loadingDinas && !isDinasEmpty;
@@ -79,38 +79,38 @@ export const useFormValidation = ({
     isSubjenisRequiredAndSelected,
   ]);
 
-  const getFormStatus = useMemo(() => {
+  const getFormStatus = useMemo((): FormValidationReturn['formStatus'] => {
     if (loadingDinas || loadingJenis) {
-      return { type: 'loading' as const, message: 'Memuat data master...' };
+      return { type: 'loading', message: 'Memuat data master...' };
     }
 
     if (isDinasEmpty || isJenisEmpty) {
-      return { type: 'empty' as const, message: '' };
+      return { type: 'empty', message: '' };
     }
 
     if (!isFormJenisUsable) {
       return { 
-        type: 'info' as const, 
+        type: 'info', 
         message: 'Pilih Dinas terlebih dahulu untuk melanjutkan.' 
       };
     }
 
     if (!isFormSubjenisUsable) {
       return { 
-        type: 'info' as const, 
+        type: 'info', 
         message: 'Pilih Jenis terlebih dahulu untuk melanjutkan.' 
       };
     }
 
     if (!isFormUsable) {
       return { 
-        type: 'info' as const, 
+        type: 'info', 
         message: 'Pilih Sub Jenis untuk melanjutkan.' 
       };
     }
 
     return { 
-      type: 'success' as const, 
+      type: 'success', 
       message: 'Form siap digunakan. Silakan lengkapi data dan upload dokumen.' 
     };
   }, [

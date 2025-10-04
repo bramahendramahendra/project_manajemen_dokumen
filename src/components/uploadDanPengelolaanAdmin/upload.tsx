@@ -17,28 +17,35 @@ import {
   validateFileSize,
   formatFileSize 
 } from "@/utils/uploadUtils";
-import { 
-  generateYearOptions
-} from "@/utils/enums";
+import { generateYearOptions } from "@/utils/enums";
+import type { 
+  UploadFormState, 
+  FileUploadState, 
+  YearOption 
+} from "@/types/formUploadPengelolaan";
+import type { UserCookie } from "@/types/userCookie";
 
-
-const dataTahun = generateYearOptions();
+const dataTahun: YearOption[] = generateYearOptions();
 
 const UploadDokumen = () => {
-  // Form State
-  const [dinas, setDinas] = useState<number>(0);
-  const [levelId, setLevelId] = useState<string>('');
-  const [jenis, setJenis] = useState<number>(0);
-  const [subjenis, setSubjenis] = useState<number>(0);
-  const [tahun, setTahun] = useState<string | number>('');
-  const [keterangan, setKeterangan] = useState('');
+  // Form State - Using UploadFormState type
+  const [formState, setFormState] = useState<UploadFormState>({
+    dinas: 0,
+    levelId: '',
+    jenis: 0,
+    subjenis: 0,
+    tahun: '',
+    keterangan: '',
+  });
   
-  // File Upload State
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<number[]>([]);
-  const [tempFilePaths, setTempFilePaths] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
-  const [isUploadComplete, setIsUploadComplete] = useState(false);
+  // File Upload State - Using FileUploadState type
+  const [fileState, setFileState] = useState<FileUploadState>({
+    files: [],
+    uploadProgress: [],
+    tempFilePaths: [],
+    isUploading: false,
+    isUploadComplete: false,
+  });
   
   // UI State
   const [loading, setLoading] = useState(false);
@@ -61,7 +68,7 @@ const UploadDokumen = () => {
     error: errorJenis,
     isEmpty: isJenisEmpty,
     refetch: refetchJenis,
-  } = useJenisData(levelId);
+  } = useJenisData(formState.levelId);
 
   const {
     data: optionSubjenis,
@@ -69,7 +76,7 @@ const UploadDokumen = () => {
     error: errorSubjenis,
     isEmpty: isSubjenisEmpty,
     refetch: refetchSubjenis,
-  } = useSubjenisData(jenis, levelId);
+  } = useSubjenisData(formState.jenis, formState.levelId);
 
   // Form Validation Hook
   const { 
@@ -78,10 +85,10 @@ const UploadDokumen = () => {
     isFormSubjenisUsable,
     formStatus 
   } = useFormValidation({
-    dinas,
-    levelId,
-    jenis,
-    subjenis,
+    dinas: formState.dinas,
+    levelId: formState.levelId,
+    jenis: formState.jenis,
+    subjenis: formState.subjenis,
     loadingDinas,
     loadingJenis,
     loadingSubjenis,
@@ -92,16 +99,24 @@ const UploadDokumen = () => {
     optionSubjenis,
   });
 
+  // Update form field helper
+  const updateFormField = <K extends keyof UploadFormState>(
+    field: K,
+    value: UploadFormState[K]
+  ) => {
+    setFormState(prev => ({ ...prev, [field]: value }));
+  };
+
   // Reset jenis when dinas changes
   useEffect(() => {
-    setJenis(0);
-    setSubjenis(0);
-  }, [dinas, levelId]);
+    updateFormField('jenis', 0);
+    updateFormField('subjenis', 0);
+  }, [formState.dinas, formState.levelId]);
 
   // Reset subjenis when jenis changes
   useEffect(() => {
-    setSubjenis(0);
-  }, [jenis]);
+    updateFormField('subjenis', 0);
+  }, [formState.jenis]);
 
   // Handle file change with validation
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -132,10 +147,13 @@ const UploadDokumen = () => {
         return;
       }
 
-      setFiles(selectedFiles);
-      setUploadProgress(new Array(selectedFiles.length).fill(0));
-      setIsUploading(true);
-      setIsUploadComplete(false);
+      setFileState({
+        files: selectedFiles,
+        uploadProgress: new Array(selectedFiles.length).fill(0),
+        tempFilePaths: [],
+        isUploading: true,
+        isUploadComplete: false,
+      });
       setError(null);
 
       const uploadedPaths: string[] = [];
@@ -149,7 +167,7 @@ const UploadDokumen = () => {
             file,
             (progress) => {
               progresses[i] = progress;
-              setUploadProgress([...progresses]);
+              setFileState(prev => ({ ...prev, uploadProgress: [...progresses] }));
             }
           );
 
@@ -160,22 +178,30 @@ const UploadDokumen = () => {
           }
         } catch (error: any) {
           setError(`Gagal upload ${file.name}: ${error.message}`);
-          setUploadProgress([]);
-          setIsUploading(false);
+          setFileState({
+            files: [],
+            uploadProgress: [],
+            tempFilePaths: [],
+            isUploading: false,
+            isUploadComplete: false,
+          });
           return;
         }
       }
 
-      setTempFilePaths(uploadedPaths);
-      setIsUploadComplete(true);
-      setIsUploading(false);
+      setFileState(prev => ({
+        ...prev,
+        tempFilePaths: uploadedPaths,
+        isUploadComplete: true,
+        isUploading: false,
+      }));
     }
   };
 
   // Handle remove file
   const handleRemoveFile = async () => {
-    if (tempFilePaths.length > 0) {
-      for (const path of tempFilePaths) {
+    if (fileState.tempFilePaths.length > 0) {
+      for (const path of fileState.tempFilePaths) {
         try {
           await apiRequest("/document_managements/delete-file", "POST", { file_path: path });
         } catch (error) {
@@ -183,11 +209,14 @@ const UploadDokumen = () => {
         }
       }
     }
-    setFiles([]);
-    setUploadProgress([]);
-    setTempFilePaths([]);
-    setIsUploading(false);
-    setIsUploadComplete(false);
+    
+    setFileState({
+      files: [],
+      uploadProgress: [],
+      tempFilePaths: [],
+      isUploading: false,
+      isUploadComplete: false,
+    });
     
     // Reset file input
     const fileInput = document.getElementById('documentFile') as HTMLInputElement;
@@ -208,28 +237,28 @@ const UploadDokumen = () => {
       return;
     }
 
-    if (!isUploadComplete || tempFilePaths.length === 0) {
+    if (!fileState.isUploadComplete || fileState.tempFilePaths.length === 0) {
       setError("Belum ada file yang berhasil diupload.");
       setLoading(false);
       return;
     }
 
-    let userData;
+    let userData: UserCookie;
     try {
       const userCookie = Cookies.get("user");
-      userData = userCookie ? JSON.parse(userCookie) : {};
+      userData = userCookie ? JSON.parse(userCookie) : {} as UserCookie;
     } catch (error) {
       console.error("Error parsing user cookie:", error);
-      userData = {};
+      userData = {} as UserCookie;
     }
 
     const payload = {
-      dinas: dinas,
-      jenis: jenis,
-      subjenis: subjenis,
-      tahun: tahun,
-      keterangan: keterangan,
-      file_paths: tempFilePaths,
+      dinas: formState.dinas,
+      jenis: formState.jenis,
+      subjenis: formState.subjenis,
+      tahun: formState.tahun,
+      keterangan: formState.keterangan,
+      file_paths: fileState.tempFilePaths,
       maker: userData.userid || "",
       maker_role: userData.level_id || "",
     };
@@ -241,17 +270,23 @@ const UploadDokumen = () => {
         setIsSuccessModalOpen(true);
         
         // Reset form
-        setDinas(0);
-        setLevelId('');
-        setJenis(0);
-        setSubjenis(0);
-        setTahun('');
-        setKeterangan('');
-        setFiles([]);
-        setUploadProgress([]);
-        setTempFilePaths([]);
-        setIsUploadComplete(false);
-        setIsUploading(false);
+        setFormState({
+          dinas: 0,
+          levelId: '',
+          jenis: 0,
+          subjenis: 0,
+          tahun: '',
+          keterangan: '',
+        });
+        
+        setFileState({
+          files: [],
+          uploadProgress: [],
+          tempFilePaths: [],
+          isUploading: false,
+          isUploadComplete: false,
+        });
+        
         setResetKey((prev) => prev + 1);
 
         const fileInput = document.getElementById('documentFile') as HTMLInputElement;
@@ -272,11 +307,11 @@ const UploadDokumen = () => {
   // Determine if submit button should be disabled
   const isSubmitDisabled = 
     loading || 
-    isUploading || 
-    !isUploadComplete || 
+    fileState.isUploading || 
+    !fileState.isUploadComplete || 
     !isMasterDataComplete || 
-    !tahun || 
-    !keterangan;
+    !formState.tahun || 
+    !formState.keterangan;
 
   return (
     <div className="col-span-12 xl:col-span-6">
@@ -314,7 +349,7 @@ const UploadDokumen = () => {
           />
         )}
 
-        {isJenisEmpty && levelId && (
+        {isJenisEmpty && formState.levelId && (
           <Alert
             type="warning"
             title="Data Jenis Belum Tersedia"
@@ -323,7 +358,7 @@ const UploadDokumen = () => {
           />
         )}
 
-        {isSubjenisEmpty && jenis !== 0 && (
+        {isSubjenisEmpty && formState.jenis !== 0 && (
           <Alert
             type="warning"
             title="Data Sub Jenis Belum Tersedia"
@@ -338,7 +373,7 @@ const UploadDokumen = () => {
         )}
 
         {/* Form */}
-        <div className="rounded-xl border border-white-200 bg-white-50 dark:border-dark-3 dark:bg-dark-2 p-6">
+        <div className="rounded-xl border border-gray-200 bg-white-50 dark:border-dark-3 dark:bg-dark-2 p-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Dinas Combobox */}
             <div>
@@ -362,11 +397,11 @@ const UploadDokumen = () => {
                 options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
                 onChange={(value) => {
                   const selectedDinas = Number(value);
-                  setDinas(selectedDinas);
+                  updateFormField('dinas', selectedDinas);
                   
                   const selectedDinasData = optionDinas.find(item => item.id === selectedDinas);
                   if (selectedDinasData) {
-                    setLevelId(selectedDinasData.level_id);
+                    updateFormField('levelId', selectedDinasData.level_id);
                   }
                 }}
                 resetKey={resetKey}
@@ -375,7 +410,7 @@ const UploadDokumen = () => {
             </div>
 
             {/* Jenis Combobox */}
-            {levelId !== "" && (
+            {formState.levelId !== "" && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-semibold text-dark dark:text-white">
@@ -398,7 +433,7 @@ const UploadDokumen = () => {
                       : "Pilih jenis"
                   }
                   options={optionJenis.map((t) => ({ name: t.jenis, id: t.id }))}
-                  onChange={(value) => setJenis(Number(value))}
+                  onChange={(value) => updateFormField('jenis', Number(value))}
                   resetKey={resetKey}
                   disabled={loadingJenis || isJenisEmpty || !isFormJenisUsable}
                 />
@@ -406,7 +441,7 @@ const UploadDokumen = () => {
             )}
 
             {/* Sub Jenis Combobox */}
-            {jenis !== 0 && (
+            {formState.jenis !== 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <label className="block text-sm font-semibold text-dark dark:text-white">
@@ -429,7 +464,7 @@ const UploadDokumen = () => {
                       : "Pilih sub jenis"
                   }
                   options={optionSubjenis.map((t) => ({ name: t.subjenis, id: t.id }))}
-                  onChange={(value) => setSubjenis(Number(value))}
+                  onChange={(value) => updateFormField('subjenis', Number(value))}
                   resetKey={resetKey}
                   disabled={loadingSubjenis || isSubjenisEmpty || !isFormSubjenisUsable}
                 />
@@ -449,7 +484,7 @@ const UploadDokumen = () => {
                     : "Pilih tahun"
                 }
                 options={dataTahun}
-                onChange={(value) => setTahun(value)}
+                onChange={(value) => updateFormField('tahun', value)}
                 resetKey={resetKey}
                 disabled={!isMasterDataComplete}
               />
@@ -460,8 +495,8 @@ const UploadDokumen = () => {
               label="Keterangan"
               required
               type="text"
-              value={keterangan}
-              onChange={(e) => setKeterangan(e.target.value)}
+              value={formState.keterangan}
+              onChange={(e) => updateFormField('keterangan', e.target.value)}
               placeholder={
                 !isMasterDataComplete 
                   ? "Lengkapi data master terlebih dahulu" 
@@ -472,10 +507,10 @@ const UploadDokumen = () => {
 
             {/* File Upload Component */}
             <FileUpload
-              files={files}
-              uploadProgress={uploadProgress}
-              isUploading={isUploading}
-              isUploadComplete={isUploadComplete}
+              files={fileState.files}
+              uploadProgress={fileState.uploadProgress}
+              isUploading={fileState.isUploading}
+              isUploadComplete={fileState.isUploadComplete}
               disabled={!isMasterDataComplete}
               onFileChange={handleFileChange}
               onRemoveFile={handleRemoveFile}
@@ -490,13 +525,13 @@ const UploadDokumen = () => {
               isLoading={loading}
               disabled={isSubmitDisabled}
             >
-              {isUploading
+              {fileState.isUploading
                 ? "Mengupload File..."
                 : !isMasterDataComplete
                 ? "Lengkapi Data Master"
-                : !tahun || !keterangan
+                : !formState.tahun || !formState.keterangan
                 ? "Lengkapi Semua Field"
-                : !isUploadComplete
+                : !fileState.isUploadComplete
                 ? "Upload File Terlebih Dahulu"
                 : loading
                 ? "Menyimpan..."

@@ -1,27 +1,23 @@
 // src/hooks/useMasterData.ts
 import { useState, useEffect, useCallback } from 'react';
 import { apiRequest } from '@/helpers/apiClient';
-
-interface MasterDataState<T> {
-  data: T[];
-  loading: boolean;
-  error: string | null;
-  isEmpty: boolean;
-}
-
-interface UseMasterDataReturn<T> {
-  data: T[];
-  loading: boolean;
-  error: string | null;
-  isEmpty: boolean;
-  refetch: () => void;
-}
+import type { 
+  DinasOption, 
+  JenisOption, 
+  SubjenisOption,
+  MasterDataHookReturn 
+} from '@/types/formUploadPengelolaan';
 
 /**
  * Hook for fetching Dinas data
  */
-export const useDinasData = (): UseMasterDataReturn<any> => {
-  const [state, setState] = useState<MasterDataState<any>>({
+export const useDinasData = (): MasterDataHookReturn<DinasOption> => {
+  const [state, setState] = useState<{
+    data: DinasOption[];
+    loading: boolean;
+    error: string | null;
+    isEmpty: boolean;
+  }>({
     data: [],
     loading: false,
     error: null,
@@ -46,7 +42,7 @@ export const useDinasData = (): UseMasterDataReturn<any> => {
       if (!result.responseData?.items || result.responseData.items.length === 0) {
         setState({ data: [], loading: false, error: null, isEmpty: true });
       } else {
-        const resDinas = result.responseData.items.map((item: any) => ({
+        const resDinas: DinasOption[] = result.responseData.items.map((item: any) => ({
           id: item.dinas,
           dinas: item.nama_dinas,
           level_id: item.level_id,
@@ -74,8 +70,13 @@ export const useDinasData = (): UseMasterDataReturn<any> => {
 /**
  * Hook for fetching Jenis data
  */
-export const useJenisData = (levelId: string): UseMasterDataReturn<any> => {
-  const [state, setState] = useState<MasterDataState<any>>({
+export const useJenisData = (levelId: string): MasterDataHookReturn<JenisOption> => {
+  const [state, setState] = useState<{
+    data: JenisOption[];
+    loading: boolean;
+    error: string | null;
+    isEmpty: boolean;
+  }>({
     data: [],
     loading: false,
     error: null,
@@ -105,7 +106,7 @@ export const useJenisData = (levelId: string): UseMasterDataReturn<any> => {
       if (!result.responseData?.items || result.responseData.items.length === 0) {
         setState({ data: [], loading: false, error: null, isEmpty: true });
       } else {
-        const resJenis = result.responseData.items.map((item: any) => ({
+        const resJenis: JenisOption[] = result.responseData.items.map((item: any) => ({
           id: item.jenis,
           jenis: item.nama_jenis,
         }));
@@ -132,8 +133,13 @@ export const useJenisData = (levelId: string): UseMasterDataReturn<any> => {
 /**
  * Hook for fetching Subjenis data
  */
-export const useSubjenisData = (jenis: number, levelId: string): UseMasterDataReturn<any> => {
-  const [state, setState] = useState<MasterDataState<any>>({
+export const useSubjenisData = (jenis: number, levelId: string): MasterDataHookReturn<SubjenisOption> => {
+  const [state, setState] = useState<{
+    data: SubjenisOption[];
+    loading: boolean;
+    error: string | null;
+    isEmpty: boolean;
+  }>({
     data: [],
     loading: false,
     error: null,
@@ -163,7 +169,7 @@ export const useSubjenisData = (jenis: number, levelId: string): UseMasterDataRe
       if (!result.responseData?.items || result.responseData.items.length === 0) {
         setState({ data: [], loading: false, error: null, isEmpty: true });
       } else {
-        const resSubjenis = result.responseData.items.map((item: any) => ({
+        const resSubjenis: SubjenisOption[] = result.responseData.items.map((item: any) => ({
           id: item.subjenis,
           subjenis: item.nama_subjenis,
         }));
