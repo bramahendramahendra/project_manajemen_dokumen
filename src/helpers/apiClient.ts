@@ -1,6 +1,6 @@
 import Cookies from "js-cookie";
-// import { useRouter } from "next/navigation";
 import { refreshAccessToken } from "./tokenService";
+import { BASE_PATH, DEBUG_MODE } from "@/utils/config";
 
 // Import notification client untuk koordinasi SSE
 let notificationClient: any = null;
@@ -12,6 +12,15 @@ const getNotificationClient = async () => {
     notificationClient = notificationModule.default;
   }
   return notificationClient;
+};
+
+// Helper function untuk redirect dengan base path
+const redirectToLogin = () => {
+  const loginPath = BASE_PATH ? `${BASE_PATH}/login` : '/login';
+  if (DEBUG_MODE) {
+    console.log('[apiClient] Redirecting to:', loginPath);
+  }
+  window.location.href = loginPath;
 };
 
 // Variabel untuk mencegah multiple refresh token secara bersamaan
@@ -39,8 +48,12 @@ const clearMenuData = () => {
         localStorage.removeItem(key);
       }
     });
+    
+    if (DEBUG_MODE) {
+      console.log('[apiClient] Menu data cleared');
+    }
   } catch (error) {
-    console.error("Error clearing menu data:", error);
+    console.error("[apiClient] Error clearing menu data:", error);
   }
 };
 
@@ -84,7 +97,10 @@ export const apiRequest = async (
         isRefreshing = true;
         
         try {
-          // console.log('Token expired, attempting refresh...');
+          if (DEBUG_MODE) {
+            console.log('[apiRequest] Token expired, attempting refresh...');
+          }
+          
           const refreshResponse = await refreshAccessToken();
           
           if (refreshResponse.ok) {
@@ -93,13 +109,19 @@ export const apiRequest = async (
             // Update waktu login terakhir
             localStorage.setItem('lastLoginTime', Date.now().toString());
             
+            if (DEBUG_MODE) {
+              console.log('[apiRequest] Token refreshed successfully');
+            }
+            
             // Notify SSE client untuk reconnect dengan token baru
             try {
               const notifClient = await getNotificationClient();
-              // console.log('Notifying SSE client to reconnect after token refresh...');
+              if (DEBUG_MODE) {
+                console.log('[apiRequest] Notifying SSE client to reconnect after token refresh...');
+              }
               notifClient.reconnect();
             } catch (sseError) {
-              console.error('Error notifying SSE client:', sseError);
+              console.error('[apiRequest] Error notifying SSE client:', sseError);
             }
             
             // Retry semua request yang gagal
@@ -110,13 +132,15 @@ export const apiRequest = async (
           } else {
             // Jika refresh gagal, redirect ke login
             isRefreshing = false;
-            // console.log('Token refresh failed, redirecting to login...');
+            if (DEBUG_MODE) {
+              console.log('[apiRequest] Token refresh failed, redirecting to login...');
+            }
             await handleLogout();
             throw new Error("Session expired, please log in again.");
           }
         } catch (error) {
           isRefreshing = false;
-          console.error('Error during token refresh:', error);
+          console.error('[apiRequest] Error during token refresh:', error);
           await handleLogout();
           throw error;
         }
@@ -136,7 +160,7 @@ export const apiRequest = async (
 
     return response;
   } catch (error) {
-    console.error("API request error:", error);
+    console.error("[apiRequest] API request error:", error);
     throw error;
   }
 };
@@ -147,8 +171,12 @@ const handleLogout = async () => {
     // Close SSE connection
     const notifClient = await getNotificationClient();
     notifClient.close();
+    
+    if (DEBUG_MODE) {
+      console.log('[handleLogout] SSE connection closed');
+    }
   } catch (error) {
-    console.error('Error closing SSE connection:', error);
+    console.error('[handleLogout] Error closing SSE connection:', error);
   }
 
   // Clear data
@@ -156,8 +184,12 @@ const handleLogout = async () => {
   localStorage.removeItem('lastLoginTime');
   clearMenuData();
   
-  // Redirect
-  window.location.href = "/login";
+  if (DEBUG_MODE) {
+    console.log('[handleLogout] User data cleared');
+  }
+  
+  // Redirect dengan base path
+  redirectToLogin();
 };
 
 /**
@@ -171,7 +203,9 @@ export const downloadFileRequest = async (
   retried: boolean = false
 ): Promise<Response> => {
   try {
-    // console.log(`Making download request: ${process.env.NEXT_PUBLIC_API_URL}${endpoint}`);
+    if (DEBUG_MODE) {
+      console.log(`[downloadFileRequest] Making download request: ${process.env.NEXT_PUBLIC_API_URL}${endpoint}`);
+    }
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
       method: "GET",
@@ -179,11 +213,15 @@ export const downloadFileRequest = async (
       // Tidak perlu set headers khusus untuk download
     });
 
-    // console.log(`Download response status: ${response.status} for ${endpoint}`);
+    if (DEBUG_MODE) {
+      console.log(`[downloadFileRequest] Response status: ${response.status} for ${endpoint}`);
+    }
     
     // Periksa jika token expired (status 401) - sama seperti apiRequest
     if (response.status === 401 && !retried) {
-      // console.log('Token expired during download, attempting refresh...');
+      if (DEBUG_MODE) {
+        console.log('[downloadFileRequest] Token expired during download, attempting refresh...');
+      }
       
       // Jika tidak sedang refresh token, lakukan refresh
       if (!isRefreshing) {
@@ -198,12 +236,16 @@ export const downloadFileRequest = async (
             // Update waktu login terakhir
             localStorage.setItem('lastLoginTime', Date.now().toString());
             
+            if (DEBUG_MODE) {
+              console.log('[downloadFileRequest] Token refreshed successfully');
+            }
+            
             // Notify SSE client untuk reconnect
             try {
               const notifClient = await getNotificationClient();
               notifClient.reconnect();
             } catch (sseError) {
-              console.error('Error notifying SSE client during download:', sseError);
+              console.error('[downloadFileRequest] Error notifying SSE client:', sseError);
             }
             
             // Retry semua request yang gagal
@@ -238,52 +280,64 @@ export const downloadFileRequest = async (
     
     return response;
   } catch (error) {
-    console.error("Download request error:", error);
+    console.error("[downloadFileRequest] Download request error:", error);
     throw error;
   }
 };
 
 /**
- * Helper function untuk request API dengan token
+ * Helper function untuk request login
  * @param endpoint URL endpoint yang dituju
  * @param method HTTP method (GET, POST, PUT, DELETE)
  * @param body Payload data untuk request (optional)
  * @returns Response dari fetch
  */
 export const loginRequest = async (endpoint: string, method: string = "POST", body?: any) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          accept: "application/json",
-        },
-        body: body ? JSON.stringify(body) : undefined,
-        // Sertakan credentials untuk menerima cookies
-        credentials: "include", 
-      });
-
-      // Jika login berhasil, simpan waktu login untuk refresh token
-      if (response.ok) {
-        localStorage.setItem('lastLoginTime', Date.now().toString());
-        
-        // Initialize SSE connection setelah login berhasil
-        try {
-          const notifClient = await getNotificationClient();
-          // Tunggu sebentar sebelum mulai SSE
-          setTimeout(() => {
-            notifClient.connect();
-          }, 1000);
-        } catch (sseError) {
-          console.error('Error starting SSE after login:', sseError);
-        }
-      }
-  
-      return response;
-    } catch (error) {
-      console.error("LOGIN request error:", error);
-      throw error;
+  try {
+    if (DEBUG_MODE) {
+      console.log('[loginRequest] Attempting login...');
     }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      // Sertakan credentials untuk menerima cookies
+      credentials: "include", 
+    });
+
+    // Jika login berhasil, simpan waktu login untuk refresh token
+    if (response.ok) {
+      localStorage.setItem('lastLoginTime', Date.now().toString());
+      
+      if (DEBUG_MODE) {
+        console.log('[loginRequest] Login successful, initializing SSE connection...');
+      }
+      
+      // Initialize SSE connection setelah login berhasil
+      try {
+        const notifClient = await getNotificationClient();
+        // Tunggu sebentar sebelum mulai SSE
+        setTimeout(() => {
+          notifClient.connect();
+        }, 1000);
+      } catch (sseError) {
+        console.error('[loginRequest] Error starting SSE after login:', sseError);
+      }
+    } else {
+      if (DEBUG_MODE) {
+        console.log('[loginRequest] Login failed with status:', response.status);
+      }
+    }
+
+    return response;
+  } catch (error) {
+    console.error("[loginRequest] LOGIN request error:", error);
+    throw error;
+  }
 };
 
 /**
@@ -292,12 +346,20 @@ export const loginRequest = async (endpoint: string, method: string = "POST", bo
  */
 export const logoutRequest = async (endpoint: string) => {
   try {
+    if (DEBUG_MODE) {
+      console.log('[logoutRequest] Attempting logout...');
+    }
+
     // Close SSE connection before logout
     try {
       const notifClient = await getNotificationClient();
       notifClient.close();
+      
+      if (DEBUG_MODE) {
+        console.log('[logoutRequest] SSE connection closed');
+      }
     } catch (sseError) {
-      console.error('Error closing SSE during logout:', sseError);
+      console.error('[logoutRequest] Error closing SSE during logout:', sseError);
     }
 
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
@@ -310,11 +372,15 @@ export const logoutRequest = async (endpoint: string) => {
       localStorage.removeItem('lastLoginTime');
       localStorage.removeItem('selectedMenu'); // Hapus selected menu
       clearMenuData(); // Bersihkan menu data
+      
+      if (DEBUG_MODE) {
+        console.log('[logoutRequest] Logout successful, data cleared');
+      }
     }
 
     return response;
   } catch (error) {
-    console.error("LOGOUT request error:", error);
+    console.error("[logoutRequest] LOGOUT request error:", error);
     // Tetap bersihkan data lokal meskipun request gagal
     Cookies.remove("user", { path: "/" });
     localStorage.removeItem('lastLoginTime');
@@ -326,7 +392,7 @@ export const logoutRequest = async (endpoint: string) => {
       const notifClient = await getNotificationClient();
       notifClient.close();
     } catch (sseError) {
-      console.error('Error closing SSE during logout cleanup:', sseError);
+      console.error('[logoutRequest] Error closing SSE during logout cleanup:', sseError);
     }
     
     throw error;
@@ -334,28 +400,34 @@ export const logoutRequest = async (endpoint: string) => {
 };
 
 /**
- * Helper function untuk request API dengan token
+ * Helper function untuk lupa password request
  * @param endpoint URL endpoint yang dituju
  * @param method HTTP method (GET, POST, PUT, DELETE)
- * @param body Payload data untuk request (optional)
  * @returns Response dari fetch
  */
 export const lupaPassRequest = async (endpoint: string, method: string = "POST") => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          accept: "application/json",
-        },
-        // body: body ? JSON.stringify(body) : undefined,
-        // Sertakan credentials untuk menerima cookies
-        credentials: "include", 
-      });
-
-      return response;
-    } catch (error) {
-      console.error("Lupa Password request error:", error);
-      throw error;
+  try {
+    if (DEBUG_MODE) {
+      console.log('[lupaPassRequest] Requesting password reset...');
     }
+
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        accept: "application/json",
+      },
+      // Sertakan credentials untuk menerima cookies
+      credentials: "include", 
+    });
+
+    if (DEBUG_MODE) {
+      console.log('[lupaPassRequest] Response status:', response.status);
+    }
+
+    return response;
+  } catch (error) {
+    console.error("[lupaPassRequest] Lupa Password request error:", error);
+    throw error;
+  }
 };

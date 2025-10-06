@@ -1,4 +1,4 @@
-import MainPage from "@/components/pengirimanLangsung";
+import MainPage from "@/components/pengirimanLangsung/admin-pengawas";
 import Breadcrumb from "@/components/breadcrumbs";
 
 const PengirimanLangsung = () => {
