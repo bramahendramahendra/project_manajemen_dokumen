@@ -1,5 +1,6 @@
 import { refreshAccessToken } from "./tokenService";
 import { BASE_PATH, DEBUG_MODE } from "@/utils/config";
+import Cookies from "js-cookie";
 
 // Helper function untuk redirect dengan base path
 const redirectToLogin = () => {
@@ -8,6 +9,22 @@ const redirectToLogin = () => {
     console.log('[NotificationClient] Redirecting to:', loginPath);
   }
   window.location.href = loginPath;
+};
+
+// Helper function untuk mendapatkan dinas_id dari user
+const getUserDinasId = (): number => {
+  try {
+    const user = JSON.parse(Cookies.get("user") || "{}");
+    const dinasId = user.dinas;
+    if (DEBUG_MODE) {
+      console.log('[NotificationClient] User dinas_id:', dinasId);
+    }
+    
+    return dinasId;
+  } catch (error) {
+    console.error('[NotificationClient] Error getting user dinas_id:', error);
+    return 0;
+  }
 };
 
 // Tipe data untuk event notifikasi
@@ -47,11 +64,17 @@ export class NotificationClient {
     this.shouldReconnect = true;
 
     try {
+      // Dapatkan dinas_id dari user
+      const dinasId = getUserDinasId();
+      
+      // Buat URL dengan path parameter dinas_id
+      const streamUrl = `${this.baseUrl}/notifications/stream/${dinasId}`;
+
       if (DEBUG_MODE) {
-        console.log('[NotificationClient] Establishing SSE connection...');
+        console.log('[NotificationClient] Establishing SSE connection to:', streamUrl);
       }
 
-      this.eventSource = new EventSource(`${this.baseUrl}/notifications/stream`, { 
+      this.eventSource = new EventSource(streamUrl, { 
         withCredentials: true // Penting untuk mengirim cookies
       });
 

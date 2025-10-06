@@ -9,6 +9,7 @@ import useLocalStorage from "@/hooks/useLocalStorage";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
 import { useMenu } from "@/contexts/MenuContext";
 import notificationClient from "@/helpers/notificationClient";
+import Cookies from "js-cookie";
 import DashboardIcon from "@/components/Icons/DashboardIcon";
 import UploadIcon from "@/components/Icons/UploadIcon";
 import DaftarIcon from "@/components/Icons/DaftarIcon";
@@ -66,6 +67,17 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   
   // Ref untuk tracking subscription
   const subscriptionRefs = useRef<(() => void)[]>([]);
+
+  // Helper function untuk mendapatkan dinas_id
+  const getUserDinasId = (): number => {
+    try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
+      return user.dinas;
+    } catch (error) {
+      console.error("Error getting user dinas_id:", error);
+      return 0;
+    }
+  };
 
   // Function untuk download manual book
   const downloadManualBook = async () => {
@@ -146,9 +158,15 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         
         const uniqueCodeNotifs = Array.from(new Set(Object.values(menuNotifMapping)));
         
+        // Dapatkan dinas_id
+        const dinasId = getUserDinasId();
+        
         await Promise.all(uniqueCodeNotifs.map(async (codeNotif) => {
           try {
-            const res = await apiRequest(`/notifications/sidebar/${codeNotif}`, "GET");
+            // Gunakan path parameter untuk dinas_id
+            const endpoint = `/notifications/sidebar/${codeNotif}/${dinasId}`;
+            
+            const res = await apiRequest(endpoint, "GET");
             
             if (res.ok) {
               const json = await res.json();
@@ -365,6 +383,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     </p>
                     <p className="text-xs text-blue-600">
                       BASE_PATH: {BASE_PATH || '(root)'}
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Dinas ID: {getUserDinasId()}
                     </p>
                   </div>
                 </div>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { apiRequest } from "@/helpers/apiClient";
 import notificationClient from "@/helpers/notificationClient";
 import { DEBUG_MODE, getAssetPath } from "@/utils/config";
+import Cookies from "js-cookie";
 
 type NotificationItem = {
   url: string;
@@ -23,13 +24,31 @@ const DropdownNotification = () => {
   const [showAll, setShowAll] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<string>('disconnected');
 
+  // Helper function untuk mendapatkan dinas_id
+  const getUserDinasId = (): number => {
+    try {
+      const user = JSON.parse(Cookies.get("user") || "{}");
+      return user.dinas;
+
+      // return user.dinas?.id || user.dinas_id || 0;
+    } catch (error) {
+      console.error("Error getting user dinas_id:", error);
+      return 0;
+    }
+  };
+
   // Initial fetch untuk notifikasi
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
         setLoading(true);
         setError(null);
-        const response = await apiRequest("/notifications/header", "GET");
+        
+        // Dapatkan dinas_id dan tambahkan ke path parameter
+        const dinasId = getUserDinasId();
+        const endpoint = `/notifications/header/${dinasId}`;
+        
+        const response = await apiRequest(endpoint, "GET");
         if (!response.ok) {
           if (response.status === 404) {
             throw new Error("Notification data not found");
@@ -120,7 +139,11 @@ const DropdownNotification = () => {
       setLoading(true);
       setError(null);
       
-      const response = await apiRequest("/notifications/header", "GET");
+      // Dapatkan dinas_id dan tambahkan ke path parameter
+      const dinasId = getUserDinasId();
+      const endpoint = `/notifications/header/${dinasId}`;
+      
+      const response = await apiRequest(endpoint, "GET");
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
