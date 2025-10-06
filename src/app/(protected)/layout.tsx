@@ -8,6 +8,7 @@ import Cookies from 'js-cookie';
 import { initNotificationManager, closeNotificationConnection } from "@/utils/notificationManager";
 import DefaultLayout from "@/components/Layouts/DefaultLayout";
 import { MenuProvider } from "@/contexts/MenuContext";
+import { ToastProvider } from '@/components/Toast';
 
 export default function ProtectedLayout({
   children,
@@ -31,7 +32,7 @@ export default function ProtectedLayout({
     const user = Cookies.get('user');
     if (!user) {
       // console.log('No user found, redirecting to login...');
-      router.push('/login');
+      router.push('/login2');
     } else {
       setIsInitialized(true);
     }
@@ -72,7 +73,7 @@ export default function ProtectedLayout({
         // console.log('User logged out, cleaning up...');
         setIsInitialized(false);
         closeNotificationConnection();
-        router.push('/login');
+        router.push('/login3');
       }
     };
 
@@ -117,15 +118,17 @@ export default function ProtectedLayout({
       
       {/* Render children dengan atau tanpa RouteGuard */}
       <DefaultLayout>
-        {isPublicPage ? (
-          // Halaman public tidak perlu route guard
-          children
-        ) : (
-          // Halaman yang memerlukan akses khusus menggunakan route guard
-          <RouteGuard>
-            {children}
-          </RouteGuard>
-        )}
+        <ToastProvider>
+          {isPublicPage ? (
+            // Halaman public tidak perlu route guard
+            children
+          ) : (
+            // Halaman yang memerlukan akses khusus menggunakan route guard
+            <RouteGuard>
+              {children}
+            </RouteGuard>
+          )}
+        </ToastProvider>
       </DefaultLayout>
     </MenuProvider>
   );

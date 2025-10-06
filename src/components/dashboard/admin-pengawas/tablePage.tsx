@@ -261,7 +261,7 @@ const TablePage = () => {
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
-            <h2 className="text-xl font-semibold text-dark dark:text-white">
+            <h2 className="text-[22px] font-semibold text-dark dark:text-white">
               All Documents - {userLevelId === 'ADM' ? 'Admin' : 'Pengawas'} View
             </h2>
             {searchLoading && (
@@ -281,8 +281,8 @@ const TablePage = () => {
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Cari uraian, dinas, tanggal dibuat, atau status..."
-                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+                placeholder="Cari uraian, dinas, tanggal dibuat, status..."
+                className="w-full pl-10 pr-8 py-2.5 text-[17px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
@@ -327,16 +327,16 @@ const TablePage = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
-                <th className="min-w-[300px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
+                <th className="min-w-[300px] text-[20px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
                   Uraian
                 </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                <th className="min-w-[150px] text-[20px] px-4 py-4 font-medium text-dark dark:text-white">
                   Dinas
                 </th>
-                <th className="min-w-[150px] px-4 py-4 font-medium text-dark dark:text-white">
+                <th className="min-w-[150px] text-[20px] px-4 py-4 font-medium text-dark dark:text-white">
                   Tanggal Dibuat
                 </th>
-                <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white xl:pr-7.5">
+                <th className="min-w-[120px] text-[20px] px-4 py-4 font-medium text-dark dark:text-white xl:pr-7.5">
                   Status
                 </th>
               </tr>
@@ -356,25 +356,25 @@ const TablePage = () => {
                         <HiOutlineDocumentText className="h-5 w-5 text-gray-400" />
                       </div>
                       <div>
-                        <p className="font-medium text-dark dark:text-white">{item.subjenis}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-[19px] font-medium text-dark dark:text-white">{item.subjenis}</p>
+                        <p className="text-[17px] text-gray-500 dark:text-gray-400">
                           Jenis: {item.jenis}
                         </p>
                       </div>
                     </div>
                   </td>
                   <td className="px-4 py-4">
-                    <p className="text-dark dark:text-white">
+                    <p className="text-[19px] text-dark dark:text-white">
                       {item.dinas || '-'}
                     </p>
                   </td>
                   <td className="px-4 py-4">
-                    <p className="text-dark dark:text-white">
+                    <p className="text-[19px] text-dark dark:text-white">
                       {formatIndonesianDateOnly(item.maker_date)}
                     </p>
                   </td>
                   <td className="px-4 py-4 xl:pr-7.5">
-                    <div className={`${statusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}>
+                    <div className={`${statusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-[19px] font-medium`}>
                     {/* <span className={`${statusColor(item.status_code)} inline-flex items-center px-3 py-1 rounded-full text-xs font-medium`}> */}                     
                       <span>
                         {statusIcon(item.status_code)}

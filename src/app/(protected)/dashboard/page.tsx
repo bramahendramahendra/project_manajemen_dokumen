@@ -81,7 +81,7 @@ const Dashboard = () => {
           <h2 className="text-[26px] font-bold leading-[30px] text-dark dark:text-white">
             Welcome, {user.name || "User Andalanku"}
           </h2>
-          <span>{getGreetingMessage()}</span>
+          <span className="text-[18px]">{getGreetingMessage()}</span>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ interface ElementComboboxProps {
   onChange?: (value: string | number) => void;
   resetKey?: number;
   disabled?: boolean;
-  defaultValue?: string | number; // Tambahkan prop defaultValue
+  defaultValue?: string | number;
 }
 
 const ElementCombobox: React.FC<ElementComboboxProps> = ({ 
@@ -18,13 +18,12 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
   onChange,
   resetKey,
   disabled = false,
-  defaultValue = "", // Default value kosong
+  defaultValue = "",
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | number>(defaultValue);
   const [isOptionSelected, setIsOptionSelected] = useState<boolean>(!!defaultValue);
 
   useEffect(() => {
-    // Reset dropdown saat resetKey berubah
     if (resetKey !== undefined) {
       setSelectedOption("");
       setIsOptionSelected(false);
@@ -32,7 +31,6 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
   }, [resetKey]);
 
   useEffect(() => {
-    // Set default value saat component mount atau defaultValue berubah
     if (defaultValue !== undefined && defaultValue !== "") {
       setSelectedOption(defaultValue);
       setIsOptionSelected(true);
@@ -40,12 +38,9 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
   }, [defaultValue]);
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    // Jangan allow change jika disabled
     if (disabled) return;
     
     const rawValue = e.target.value;
-
-    // Try to convert to number if it's a number, else keep string
     const parsedValue = isNaN(Number(rawValue)) ? rawValue : Number(rawValue);
 
     setSelectedOption(parsedValue);
@@ -56,58 +51,58 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
     }
   };
 
-  const changeTextColor = () => {
-    setIsOptionSelected(true);
-  };
-
   return (
-    <div className="mb-4.5">
+    <div className="relative">
       {label && (
-        <label className="mb-3 block text-body-sm text-dark dark:text-white font-medium">
+        <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
           {label}
         </label>
       )}
 
-      <div className="relative z-20 bg-transparent dark:bg-dark-2">
+      <div className="relative">
         <select
           value={selectedOption}
           onChange={handleChange}
           disabled={disabled}
-          className={`relative z-20 appearance-none w-full rounded-[7px] bg-transparent px-5 py-3 transition ring-1 ring-inset placeholder:text-gray-400 focus:ring-1 focus:ring-inset dark:border-dark-3 dark:bg-dark-2 dark:text-white ${
+          className={`relative w-full appearance-none rounded-lg bg-transparent px-5 py-3 outline-none transition border focus:border-blue-500 dark:bg-dark-2 dark:text-white dark:focus:border-primary ${
             disabled
-              ? "ring-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:ring-gray-600 dark:bg-gray-800 dark:text-gray-400"
+              ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
               : isOptionSelected 
-                ? "text-dark dark:text-white ring-[#1D92F9] focus:ring-indigo-600 dark:focus:border-primary" 
-                : "text-[#9ca3af] ring-[#1D92F9] focus:ring-indigo-600 dark:focus:border-primary"
+                ? 'text-dark dark:text-white border-gray-300 dark:border-gray-600' 
+                : 'text-gray-400 border-gray-300 dark:border-gray-600'
           }`}
         >
-          <option value="" disabled className="text-dark-6">
+          <option value="" disabled className="text-gray-500 dark:text-gray-400">
             {placeholder}
           </option>
           {options.map((option, index) => (
-            <option key={index} value={option.id ?? option.name} className="text-dark-6">
+            <option 
+              key={index} 
+              value={option.id ?? option.name} 
+              className="text-dark dark:text-white bg-white dark:bg-dark-2"
+            >
               {option.name}
             </option>
           ))}
         </select>
 
-        {/* Arrow icon - ubah warna jika disabled */}
-        <span className={`absolute right-4 top-1/2 z-30 -translate-y-1/2 ${
-          disabled ? "opacity-50" : ""
+        {/* Arrow icon */}
+        <span className={`absolute right-4 top-1/2 z-10 -translate-y-1/2 pointer-events-none ${
+          disabled ? 'opacity-50' : ''
         }`}>
           <svg
-            className={`fill-current ${
-              disabled ? "text-gray-400" : ""
+            className={`fill-current transition-transform ${
+              disabled ? 'text-gray-400' : 'text-gray-600 dark:text-gray-400'
             }`}
-            width="18"
-            height="18"
-            viewBox="0 0 18 18"
+            width="20"
+            height="20"
+            viewBox="0 0 20 20"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
             <path
-              d="M8.99922 12.8249C8.83047 12.8249 8.68984 12.7687 8.54922 12.6562L2.08047 6.2999C1.82734 6.04678 1.82734 5.65303 2.08047 5.3999C2.33359 5.14678 2.72734 5.14678 2.98047 5.3999L8.99922 11.278L15.018 5.34365C15.2711 5.09053 15.6648 5.09053 15.918 5.34365C16.1711 5.59678 16.1711 5.99053 15.918 6.24365L9.44922 12.5999C9.30859 12.7405 9.16797 12.8249 8.99922 12.8249Z"
-              fill=""
+              d="M10 12.9L4.7 7.6C4.3 7.2 4.3 6.6 4.7 6.2C5.1 5.8 5.7 5.8 6.1 6.2L10 10.1L13.9 6.2C14.3 5.8 14.9 5.8 15.3 6.2C15.7 6.6 15.7 7.2 15.3 7.6L10 12.9Z"
+              fill="currentColor"
             />
           </svg>
         </span>

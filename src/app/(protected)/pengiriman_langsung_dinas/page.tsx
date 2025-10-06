@@ -1,5 +1,5 @@
 "use client"
-import MainPage from "@/components/pengirimanLangsungDinas";
+import MainPage from "@/components/pengirimanLangsung/dinas";
 import Breadcrumb from "@/components/breadcrumbs";
 
 const PengirimanLangsungDinas = () => {
