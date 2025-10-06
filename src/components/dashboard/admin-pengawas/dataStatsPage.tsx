@@ -220,7 +220,7 @@ const AdminPengawasDataStats: React.FC = () => {
                   <h4 className="mb-1.5 text-heading-6 font-bold text-dark dark:text-white">
                     {count.toString()}
                   </h4>
-                  <span className="text-body-sm font-medium">{config.title}</span>
+                  <span className="font-medium text-[18px]">{config.title}</span>
                 </div>
               </div>
             </div>
