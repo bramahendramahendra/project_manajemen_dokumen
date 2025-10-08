@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef } from 'react';
-import { checkAndRefreshTokenIfNeeded } from '@/helpers/tokenService';
+import { useEffect, useRef, useCallback } from 'react';
+import { checkAndRefreshTokenIfNeeded, getTokenStatus } from '@/helpers/tokenService';
 import { DEBUG_MODE, tokenConfig, BASE_PATH } from '@/utils/config';
 
-// Dynamic import untuk notificationClient untuk menghindari circular dependency
+// Dynamic import untuk notificationClient
 const getNotificationClient = async () => {
   try {
     const notificationModule = await import('@/helpers/notificationClient');
@@ -15,65 +15,89 @@ const getNotificationClient = async () => {
   }
 };
 
-// Helper function untuk redirect dengan base path
+// Helper function untuk redirect
 const redirectToLogin = () => {
   const loginPath = BASE_PATH ? `${BASE_PATH}/login` : '/login';
   window.location.href = loginPath;
 };
 
+// Format duration helper
+const formatDuration = (ms: number): string => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+};
+
 const TokenRefresher = () => {
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const statusIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isRefreshingRef = useRef<boolean>(false);
+  const mountTimeRef = useRef<number>(Date.now());
 
-  useEffect(() => {
-    // Fungsi untuk melakukan pengecekan dan refresh token jika perlu
-    const refreshTokenHandler = async () => {
-      // Prevent multiple simultaneous refresh attempts
-      if (isRefreshingRef.current) {
-        return;
+  // Fungsi untuk log status token (hanya di development)
+  const logTokenStatus = useCallback(() => {
+    if (!DEBUG_MODE) return;
+    
+    const status = getTokenStatus();
+    if (status.isLoggedIn) {
+      const uptime = Date.now() - mountTimeRef.current;
+      console.log('📊 [TokenRefresher] Status Update');
+      console.log(`   ├─ Component Uptime: ${formatDuration(uptime)}`);
+      console.log(`   ├─ Token Age: ${status.tokenAgeFmt}`);
+      console.log(`   ├─ Until Refresh: ${status.timeUntilRefreshFmt}`);
+      console.log(`   ├─ Until Expiry: ${status.timeUntilExpiryFmt}`);
+      console.log(`   ├─ Needs Refresh: ${status.needsRefresh ? '⚠️  YES' : '✅ NO'}`);
+      console.log(`   └─ Is Expired: ${status.isExpired ? '❌ YES' : '✅ NO'}`);
+    }
+  }, []);
+
+  // Fungsi untuk melakukan pengecekan dan refresh token
+  const refreshTokenHandler = useCallback(async () => {
+    // Prevent multiple simultaneous refresh attempts
+    if (isRefreshingRef.current) {
+      if (DEBUG_MODE) {
+        console.log('⏸️  [TokenRefresher] Refresh already in progress, skipping...');
       }
+      return;
+    }
 
-      try {
-        isRefreshingRef.current = true;
-        const success = await checkAndRefreshTokenIfNeeded();
-        
-        if (success) {
-          if (DEBUG_MODE) {
-            console.log('[TokenRefresher] Token refreshed successfully');
-          }
-          
-          // Notify SSE client untuk reconnect dengan token baru
-          try {
-            const notificationClient = await getNotificationClient();
-            if (notificationClient) {
-              if (DEBUG_MODE) {
-                console.log('[TokenRefresher] Notifying SSE client to reconnect after token refresh');
-              }
-              notificationClient.reconnect();
-            }
-          } catch (sseError) {
-            console.error('[TokenRefresher] Error notifying SSE client:', sseError);
-          }
-        } else {
-          if (DEBUG_MODE) {
-            console.log('[TokenRefresher] Token refresh failed, redirecting to login');
-          }
-          
-          // Close SSE connection before redirect
-          try {
-            const notificationClient = await getNotificationClient();
-            if (notificationClient) {
-              notificationClient.close();
-            }
-          } catch (sseError) {
-            console.error('[TokenRefresher] Error closing SSE connection before redirect:', sseError);
-          }
-          
-          // Redirect ke login dengan base path
-          redirectToLogin();
+    try {
+      isRefreshingRef.current = true;
+      
+      if (DEBUG_MODE) {
+        console.log('🔄 [TokenRefresher] Starting token check...');
+      }
+      
+      const success = await checkAndRefreshTokenIfNeeded();
+      
+      if (success) {
+        if (DEBUG_MODE) {
+          console.log('✅ [TokenRefresher] Token check completed successfully');
         }
-      } catch (error) {
-        console.error('[TokenRefresher] Failed to refresh token:', error);
+        
+        // Notify SSE client untuk reconnect dengan token baru jika di-refresh
+        try {
+          const notificationClient = await getNotificationClient();
+          if (notificationClient) {
+            const status = getTokenStatus();
+            
+            // Type guard: Check if status has tokenAge property and is logged in
+            if (status.isLoggedIn && typeof status.tokenAge === 'number') {
+              // Hanya reconnect jika baru saja refresh (token age < 10 detik)
+              if (status.tokenAge < 10000) {
+                if (DEBUG_MODE) {
+                  console.log('🔌 [TokenRefresher] Reconnecting SSE after token refresh');
+                }
+                notificationClient.reconnect();
+              }
+            }
+          }
+        } catch (sseError) {
+          console.error('[TokenRefresher] Error with SSE client:', sseError);
+        }
+      } else {
+        console.error('❌ [TokenRefresher] Token check failed, redirecting to login');
         
         // Close SSE connection before redirect
         try {
@@ -82,82 +106,101 @@ const TokenRefresher = () => {
             notificationClient.close();
           }
         } catch (sseError) {
-          console.error('[TokenRefresher] Error closing SSE connection on error:', sseError);
+          console.error('[TokenRefresher] Error closing SSE:', sseError);
         }
         
-        // Redirect ke login dengan base path
+        // Clear login time
+        localStorage.removeItem('lastLoginTime');
+        
+        // Redirect ke login
         redirectToLogin();
-      } finally {
-        isRefreshingRef.current = false;
       }
-    };
-    
-    // Set interval untuk refresh token
-    const intervalDuration = tokenConfig?.refreshCheckInterval || 5 * 60 * 1000; // Default 5 minutes
+    } catch (error) {
+      console.error('[TokenRefresher] Error during token refresh:', error);
+      
+      // Close SSE connection
+      try {
+        const notificationClient = await getNotificationClient();
+        if (notificationClient) {
+          notificationClient.close();
+        }
+      } catch (sseError) {
+        console.error('[TokenRefresher] Error closing SSE on error:', sseError);
+      }
+      
+      // Clear login time
+      localStorage.removeItem('lastLoginTime');
+      
+      // Redirect ke login
+      redirectToLogin();
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, []);
+
+  // Setup refresh interval
+  useEffect(() => {
+    const intervalDuration = tokenConfig?.refreshCheckInterval || 5 * 60 * 1000;
     
     if (DEBUG_MODE) {
-      console.log('[TokenRefresher] Initialized with interval:', intervalDuration / 1000, 'seconds');
-      console.log('[TokenRefresher] BASE_PATH:', BASE_PATH || '(none)');
+      console.log('='.repeat(60));
+      console.log('🚀 [TokenRefresher] Component Initialized');
+      console.log('='.repeat(60));
+      console.log(`Check Interval: ${formatDuration(intervalDuration)}`);
+      console.log(`Access Token Duration: ${formatDuration(tokenConfig.accessTokenDuration)}`);
+      console.log(`Refresh Threshold: ${(tokenConfig.refreshThreshold * 100).toFixed(0)}%`);
+      console.log(`Will refresh after: ${formatDuration(tokenConfig.accessTokenDuration * tokenConfig.refreshThreshold)}`);
+      console.log(`BASE_PATH: ${BASE_PATH || '(none)'}`);
+      console.log('='.repeat(60));
     }
     
+    // Set interval untuk refresh token
     refreshIntervalRef.current = setInterval(
       refreshTokenHandler, 
       intervalDuration
     );
 
-    // Juga check saat komponen di-mount setelah delay kecil
+    // Set interval untuk log status (hanya di development, setiap 30 detik)
+    if (DEBUG_MODE) {
+      statusIntervalRef.current = setInterval(logTokenStatus, 30000);
+      
+      // Log status awal setelah 5 detik
+      setTimeout(logTokenStatus, 5000);
+    }
+
+    // Check pertama kali setelah 2 detik
     const timeoutId = setTimeout(() => {
       if (DEBUG_MODE) {
-        console.log('[TokenRefresher] Running initial token check');
+        console.log('🎯 [TokenRefresher] Running initial token check');
       }
       refreshTokenHandler();
-    }, 2000); // Delay 2 detik untuk memberi waktu aplikasi ter-initialize
+    }, 2000);
 
-    // Cleanup interval dan timeout saat komponen di-unmount
+    // Cleanup
     return () => {
       if (refreshIntervalRef.current) {
         clearInterval(refreshIntervalRef.current);
       }
+      if (statusIntervalRef.current) {
+        clearInterval(statusIntervalRef.current);
+      }
       clearTimeout(timeoutId);
       
       if (DEBUG_MODE) {
-        console.log('[TokenRefresher] Cleanup completed');
+        console.log('🛑 [TokenRefresher] Component cleanup completed');
       }
     };
-  }, []);
+  }, [refreshTokenHandler, logTokenStatus]);
 
-  // Listen for visibility change untuk refresh saat tab menjadi aktif
+  // Listen for visibility change
   useEffect(() => {
     const handleVisibilityChange = async () => {
       if (!document.hidden && !isRefreshingRef.current) {
-        // Tab menjadi aktif, cek apakah perlu refresh token
         if (DEBUG_MODE) {
-          console.log('[TokenRefresher] Tab became visible, checking token');
+          console.log('👁️  [TokenRefresher] Tab visible, checking token');
         }
         
-        try {
-          const success = await checkAndRefreshTokenIfNeeded();
-          if (success) {
-            if (DEBUG_MODE) {
-              console.log('[TokenRefresher] Token refreshed on visibility change');
-            }
-            
-            // Reconnect SSE jika diperlukan
-            try {
-              const notificationClient = await getNotificationClient();
-              if (notificationClient && notificationClient.getConnectionStatus() !== 'connected') {
-                if (DEBUG_MODE) {
-                  console.log('[TokenRefresher] Reconnecting SSE after visibility change');
-                }
-                notificationClient.reconnect();
-              }
-            } catch (sseError) {
-              console.error('[TokenRefresher] Error reconnecting SSE on visibility change:', sseError);
-            }
-          }
-        } catch (error) {
-          console.error('[TokenRefresher] Error checking token on visibility change:', error);
-        }
+        await refreshTokenHandler();
       }
     };
 
@@ -166,39 +209,17 @@ const TokenRefresher = () => {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [refreshTokenHandler]);
 
-  // Listen for focus event untuk refresh saat window mendapat focus
+  // Listen for window focus
   useEffect(() => {
     const handleWindowFocus = async () => {
       if (!isRefreshingRef.current) {
         if (DEBUG_MODE) {
-          console.log('[TokenRefresher] Window focused, checking token');
+          console.log('🎯 [TokenRefresher] Window focused, checking token');
         }
         
-        try {
-          const success = await checkAndRefreshTokenIfNeeded();
-          if (success) {
-            if (DEBUG_MODE) {
-              console.log('[TokenRefresher] Token refreshed on window focus');
-            }
-            
-            // Ensure SSE connection is active
-            try {
-              const notificationClient = await getNotificationClient();
-              if (notificationClient && notificationClient.getConnectionStatus() !== 'connected') {
-                if (DEBUG_MODE) {
-                  console.log('[TokenRefresher] Connecting SSE after window focus');
-                }
-                notificationClient.connect();
-              }
-            } catch (sseError) {
-              console.error('[TokenRefresher] Error ensuring SSE connection on focus:', sseError);
-            }
-          }
-        } catch (error) {
-          console.error('[TokenRefresher] Error checking token on window focus:', error);
-        }
+        await refreshTokenHandler();
       }
     };
 
@@ -207,7 +228,7 @@ const TokenRefresher = () => {
     return () => {
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, []);
+  }, [refreshTokenHandler]);
 
   // Komponen ini tidak merender apapun
   return null;

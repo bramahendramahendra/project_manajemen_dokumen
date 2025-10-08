@@ -8,6 +8,7 @@ import Cookies from "js-cookie";
 import { loginRequest, apiRequest, downloadFileRequest } from "@/helpers/apiClient"; // Import apiRequest
 import { FaEye, FaEyeSlash, FaTimes, FaDownload } from "react-icons/fa";
 import { useMenu } from "@/contexts/MenuContext";
+import { DEBUG_MODE } from '@/utils/config';
 
 const SectionRight = () => {
   const [username, setUsername] = useState<string>("");
@@ -61,7 +62,7 @@ const SectionRight = () => {
   useEffect(() => {
     fetchCaptcha();
   }, []);
-
+  
   const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -83,13 +84,65 @@ const SectionRight = () => {
       
       const response = await loginRequest("/auths/login", "POST", payload);
       const data = await response.json();
-  
+
       if (response.ok && data.responseCode === 200) {
         localStorage.setItem("hasVisited", "true");
         Cookies.set("user", JSON.stringify(data.responseData.user), { path: "/" });
 
         // Simpan waktu login untuk refresh token check
-        localStorage.setItem('lastLoginTime', Date.now().toString());
+        const loginTime = Date.now();
+        localStorage.setItem('lastLoginTime', loginTime.toString());
+
+        // Debug logging untuk token configuration
+        if (DEBUG_MODE) {
+          console.log('='.repeat(60));
+          console.log('✅ LOGIN SUCCESSFUL');
+          console.log('='.repeat(60));
+          console.log('Login Time:', new Date(loginTime).toLocaleTimeString('id-ID'));
+          console.log('User:', data.responseData.user.username);
+          
+          // Jika backend mengirim token config
+          if (data.responseData?.token_config) {
+            const tokenConfigFromBackend = data.responseData.token_config;
+            console.log('Token Configuration from Backend:');
+            console.log(`  ├─ Access Token Duration: ${tokenConfigFromBackend.access_token_duration} minutes`);
+            console.log(`  └─ Refresh Token Duration: ${tokenConfigFromBackend.refresh_token_duration} minutes`);
+            
+            // Validasi apakah config frontend sama dengan backend
+            const frontendAccessDuration = parseInt(process.env.NEXT_PUBLIC_ACCESS_TOKEN_DURATION || '15');
+            const frontendRefreshDuration = parseInt(process.env.NEXT_PUBLIC_REFRESH_TOKEN_DURATION || '10080');
+            
+            console.log('Frontend Token Configuration:');
+            console.log(`  ├─ Access Token Duration: ${frontendAccessDuration} minutes`);
+            console.log(`  └─ Refresh Token Duration: ${frontendRefreshDuration} minutes`);
+            
+            // Warning jika ada mismatch
+            if (tokenConfigFromBackend.access_token_duration !== frontendAccessDuration) {
+              console.warn('⚠️  WARNING: Access token duration mismatch!');
+              console.warn(`   Backend: ${tokenConfigFromBackend.access_token_duration} minutes`);
+              console.warn(`   Frontend: ${frontendAccessDuration} minutes`);
+              console.warn('   → Please update NEXT_PUBLIC_ACCESS_TOKEN_DURATION in .env.local');
+            }
+            
+            if (tokenConfigFromBackend.refresh_token_duration !== frontendRefreshDuration) {
+              console.warn('⚠️  WARNING: Refresh token duration mismatch!');
+              console.warn(`   Backend: ${tokenConfigFromBackend.refresh_token_duration} minutes`);
+              console.warn(`   Frontend: ${frontendRefreshDuration} minutes`);
+              console.warn('   → Please update NEXT_PUBLIC_REFRESH_TOKEN_DURATION in .env.local');
+            }
+            
+            // Success message jika config match
+            if (tokenConfigFromBackend.access_token_duration === frontendAccessDuration &&
+                tokenConfigFromBackend.refresh_token_duration === frontendRefreshDuration) {
+              console.log('✅ Token configuration is synchronized between frontend and backend');
+            }
+          } else {
+            console.warn('⚠️  Backend did not send token_config in response');
+            console.warn('   Using frontend configuration from .env.local');
+          }
+          
+          console.log('='.repeat(60));
+        }
 
         // Fetch menu data setelah login berhasil
         try {

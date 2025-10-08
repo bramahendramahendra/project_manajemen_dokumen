@@ -70,12 +70,12 @@ export function middleware(request: NextRequest) {
   }
   
   // Jika user sudah login dan mencoba akses halaman login
-  if (userCookie && normalizedPath === "/login") {
-    if (DEBUG_MODE) {
-      console.log('[Middleware] Redirecting authenticated user to dashboard');
-    }
-    return NextResponse.redirect(createURL("/dashboard1", request.url));
-  }
+  // if (userCookie && normalizedPath === "/login") {
+  //   if (DEBUG_MODE) {
+  //     console.log('[Middleware] Redirecting authenticated user to dashboard');
+  //   }
+  //   return NextResponse.redirect(createURL("/dashboard", request.url));
+  // }
 
   return NextResponse.next();
 }
