@@ -21,7 +21,8 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
 // Base Path - extracted from APP_URL
-export const BASE_PATH = APP_URL.includes('/testing') ? '/testing' : '';
+// export const BASE_PATH = APP_URL.includes('/testing') ? '/testing' : '';
+export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
 // Debug mode (opsional)
 export const DEBUG_MODE = process.env.NEXT_PUBLIC_DEBUG_MODE === 'true';

@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Base path dari environment variable
-const BASE_PATH = process.env.NEXT_PUBLIC_APP_URL?.includes('/testing') ? '/testing' : '';
+// const BASE_PATH = process.env.NEXT_PUBLIC_APP_URL?.includes('/testing') ? '/testing' : '';
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const DEBUG_MODE = process.env.NEXT_PUBLIC_DEBUG_MODE === 'true';
 
 // Helper function untuk normalize path (remove base path jika ada)
