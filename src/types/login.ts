@@ -5,6 +5,12 @@ export interface LoginFormState {
   captchaInput: string;
 }
 
+export interface FormErrors {
+  username: string | null;
+  password: string | null;
+  captchaInput: string | null;
+}
+
 export interface CaptchaState {
   id: string;
   url: string;

@@ -16,6 +16,7 @@ import { FaEye, FaEyeSlash, FaDownload } from "react-icons/fa";
 
 // Components
 import { LoginErrorAlert } from "@/components/alerts/LoginErrorAlert";
+import { InputWithError } from "@/components/elements/InputWithError";
 
 const SectionRight = () => {
   // Custom Hooks
@@ -23,6 +24,7 @@ const SectionRight = () => {
     formState,
     captchaState,
     uiState,
+    formErrors,
     updateFormField,
     updateUIState,
     fetchCaptcha,
@@ -57,46 +59,8 @@ const SectionRight = () => {
 
             {/* Login Form */}
             <section className="w-full">
-              <form onSubmit={handleSubmitLogin}>
-                {/* Username Input */}
-                <input
-                  id="username"
-                  type="text"
-                  value={formState.username}
-                  onChange={(e) => updateFormField('username', e.target.value)}
-                  required
-                  disabled={uiState.isLoggingIn}
-                  placeholder="Masukkan Username..."
-                  autoComplete="username"
-                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
-                />
-
-                {/* Password Input */}
-                <div className="relative mt-[15px]">
-                  <input
-                    id="password"
-                    type={uiState.showPassword ? "text" : "password"}
-                    value={formState.password}
-                    onChange={(e) => updateFormField('password', e.target.value)}
-                    required
-                    disabled={uiState.isLoggingIn}
-                    placeholder="Masukkan Password..."
-                    autoComplete="current-password"
-                    className="block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => updateUIState('showPassword', !uiState.showPassword)}
-                    disabled={uiState.isLoggingIn}
-                    tabIndex={-1}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition-colors hover:text-gray-700 disabled:opacity-50"
-                    aria-label={uiState.showPassword ? "Sembunyikan password" : "Tampilkan password"}
-                  >
-                    {uiState.showPassword ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
-                  </button>
-                </div>
-
-                {/* Error Alert - IMMERSIVE 3D DESIGN */}
+              <form onSubmit={handleSubmitLogin} noValidate>
+                {/* General Error Alert - IMMERSIVE 3D DESIGN */}
                 <AnimatePresence mode="wait">
                   {uiState.errorMessage && (
                     <LoginErrorAlert
@@ -106,6 +70,46 @@ const SectionRight = () => {
                     />
                   )}
                 </AnimatePresence>
+                
+                {/* Username Input */}
+                <div className="mt-[15px]">
+                  <InputWithError
+                    id="username"
+                    type="text"
+                    value={formState.username}
+                    onChange={(e) => updateFormField('username', e.target.value)}
+                    disabled={uiState.isLoggingIn}
+                    placeholder="Masukkan Username..."
+                    autoComplete="username"
+                    error={formErrors.username}
+                  />
+                </div>
+
+                {/* Password Input */}
+                <div className="mt-[15px]">
+                  <InputWithError
+                    id="password"
+                    type={uiState.showPassword ? "text" : "password"}
+                    value={formState.password}
+                    onChange={(e) => updateFormField('password', e.target.value)}
+                    disabled={uiState.isLoggingIn}
+                    placeholder="Masukkan Password..."
+                    autoComplete="current-password"
+                    error={formErrors.password}
+                    icon={
+                      <button
+                        type="button"
+                        onClick={() => updateUIState('showPassword', !uiState.showPassword)}
+                        disabled={uiState.isLoggingIn}
+                        tabIndex={-1}
+                        className="text-gray-500 transition-colors hover:text-gray-700 disabled:opacity-50"
+                        aria-label={uiState.showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                      >
+                        {uiState.showPassword ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
+                      </button>
+                    }
+                  />
+                </div>
 
                 {/* CAPTCHA Section */}
                 <div className="mt-[15px]">
@@ -164,18 +168,19 @@ const SectionRight = () => {
                   </div>
 
                   {/* CAPTCHA Input */}
-                  <input
-                    id="captcha"
-                    name="captcha"
-                    type="text"
-                    value={formState.captchaInput}
-                    onChange={(e) => updateFormField('captchaInput', e.target.value)}
-                    required
-                    disabled={uiState.isLoggingIn || uiState.isRefreshing}
-                    placeholder="Masukkan CAPTCHA..."
-                    autoComplete="off"
-                    className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
-                  />
+                  <div className="mt-[10px]">
+                    <InputWithError
+                      id="captcha"
+                      name="captcha"
+                      type="text"
+                      value={formState.captchaInput}
+                      onChange={(e) => updateFormField('captchaInput', e.target.value)}
+                      disabled={uiState.isLoggingIn || uiState.isRefreshing}
+                      placeholder="Masukkan CAPTCHA..."
+                      autoComplete="off"
+                      error={formErrors.captchaInput}
+                    />
+                  </div>
                 </div>
 
                 {/* Lupa Password Link */}
@@ -292,7 +297,7 @@ const SectionRight = () => {
                   boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
                 }}
               >
-                {/* Close button di kanan atas */}
+                {/* Close button */}
                 <button
                   onClick={() => updateUIState('showGuidePopup', false)}
                   disabled={isDownloading}
@@ -308,7 +313,7 @@ const SectionRight = () => {
                   Panduan Penggunaan
                 </h3>
 
-                {/* Gambar Manual Book sebagai tombol download */}
+                {/* Manual Book Image Button */}
                 <button
                   onClick={handleDownloadAndClose}
                   disabled={isDownloading}
@@ -322,14 +327,12 @@ const SectionRight = () => {
                       height={400}
                       className="mx-auto h-auto w-full transition-all duration-300 group-hover:scale-105"
                     />
-                    {/* Overlay dengan efek gradient */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
                       <div className="flex items-center gap-2 text-white font-semibold">
                         <FaDownload className="h-5 w-5" />
                         <span>Download Manual Book</span>
                       </div>
                     </div>
-                    {/* Loading spinner overlay */}
                     {isDownloading && (
                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <svg
@@ -364,7 +367,7 @@ const SectionRight = () => {
                   }
                 </p>
 
-                {/* Button Tutup di bawah */}
+                {/* Button Tutup */}
                 <button
                   onClick={() => updateUIState('showGuidePopup', false)}
                   disabled={isDownloading}

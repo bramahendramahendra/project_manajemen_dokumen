@@ -10,7 +10,8 @@ import type {
   CaptchaState, 
   UIState,
   LoginPayload,
-  LoginResponse 
+  LoginResponse,
+  FormErrors
 } from '@/types/login';
 import type { UserCookie } from '@/types/userCookie';
 
@@ -18,11 +19,14 @@ interface UseLoginReturn {
   formState: LoginFormState;
   captchaState: CaptchaState;
   uiState: UIState;
-  updateFormField: <K extends keyof LoginFormState>(field: K, value: LoginFormState[K], clearError?: boolean) => void;
+  formErrors: FormErrors;
+  updateFormField: <K extends keyof LoginFormState>(field: K, value: LoginFormState[K]) => void;
   updateUIState: <K extends keyof UIState>(field: K, value: UIState[K]) => void;
   fetchCaptcha: (clearError?: boolean) => Promise<void>;
   handleSubmitLogin: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
   validateForm: () => boolean;
+  clearError: (field: keyof FormErrors) => void;
+  clearAllErrors: () => void;
 }
 
 export const useLogin = (): UseLoginReturn => {
@@ -34,6 +38,13 @@ export const useLogin = (): UseLoginReturn => {
     username: "",
     password: "",
     captchaInput: "",
+  });
+
+  // Form Errors State
+  const [formErrors, setFormErrors] = useState<FormErrors>({
+    username: null,
+    password: null,
+    captchaInput: null,
   });
 
   // Captcha State
@@ -53,19 +64,43 @@ export const useLogin = (): UseLoginReturn => {
   });
 
   /**
-   * Update form field helper
+   * Clear specific error
+   */
+  const clearError = useCallback((field: keyof FormErrors) => {
+    setFormErrors(prev => ({ ...prev, [field]: null }));
+  }, []);
+
+  /**
+   * Clear all errors
+   */
+  const clearAllErrors = useCallback(() => {
+    setFormErrors({
+      username: null,
+      password: null,
+      captchaInput: null,
+    });
+    setUiState(prev => ({ ...prev, errorMessage: null }));
+  }, []);
+
+  /**
+   * Update form field helper - Auto clear error when typing
    */
   const updateFormField = useCallback(<K extends keyof LoginFormState>(
     field: K,
-    value: LoginFormState[K],
-    clearError: boolean = true
+    value: LoginFormState[K]
   ) => {
     setFormState(prev => ({ ...prev, [field]: value }));
-    // Clear error saat user mengetik (optional)
-    if (clearError) {
+    
+    // Clear field-specific error when user types
+    if (formErrors[field as keyof FormErrors]) {
+      clearError(field as keyof FormErrors);
+    }
+    
+    // Clear general error message when user types
+    if (uiState.errorMessage) {
       setUiState(prev => ({ ...prev, errorMessage: null }));
     }
-  }, []);
+  }, [formErrors, uiState.errorMessage, clearError]);
 
   /**
    * Update UI state helper
@@ -100,8 +135,14 @@ export const useLogin = (): UseLoginReturn => {
             id: data.responseData.captcha_id,
             url: `${process.env.NEXT_PUBLIC_API_URL}${data.responseData.captcha_url}`,
           });
-          // Reset captcha input tanpa clear error jika diperlukan
-          updateFormField('captchaInput', '', clearError);
+          
+          // Reset captcha input
+          setFormState(prev => ({ ...prev, captchaInput: '' }));
+          
+          // Clear captcha error if requested
+          if (clearError) {
+            setFormErrors(prev => ({ ...prev, captchaInput: null }));
+          }
         } else {
           console.error("Invalid captcha response:", data);
           updateUIState('errorMessage', "Gagal memuat CAPTCHA. Silakan refresh halaman.");
@@ -116,37 +157,59 @@ export const useLogin = (): UseLoginReturn => {
     } finally {
       setTimeout(() => updateUIState('isRefreshing', false), 800);
     }
-  }, [updateFormField, updateUIState]);
+  }, [updateUIState]);
 
   /**
    * Validasi form sebelum submit
    */
   const validateForm = useCallback((): boolean => {
-    updateUIState('errorMessage', null);
+    const errors: FormErrors = {
+      username: null,
+      password: null,
+      captchaInput: null,
+    };
 
+    let isValid = true;
+
+    // Validate username
     if (!formState.username.trim()) {
-      updateUIState('errorMessage', "Username tidak boleh kosong");
-      return false;
+      errors.username = "Username tidak boleh kosong";
+      isValid = false;
+    } else if (formState.username.trim().length < 3) {
+      errors.username = "Username minimal 3 karakter";
+      isValid = false;
     }
 
+    // Validate password
     if (!formState.password.trim()) {
-      updateUIState('errorMessage', "Password tidak boleh kosong");
-      return false;
+      errors.password = "Password tidak boleh kosong";
+      isValid = false;
+    } else if (formState.password.trim().length < 6) {
+      errors.password = "Password minimal 6 karakter";
+      isValid = false;
     }
 
+    // Validate captcha
     if (!formState.captchaInput.trim()) {
-      updateUIState('errorMessage', "Kode CAPTCHA tidak boleh kosong");
-      return false;
+      errors.captchaInput = "Kode CAPTCHA tidak boleh kosong";
+      isValid = false;
     }
 
-    return true;
-  }, [formState, updateUIState]);
+    setFormErrors(errors);
+
+    // TIDAK set errorMessage untuk validasi form
+    // errorMessage hanya untuk response API
+    return isValid;
+  }, [formState]);
 
   /**
    * Handle Submit Login
    */
   const handleSubmitLogin = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    // Clear all previous errors
+    clearAllErrors();
 
     if (!validateForm()) {
       return;
@@ -219,12 +282,30 @@ export const useLogin = (): UseLoginReturn => {
         router.push("/dashboard");
 
       } else {
-        // Login gagal
+        // Login gagal - Handle specific error cases
         const errorMsg = data.responseDesc || "Login gagal. Silakan coba lagi.";
+        
+        // Check if error is related to captcha
+        if (errorMsg.toLowerCase().includes('captcha')) {
+          setFormErrors(prev => ({ 
+            ...prev, 
+            captchaInput: "Kode CAPTCHA salah. Silakan coba lagi." 
+          }));
+        }
+        
+        // Check if error is related to credentials
+        if (errorMsg.toLowerCase().includes('username') || errorMsg.toLowerCase().includes('password')) {
+          setFormErrors(prev => ({
+            ...prev,
+            username: "Username atau password salah",
+            password: "Username atau password salah"
+          }));
+        }
+        
         updateUIState('errorMessage', errorMsg);
 
-        // Reset captcha input dan fetch captcha baru TANPA clear error
-        updateFormField('captchaInput', '', false);
+        // Reset captcha input dan fetch captcha baru
+        setFormState(prev => ({ ...prev, captchaInput: '' }));
         await fetchCaptcha(false);
       }
 
@@ -236,23 +317,26 @@ export const useLogin = (): UseLoginReturn => {
         : "Terjadi kesalahan. Silakan coba lagi.";
       updateUIState('errorMessage', errorMsg);
 
-      // Reset captcha input dan fetch captcha baru TANPA clear error
-      updateFormField('captchaInput', '', false);
+      // Reset captcha input dan fetch captcha baru
+      setFormState(prev => ({ ...prev, captchaInput: '' }));
       await fetchCaptcha(false);
 
     } finally {
       updateUIState('isLoggingIn', false);
     }
-  }, [formState, captchaState, validateForm, updateUIState, updateFormField, fetchCaptcha, fetchMenuData, router]);
+  }, [formState, captchaState, validateForm, updateUIState, fetchCaptcha, fetchMenuData, router, clearAllErrors]);
 
   return {
     formState,
     captchaState,
     uiState,
+    formErrors,
     updateFormField,
     updateUIState,
     fetchCaptcha,
     handleSubmitLogin,
     validateForm,
+    clearError,
+    clearAllErrors,
   };
 };
