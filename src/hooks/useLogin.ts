@@ -204,6 +204,8 @@ export const useLogin = (): UseLoginReturn => {
 
   /**
    * Handle Submit Login
+   * 
+   * Ganti function handleSubmitLogin yang lama dengan yang ini
    */
   const handleSubmitLogin = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -285,24 +287,55 @@ export const useLogin = (): UseLoginReturn => {
         // Login gagal - Handle specific error cases
         const errorMsg = data.responseDesc || "Login gagal. Silakan coba lagi.";
         
-        // Check if error is related to captcha
-        if (errorMsg.toLowerCase().includes('captcha')) {
-          setFormErrors(prev => ({ 
-            ...prev, 
-            captchaInput: "Kode CAPTCHA salah. Silakan coba lagi." 
-          }));
-        }
-        
-        // Check if error is related to credentials
-        if (errorMsg.toLowerCase().includes('username') || errorMsg.toLowerCase().includes('password')) {
-          setFormErrors(prev => ({
-            ...prev,
-            username: "Username atau password salah",
-            password: "Username atau password salah"
-          }));
-        }
-        
+        // SELALU set error message untuk LoginErrorAlert
         updateUIState('errorMessage', errorMsg);
+
+        // Parse error message dan set field error yang sesuai
+        const lowerErrorMsg = errorMsg.toLowerCase();
+        
+        // Reset semua field errors dulu
+        const newErrors: FormErrors = {
+          username: null,
+          password: null,
+          captchaInput: null,
+        };
+        
+        // PENTING: Cek dari yang paling spesifik ke umum
+        
+        // 1. Check untuk error CAPTCHA (paling spesifik)
+        if (lowerErrorMsg.includes('captcha')) {
+          newErrors.captchaInput = errorMsg;
+        }
+        // 2. Check untuk error username spesifik
+        else if (lowerErrorMsg.includes('username tidak ditemukan') || 
+                lowerErrorMsg.includes('username tidak terdaftar') ||
+                lowerErrorMsg.includes('user tidak ditemukan') ||
+                lowerErrorMsg.includes('user tidak terdaftar') ||
+                lowerErrorMsg.includes('username tidak ada')) {
+          newErrors.username = errorMsg;
+        }
+        // 3. Check untuk error password spesifik
+        else if (lowerErrorMsg.includes('password yang anda masukkan salah') ||
+                lowerErrorMsg.includes('password salah') ||
+                lowerErrorMsg.includes('kata sandi salah') ||
+                (lowerErrorMsg.includes('password') && 
+                  !lowerErrorMsg.includes('username') && 
+                  !lowerErrorMsg.includes('atau'))) {
+          newErrors.password = errorMsg;
+        }
+        // 4. Error umum (username atau password salah) - set ke kedua field
+        else if (lowerErrorMsg.includes('username atau password') ||
+                lowerErrorMsg.includes('password atau username') ||
+                lowerErrorMsg.includes('username and password') ||
+                lowerErrorMsg.includes('kredensial salah') ||
+                lowerErrorMsg.includes('invalid credentials')) {
+          newErrors.username = errorMsg;
+          newErrors.password = errorMsg;
+        }
+        // 5. Error lainnya - tidak set field error, hanya alert
+        
+        // Set errors
+        setFormErrors(newErrors);
 
         // Reset captcha input dan fetch captcha baru
         setFormState(prev => ({ ...prev, captchaInput: '' }));
@@ -315,6 +348,8 @@ export const useLogin = (): UseLoginReturn => {
       const errorMsg = error instanceof Error 
         ? error.message 
         : "Terjadi kesalahan. Silakan coba lagi.";
+      
+      // Untuk network error, hanya tampilkan alert, tidak set field error
       updateUIState('errorMessage', errorMsg);
 
       // Reset captcha input dan fetch captcha baru
@@ -325,6 +360,7 @@ export const useLogin = (): UseLoginReturn => {
       updateUIState('isLoggingIn', false);
     }
   }, [formState, captchaState, validateForm, updateUIState, fetchCaptcha, fetchMenuData, router, clearAllErrors]);
+
 
   return {
     formState,
