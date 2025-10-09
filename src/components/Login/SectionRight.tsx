@@ -5,19 +5,28 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
 import Cookies from "js-cookie";
-import { loginRequest, apiRequest, downloadFileRequest } from "@/helpers/apiClient"; // Import apiRequest
+import { loginRequest, apiRequest, downloadFileRequest } from "@/helpers/apiClient";
 import { FaEye, FaEyeSlash, FaTimes, FaDownload } from "react-icons/fa";
 import { useMenu } from "@/contexts/MenuContext";
 import { DEBUG_MODE } from '@/utils/config';
+import { Alert, LoadingAlert } from "@/components/alerts/Alert";
 
 const SectionRight = () => {
+  // Form State
   const [username, setUsername] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [captchaInput, setCaptchaInput] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Router & Menu
   const router = useRouter();
+  const { fetchMenuData } = useMenu();
+  
+  // Captcha State
   const [captchaID, setCaptchaID] = useState<string>("");
   const [captchaURL, setCaptchaURL] = useState<string>("");
+  
+  // UI State
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
@@ -26,12 +35,13 @@ const SectionRight = () => {
   const [showGuidePopup, setShowGuidePopup] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
 
-  // Gunakan menu context
-  const { fetchMenuData } = useMenu();
-
-  // Generate CAPTCHA menggunakan apiClient
+  /**
+   * Generate CAPTCHA menggunakan apiClient
+   */
   const fetchCaptcha = async () => {
     setIsRefreshing(true);
+    // setErrorMessage(null); // Clear error saat refresh CAPTCHA
+    
     try {
       const response = await apiRequest("/auths/generate-captcha", "GET");
       
@@ -42,6 +52,7 @@ const SectionRight = () => {
         if (data.responseCode === 200 && data.responseData) {
           setCaptchaID(data.responseData.captcha_id);
           setCaptchaURL(`${process.env.NEXT_PUBLIC_API_URL}${data.responseData.captcha_url}`);
+          setCaptchaInput(""); // Reset input CAPTCHA
         } else {
           console.error("Invalid captcha response:", data);
           setErrorMessage("Gagal memuat CAPTCHA. Silakan refresh halaman.");
@@ -59,33 +70,65 @@ const SectionRight = () => {
     }
   };
 
+  // Load CAPTCHA saat komponen mount
   useEffect(() => {
     fetchCaptcha();
   }, []);
-  
+
+  /**
+   * Validasi form sebelum submit
+   */
+  const validateForm = (): boolean => {
+    // Reset error message
+    setErrorMessage(null);
+
+    // Validasi username
+    if (!username.trim()) {
+      setErrorMessage("Username tidak boleh kosong");
+      return false;
+    }
+
+    // Validasi password
+    if (!password.trim()) {
+      setErrorMessage("Password tidak boleh kosong");
+      return false;
+    }
+
+    // Validasi CAPTCHA
+    if (!captchaInput.trim()) {
+      setErrorMessage("Kode CAPTCHA tidak boleh kosong");
+      return false;
+    }
+
+    return true;
+  };
+
+  /**
+   * Handle Submit Login
+   */
   const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrorMessage(null);
-    setIsLoggingIn(true);
 
-    if (!captchaInput) {
-      setErrorMessage("Captcha is required");
-      setIsLoggingIn(false);
+    // Validasi form terlebih dahulu
+    if (!validateForm()) {
       return;
     }
 
+    setIsLoggingIn(true);
+
     try {
       const payload = {
-        username: username,
-        password: password,
+        username: username.trim(),
+        password: password.trim(),
         captcha_id: captchaID,
-        captcha: captchaInput,
+        captcha: captchaInput.trim(),
       };
       
       const response = await loginRequest("/auths/login", "POST", payload);
       const data = await response.json();
 
       if (response.ok && data.responseCode === 200) {
+        // ✅ Login berhasil
         localStorage.setItem("hasVisited", "true");
         Cookies.set("user", JSON.stringify(data.responseData.user), { path: "/" });
 
@@ -154,24 +197,35 @@ const SectionRight = () => {
 
         // Navigasi ke dashboard
         router.push("/dashboard");
+
       } else {
-        setErrorMessage(data.responseDesc || "Login failed. Please try again.");
+        // ❌ Login gagal - tampilkan error dari backend
+        const errorMsg = data.responseDesc || "Login gagal. Silakan coba lagi.";
+        setErrorMessage(errorMsg);
+        
         // Reset captcha input dan refresh captcha baru saat login gagal
         setCaptchaInput("");
-        fetchCaptcha();
+        await fetchCaptcha();
       }
+
     } catch (error) {
       console.error("Login error:", error);
-      setErrorMessage("An error occurred. Please try again later.");
+      
+      const errorMsg = error instanceof Error ? error.message : "Terjadi kesalahan. Silakan coba lagi.";
+      setErrorMessage(errorMsg);
+      
       // Reset captcha input dan refresh captcha baru jika terjadi error
       setCaptchaInput("");
-      fetchCaptcha();
+      await fetchCaptcha();
+
     } finally {
       setIsLoggingIn(false);
     }
   };
 
-  // Function untuk download manual book - KONSISTEN DENGAN REFERENSI
+  /**
+   * Function untuk download manual book - KONSISTEN DENGAN REFERENSI
+   */
   const downloadManualBook = async () => {
     setIsDownloading(true);
     try {
@@ -269,41 +323,57 @@ const SectionRight = () => {
       <div className="block sm:hidden md:block">
         <div className="relative z-[2] flex h-screen flex-col items-center justify-center px-12 lg:px-[100px] xl:px-[120px] 2xl:px-[150px]">
           <div className="2xl:w-full">
+            {/* Header */}
             <div className="w-full font-poppins font-semibold text-[#1D92F9] md:text-[23px] lg:text-[24px] xl:text-[28px]">
               Masuk ke dalam Sipaduke
             </div>
             <div className="w-full pt-1 font-inter font-normal leading-normal text-[#0C479F] md:text-[13px] lg:text-[14px] xl:text-[14px]">
               Silahkan masuk untuk melakukan aktifitas anda
             </div>
+
+            {/* Login Form */}
             <section className="w-full">
               <form onSubmit={handleSubmitLogin}>
+                
+                {/* Username Input */}
                 <input
                   id="username"
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setErrorMessage(null); // Clear error saat user mengetik
+                  }}
                   required
                   disabled={isLoggingIn}
                   placeholder="Masukkan Username..."
-                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-1 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:opacity-50 disabled:cursor-not-allowed"
+                  autoComplete="username"
+                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50"
                 />
 
+                {/* Password Input with Toggle */}
                 <div className="relative mt-[15px]">
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setErrorMessage(null); // Clear error saat user mengetik
+                    }}
                     required
                     disabled={isLoggingIn}
                     placeholder="Masukkan Password..."
-                    className="block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:opacity-50 disabled:cursor-not-allowed"
+                    autoComplete="current-password"
+                    className="block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     disabled={isLoggingIn}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                    tabIndex={-1}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition-colors hover:text-gray-700 disabled:opacity-50"
+                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                   >
                     {showPassword ? (
                       <FaEye size={20} />
@@ -313,30 +383,45 @@ const SectionRight = () => {
                   </button>
                 </div>
 
+                {/* Error Message Display - MENGGUNAKAN ALERT COMPONENT */}
                 {errorMessage && (
-                  <p className="mt-[10px] text-sm text-red-500">
-                    {errorMessage}
-                  </p>
+                  <Alert
+                    type="error"
+                    title="Terjadi Kesalahan"
+                    message={errorMessage}
+                    onRetry={errorMessage.includes('CAPTCHA') ? fetchCaptcha : undefined}
+                  />
                 )}
 
-                {/* CAPTCHA */}
+                {/* CAPTCHA Section */}
                 <div className="mt-[15px]">
-                  <div className="mt-2 flex items-center">
-                    {captchaURL && (
-                      <Image
-                        src={captchaURL}
-                        alt="captcha"
-                        width={240}
-                        height={80}
-                        unoptimized
-                      />
+                  <div className="mt-2 flex items-center gap-2">
+                    {/* CAPTCHA Image */}
+                    {captchaURL ? (
+                      <div className="flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 bg-white shadow-sm">
+                        <Image
+                          src={captchaURL}
+                          alt="captcha"
+                          width={240}
+                          height={80}
+                          unoptimized
+                          priority
+                          className="object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex h-[80px] w-[240px] flex-shrink-0 items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50">
+                        <span className="text-xs text-gray-400">Loading...</span>
+                      </div>
                     )}
+
+                    {/* Refresh CAPTCHA Button with Tooltip */}
                     <div className="group relative inline-block">
                       <button
                         type="button"
                         onClick={fetchCaptcha}
                         disabled={isRefreshing || isLoggingIn}
-                        className="ml-2 rounded-full bg-blue-100 p-2.5 text-blue-600 shadow-md transition-all duration-300 hover:bg-blue-200 hover:text-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
+                        className="rounded-full bg-blue-100 p-2.5 text-blue-600 shadow-md transition-all duration-300 hover:bg-blue-200 hover:text-blue-800 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
                         aria-label="Refresh captcha"
                       >
                         <svg
@@ -349,37 +434,50 @@ const SectionRight = () => {
                           strokeWidth="2"
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          className={`transition-transform ${isRefreshing ? "animate-spin" : "hover:rotate-90"}`}
+                          className={`transition-transform duration-500 ${
+                            isRefreshing ? "animate-spin" : "group-hover:rotate-180"
+                          }`}
                         >
                           <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                         </svg>
                       </button>
-                      <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 scale-0 rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100">
+                      {/* Tooltip */}
+                      <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 scale-0 rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap">
                         Refresh Captcha
                       </div>
                     </div>
                   </div>
+
+                  {/* CAPTCHA Input */}
                   <input
+                    id="captcha"
+                    name="captcha"
                     type="text"
                     value={captchaInput}
-                    onChange={(e) => setCaptchaInput(e.target.value)}
+                    onChange={(e) => {
+                      setCaptchaInput(e.target.value);
+                      setErrorMessage(null); // Clear error saat user mengetik
+                    }}
                     required
-                    disabled={isLoggingIn}
+                    disabled={isLoggingIn || isRefreshing}
                     placeholder="Masukkan CAPTCHA..."
-                    className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-[#1D92F9] disabled:opacity-50 disabled:cursor-not-allowed"
+                    autoComplete="off"
+                    className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
 
+                {/* Lupa Password Link */}
                 <div>
                   <span className="float-right mt-[20px] mb-2 font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
-                    <Link href={`lupa-password`}>Lupa Password?</Link>
+                    <Link href="/lupa-password">Lupa Password?</Link>
                   </span>
                 </div>
 
+                {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isLoggingIn}
-                  className="mt-[20px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  disabled={isLoggingIn || isRefreshing}
+                  className="mt-[20px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm transition-all hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center active:scale-[0.98]"
                 >
                   {isLoggingIn ? (
                     <>
@@ -396,12 +494,12 @@ const SectionRight = () => {
                           r="10"
                           stroke="currentColor"
                           strokeWidth="4"
-                        ></circle>
+                        />
                         <path
                           className="opacity-75"
                           fill="currentColor"
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
+                        />
                       </svg>
                       Sedang Masuk...
                     </>
@@ -414,6 +512,7 @@ const SectionRight = () => {
           </div>
         </div>
 
+        {/* Background Image */}
         <motion.div
           className="margin absolute right-0 top-0 z-[1] overflow-hidden"
           initial={{ x: "100%", opacity: 0 }}
@@ -423,7 +522,7 @@ const SectionRight = () => {
           <Image
             className="pointer-events-none relative top-0 max-h-full max-w-full select-none object-cover md:right-[-50px] md:top-[-60px] lg:right-[-10px] lg:top-[-50px]"
             src={Background1}
-            alt=""
+            alt="Background"
             priority
           />
         </motion.div>
@@ -446,8 +545,8 @@ const SectionRight = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
             <div className="absolute -top-12 left-1/2 -translate-x-1/2 scale-0 rounded bg-gray-800 px-3 py-1 text-sm text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap">
               Panduan Penggunaan
@@ -455,7 +554,7 @@ const SectionRight = () => {
           </button>
         </div>
 
-        {/* Guide Popup - UPDATED */}
+        {/* Guide Popup */}
         {showGuidePopup && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
             <motion.div
@@ -494,12 +593,12 @@ const SectionRight = () => {
                         r="10"
                         stroke="currentColor"
                         strokeWidth="4"
-                      ></circle>
+                      />
                       <path
                         className="opacity-75"
                         fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
+                      />
                     </svg>
                   ) : (
                     <FaDownload className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
