@@ -1,183 +1,258 @@
-/**
- * useLogin Hook
- * Custom hook untuk handle login functionality
- */
-
+// src/hooks/useLogin.ts
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
 import { loginRequest } from '@/helpers/apiClient';
-// import { Toast } from '@/components/alerts/Alert';
+import { useMenu } from '@/contexts/MenuContext';
+import { DEBUG_MODE } from '@/utils/config';
 import type { 
-  LoginPayload, 
-  LoginResponse,
-  LoginError,
-  LoginErrorType 
+  LoginFormState, 
+  CaptchaState, 
+  UIState,
+  LoginPayload,
+  LoginResponse 
 } from '@/types/login';
+import type { UserCookie } from '@/types/userCookie';
 
 interface UseLoginReturn {
-  isLoading: boolean;
-  error: string | null;
-  login: (payload: LoginPayload) => Promise<boolean>;
-  clearError: () => void;
+  formState: LoginFormState;
+  captchaState: CaptchaState;
+  uiState: UIState;
+  updateFormField: <K extends keyof LoginFormState>(field: K, value: LoginFormState[K], clearError?: boolean) => void;
+  updateUIState: <K extends keyof UIState>(field: K, value: UIState[K]) => void;
+  fetchCaptcha: (clearError?: boolean) => Promise<void>;
+  handleSubmitLogin: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
+  validateForm: () => boolean;
 }
-
-const DEBUG_MODE = process.env.NODE_ENV === 'development';
 
 export const useLogin = (): UseLoginReturn => {
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { fetchMenuData } = useMenu();
+
+  // Form State
+  const [formState, setFormState] = useState<LoginFormState>({
+    username: "",
+    password: "",
+    captchaInput: "",
+  });
+
+  // Captcha State
+  const [captchaState, setCaptchaState] = useState<CaptchaState>({
+    id: "",
+    url: "",
+  });
+
+  // UI State
+  const [uiState, setUiState] = useState<UIState>({
+    showPassword: false,
+    isRefreshing: false,
+    isLoggingIn: false,
+    showGuidePopup: false,
+    isDownloading: false,
+    errorMessage: null,
+  });
 
   /**
-   * Clear error message
+   * Update form field helper
    */
-  const clearError = useCallback(() => {
-    setError(null);
+  const updateFormField = useCallback(<K extends keyof LoginFormState>(
+    field: K,
+    value: LoginFormState[K],
+    clearError: boolean = true
+  ) => {
+    setFormState(prev => ({ ...prev, [field]: value }));
+    // Clear error saat user mengetik (optional)
+    if (clearError) {
+      setUiState(prev => ({ ...prev, errorMessage: null }));
+    }
   }, []);
 
   /**
-   * Parse error dari backend
+   * Update UI state helper
    */
-  const parseError = (responseDesc: string, statusCode: number): LoginError => {
-    // Mapping error berdasarkan message dari backend
-    if (responseDesc.includes('tidak ditemukan') || responseDesc.includes('not found')) {
-      return {
-        type: 'USER_NOT_FOUND',
-        message: responseDesc,
-      };
-    }
-    
-    if (responseDesc.includes('Password') || responseDesc.includes('password')) {
-      return {
-        type: 'INVALID_CREDENTIALS',
-        message: responseDesc,
-      };
-    }
-    
-    if (responseDesc.includes('CAPTCHA') || responseDesc.includes('captcha')) {
-      return {
-        type: 'INVALID_CAPTCHA',
-        message: responseDesc,
-      };
-    }
-    
-    if (responseDesc.includes('tidak aktif') || responseDesc.includes('inactive')) {
-      return {
-        type: 'ACCOUNT_INACTIVE',
-        message: responseDesc,
-      };
-    }
-    
-    if (responseDesc.includes('terkunci') || responseDesc.includes('locked')) {
-      return {
-        type: 'ACCOUNT_LOCKED',
-        message: responseDesc,
-      };
-    }
-
-    if (statusCode === 400) {
-      return {
-        type: 'VALIDATION_ERROR',
-        message: responseDesc,
-      };
-    }
-
-    return {
-      type: 'UNKNOWN_ERROR',
-      message: responseDesc || 'Terjadi kesalahan saat login',
-    };
-  };
+  const updateUIState = useCallback(<K extends keyof UIState>(
+    field: K,
+    value: UIState[K]
+  ) => {
+    setUiState(prev => ({ ...prev, [field]: value }));
+  }, []);
 
   /**
-   * Login function
+   * Generate CAPTCHA
    */
-  const login = useCallback(async (payload: LoginPayload): Promise<boolean> => {
-    setIsLoading(true);
-    setError(null);
+  const fetchCaptcha = useCallback(async (clearError: boolean = true) => {
+    updateUIState('isRefreshing', true);
 
     try {
-      const response = await loginRequest('/auths/login', 'POST', payload);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/auths/generate-captcha`,
+        {
+          method: 'GET',
+          credentials: 'include',
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+
+        if (data.responseCode === 200 && data.responseData) {
+          setCaptchaState({
+            id: data.responseData.captcha_id,
+            url: `${process.env.NEXT_PUBLIC_API_URL}${data.responseData.captcha_url}`,
+          });
+          // Reset captcha input tanpa clear error jika diperlukan
+          updateFormField('captchaInput', '', clearError);
+        } else {
+          console.error("Invalid captcha response:", data);
+          updateUIState('errorMessage', "Gagal memuat CAPTCHA. Silakan refresh halaman.");
+        }
+      } else {
+        console.error("Failed to fetch captcha:", response.status);
+        updateUIState('errorMessage', "Gagal memuat CAPTCHA. Silakan coba lagi.");
+      }
+    } catch (error) {
+      console.error("Error fetching CAPTCHA:", error);
+      updateUIState('errorMessage', "Terjadi kesalahan saat memuat CAPTCHA.");
+    } finally {
+      setTimeout(() => updateUIState('isRefreshing', false), 800);
+    }
+  }, [updateFormField, updateUIState]);
+
+  /**
+   * Validasi form sebelum submit
+   */
+  const validateForm = useCallback((): boolean => {
+    updateUIState('errorMessage', null);
+
+    if (!formState.username.trim()) {
+      updateUIState('errorMessage', "Username tidak boleh kosong");
+      return false;
+    }
+
+    if (!formState.password.trim()) {
+      updateUIState('errorMessage', "Password tidak boleh kosong");
+      return false;
+    }
+
+    if (!formState.captchaInput.trim()) {
+      updateUIState('errorMessage', "Kode CAPTCHA tidak boleh kosong");
+      return false;
+    }
+
+    return true;
+  }, [formState, updateUIState]);
+
+  /**
+   * Handle Submit Login
+   */
+  const handleSubmitLogin = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    updateUIState('isLoggingIn', true);
+
+    try {
+      const payload: LoginPayload = {
+        username: formState.username.trim(),
+        password: formState.password.trim(),
+        captcha_id: captchaState.id,
+        captcha: formState.captchaInput.trim(),
+      };
+
+      const response = await loginRequest("/auths/login", "POST", payload);
       const data: LoginResponse = await response.json();
 
       if (response.ok && data.responseCode === 200) {
         // Login berhasil
-        const { user, token_config } = data.responseData;
-
-        // Simpan user data ke cookies
-        Cookies.set('user', JSON.stringify(user), { path: '/' });
+        localStorage.setItem("hasVisited", "true");
         
-        // Simpan login time untuk token refresh
+        const userData: UserCookie = data.responseData.user;
+        Cookies.set("user", JSON.stringify(userData), { path: "/" });
+
+        // Simpan waktu login
         const loginTime = Date.now();
         localStorage.setItem('lastLoginTime', loginTime.toString());
-        localStorage.setItem('hasVisited', 'true');
 
         // Debug logging
         if (DEBUG_MODE) {
-          console.log('✅ LOGIN SUCCESS');
-          console.log('User:', user.username);
-          console.log('Login Time:', new Date(loginTime).toLocaleString('id-ID'));
-          if (token_config) {
-            console.log('Token Config:', token_config);
+          console.log('='.repeat(60));
+          console.log('✅ LOGIN SUCCESSFUL');
+          console.log('='.repeat(60));
+          console.log('Login Time:', new Date(loginTime).toLocaleTimeString('id-ID'));
+          console.log('User:', userData.name);
+
+          if (data.responseData?.token_config) {
+            const tokenConfigFromBackend = data.responseData.token_config;
+            const frontendAccessDuration = parseInt(process.env.NEXT_PUBLIC_ACCESS_TOKEN_DURATION || '15');
+            const frontendRefreshDuration = parseInt(process.env.NEXT_PUBLIC_REFRESH_TOKEN_DURATION || '10080');
+
+            console.log('Token Configuration from Backend:');
+            console.log(`  ├─ Access Token Duration: ${tokenConfigFromBackend.access_token_duration} minutes`);
+            console.log(`  └─ Refresh Token Duration: ${tokenConfigFromBackend.refresh_token_duration} minutes`);
+
+            console.log('Frontend Token Configuration:');
+            console.log(`  ├─ Access Token Duration: ${frontendAccessDuration} minutes`);
+            console.log(`  └─ Refresh Token Duration: ${frontendRefreshDuration} minutes`);
+
+            if (tokenConfigFromBackend.access_token_duration !== frontendAccessDuration ||
+                tokenConfigFromBackend.refresh_token_duration !== frontendRefreshDuration) {
+              console.warn('⚠️  WARNING: Token duration mismatch between frontend and backend!');
+            } else {
+              console.log('✅ Token configuration is synchronized');
+            }
           }
+
+          console.log('='.repeat(60));
         }
 
-        // Show success toast
-        // Toast.show({
-        //   type: 'success',
-        //   title: 'Login Berhasil',
-        //   message: `Selamat datang, ${user.name || user.username}!`,
-        //   duration: 2000,
-        // });
+        // Fetch menu data
+        try {
+          await fetchMenuData();
+        } catch (menuError) {
+          console.error("Failed to fetch menu after login:", menuError);
+        }
 
-        // Redirect after short delay
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 500);
-
-        return true;
+        // Navigate to dashboard
+        router.push("/dashboard");
 
       } else {
-        // Login gagal - parse error
-        const loginError = parseError(data.responseDesc, response.status);
-        setError(loginError.message);
+        // Login gagal
+        const errorMsg = data.responseDesc || "Login gagal. Silakan coba lagi.";
+        updateUIState('errorMessage', errorMsg);
 
-        // Toast.show({
-        //   type: 'error',
-        //   title: 'Login Gagal',
-        //   message: loginError.message,
-        // });
-
-        if (DEBUG_MODE) {
-          console.error('❌ LOGIN FAILED:', loginError);
-        }
-
-        return false;
+        // Reset captcha input dan fetch captcha baru TANPA clear error
+        updateFormField('captchaInput', '', false);
+        await fetchCaptcha(false);
       }
 
-    } catch (err: any) {
-      // Network error atau error lainnya
-      const errorMessage = err.message || 'Terjadi kesalahan jaringan';
-      setError(errorMessage);
+    } catch (error) {
+      console.error("Login error:", error);
 
-    //   Toast.show({
-    //     type: 'error',
-    //     title: 'Kesalahan Jaringan',
-    //     message: errorMessage,
-    //   });
+      const errorMsg = error instanceof Error 
+        ? error.message 
+        : "Terjadi kesalahan. Silakan coba lagi.";
+      updateUIState('errorMessage', errorMsg);
 
-      console.error('❌ LOGIN ERROR:', err);
-      return false;
+      // Reset captcha input dan fetch captcha baru TANPA clear error
+      updateFormField('captchaInput', '', false);
+      await fetchCaptcha(false);
 
     } finally {
-      setIsLoading(false);
+      updateUIState('isLoggingIn', false);
     }
-  }, [router]);
+  }, [formState, captchaState, validateForm, updateUIState, updateFormField, fetchCaptcha, fetchMenuData, router]);
 
   return {
-    isLoading,
-    error,
-    login,
-    clearError,
+    formState,
+    captchaState,
+    uiState,
+    updateFormField,
+    updateUIState,
+    fetchCaptcha,
+    handleSubmitLogin,
+    validateForm,
   };
 };

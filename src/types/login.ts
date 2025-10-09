@@ -1,12 +1,22 @@
-/**
- * Login Types
- * Definisi tipe data untuk login system
- */
-
+// src/types/login.ts
 export interface LoginFormState {
   username: string;
   password: string;
   captchaInput: string;
+}
+
+export interface CaptchaState {
+  id: string;
+  url: string;
+}
+
+export interface UIState {
+  showPassword: boolean;
+  isRefreshing: boolean;
+  isLoggingIn: boolean;
+  showGuidePopup: boolean;
+  isDownloading: boolean;
+  errorMessage: string | null;
 }
 
 export interface LoginPayload {
@@ -16,54 +26,30 @@ export interface LoginPayload {
   captcha: string;
 }
 
-export interface CaptchaData {
-  captcha_id: string;
-  captcha_url: string;
-}
-
-export interface TokenConfig {
-  access_token_duration: number;
-  refresh_token_duration: number;
-}
-
-export interface LoginResponseData {
-  user: {
-    userid: string;
-    username: string;
-    name: string;
-    level_id: string;
-    role: string;
-    dinas?: number;
-    nama_dinas?: string;
-  };
-  token_config?: TokenConfig;
-}
-
 export interface LoginResponse {
   responseCode: number;
   responseDesc: string;
-  responseData: LoginResponseData;
+  responseData: {
+    user: {
+      userid: string;
+      username: string;
+      name: string;
+      dinas: number;
+      nama_dinas: string;
+      level_id: string;
+    };
+    token_config?: {
+      access_token_duration: number;
+      refresh_token_duration: number;
+    };
+  };
 }
 
 export interface CaptchaResponse {
   responseCode: number;
   responseDesc: string;
-  responseData: CaptchaData;
-}
-
-// Error types
-export type LoginErrorType = 
-  | 'INVALID_CREDENTIALS'
-  | 'USER_NOT_FOUND'
-  | 'INVALID_CAPTCHA'
-  | 'ACCOUNT_INACTIVE'
-  | 'ACCOUNT_LOCKED'
-  | 'NETWORK_ERROR'
-  | 'VALIDATION_ERROR'
-  | 'UNKNOWN_ERROR';
-
-export interface LoginError {
-  type: LoginErrorType;
-  message: string;
-  details?: string;
+  responseData: {
+    captcha_id: string;
+    captcha_url: string;
+  };
 }

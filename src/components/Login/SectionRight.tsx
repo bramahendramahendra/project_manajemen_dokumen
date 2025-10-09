@@ -1,321 +1,45 @@
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+"use client";
+import React, { useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+
+// Assets
 import Background1 from "../../../public/assets/manajement-dokumen-login-4.svg";
-import Cookies from "js-cookie";
-import { loginRequest, apiRequest, downloadFileRequest } from "@/helpers/apiClient";
-import { FaEye, FaEyeSlash, FaTimes, FaDownload } from "react-icons/fa";
-import { useMenu } from "@/contexts/MenuContext";
-import { DEBUG_MODE } from '@/utils/config';
-import { Alert, LoadingAlert } from "@/components/alerts/Alert";
+
+// Hooks
+import { useLogin } from "@/hooks/useLogin";
+import { useManualBook } from "@/hooks/useManualBook";
+
+// Icons
+import { FaEye, FaEyeSlash, FaDownload } from "react-icons/fa";
+
+// Components
+import { LoginErrorAlert } from "@/components/alerts/LoginErrorAlert";
 
 const SectionRight = () => {
-  // Form State
-  const [username, setUsername] = useState<string>("");
-  const [password, setPassword] = useState<string>("");
-  const [captchaInput, setCaptchaInput] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  
-  // Router & Menu
-  const router = useRouter();
-  const { fetchMenuData } = useMenu();
-  
-  // Captcha State
-  const [captchaID, setCaptchaID] = useState<string>("");
-  const [captchaURL, setCaptchaURL] = useState<string>("");
-  
-  // UI State
-  const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [isLoggingIn, setIsLoggingIn] = useState<boolean>(false);
-  
-  // State untuk floating guide button
-  const [showGuidePopup, setShowGuidePopup] = useState<boolean>(false);
-  const [isDownloading, setIsDownloading] = useState<boolean>(false);
+  // Custom Hooks
+  const {
+    formState,
+    captchaState,
+    uiState,
+    updateFormField,
+    updateUIState,
+    fetchCaptcha,
+    handleSubmitLogin,
+  } = useLogin();
 
-  /**
-   * Generate CAPTCHA menggunakan apiClient
-   */
-  const fetchCaptcha = async () => {
-    setIsRefreshing(true);
-    // setErrorMessage(null); // Clear error saat refresh CAPTCHA
-    
-    try {
-      const response = await apiRequest("/auths/generate-captcha", "GET");
-      
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Validasi response structure
-        if (data.responseCode === 200 && data.responseData) {
-          setCaptchaID(data.responseData.captcha_id);
-          setCaptchaURL(`${process.env.NEXT_PUBLIC_API_URL}${data.responseData.captcha_url}`);
-          setCaptchaInput(""); // Reset input CAPTCHA
-        } else {
-          console.error("Invalid captcha response:", data);
-          setErrorMessage("Gagal memuat CAPTCHA. Silakan refresh halaman.");
-        }
-      } else {
-        console.error("Failed to fetch captcha:", response.status);
-        setErrorMessage("Gagal memuat CAPTCHA. Silakan coba lagi.");
-      }
-    } catch (error) {
-      console.error("Error fetching CAPTCHA:", error);
-      setErrorMessage("Terjadi kesalahan saat memuat CAPTCHA.");
-    } finally {
-      // Tambahkan delay kecil untuk efek visual
-      setTimeout(() => setIsRefreshing(false), 800);
-    }
-  };
+  const { isDownloading, downloadManualBook } = useManualBook();
 
-  // Load CAPTCHA saat komponen mount
+  // Load CAPTCHA on mount
   useEffect(() => {
     fetchCaptcha();
-  }, []);
+  }, [fetchCaptcha]);
 
-  /**
-   * Validasi form sebelum submit
-   */
-  const validateForm = (): boolean => {
-    // Reset error message
-    setErrorMessage(null);
-
-    // Validasi username
-    if (!username.trim()) {
-      setErrorMessage("Username tidak boleh kosong");
-      return false;
-    }
-
-    // Validasi password
-    if (!password.trim()) {
-      setErrorMessage("Password tidak boleh kosong");
-      return false;
-    }
-
-    // Validasi CAPTCHA
-    if (!captchaInput.trim()) {
-      setErrorMessage("Kode CAPTCHA tidak boleh kosong");
-      return false;
-    }
-
-    return true;
-  };
-
-  /**
-   * Handle Submit Login
-   */
-  const handleSubmitLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // Validasi form terlebih dahulu
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsLoggingIn(true);
-
-    try {
-      const payload = {
-        username: username.trim(),
-        password: password.trim(),
-        captcha_id: captchaID,
-        captcha: captchaInput.trim(),
-      };
-      
-      const response = await loginRequest("/auths/login", "POST", payload);
-      const data = await response.json();
-
-      if (response.ok && data.responseCode === 200) {
-        // ✅ Login berhasil
-        localStorage.setItem("hasVisited", "true");
-        Cookies.set("user", JSON.stringify(data.responseData.user), { path: "/" });
-
-        // Simpan waktu login untuk refresh token check
-        const loginTime = Date.now();
-        localStorage.setItem('lastLoginTime', loginTime.toString());
-
-        // Debug logging untuk token configuration
-        if (DEBUG_MODE) {
-          console.log('='.repeat(60));
-          console.log('✅ LOGIN SUCCESSFUL');
-          console.log('='.repeat(60));
-          console.log('Login Time:', new Date(loginTime).toLocaleTimeString('id-ID'));
-          console.log('User:', data.responseData.user.username);
-          
-          // Jika backend mengirim token config
-          if (data.responseData?.token_config) {
-            const tokenConfigFromBackend = data.responseData.token_config;
-            console.log('Token Configuration from Backend:');
-            console.log(`  ├─ Access Token Duration: ${tokenConfigFromBackend.access_token_duration} minutes`);
-            console.log(`  └─ Refresh Token Duration: ${tokenConfigFromBackend.refresh_token_duration} minutes`);
-            
-            // Validasi apakah config frontend sama dengan backend
-            const frontendAccessDuration = parseInt(process.env.NEXT_PUBLIC_ACCESS_TOKEN_DURATION || '15');
-            const frontendRefreshDuration = parseInt(process.env.NEXT_PUBLIC_REFRESH_TOKEN_DURATION || '10080');
-            
-            console.log('Frontend Token Configuration:');
-            console.log(`  ├─ Access Token Duration: ${frontendAccessDuration} minutes`);
-            console.log(`  └─ Refresh Token Duration: ${frontendRefreshDuration} minutes`);
-            
-            // Warning jika ada mismatch
-            if (tokenConfigFromBackend.access_token_duration !== frontendAccessDuration) {
-              console.warn('⚠️  WARNING: Access token duration mismatch!');
-              console.warn(`   Backend: ${tokenConfigFromBackend.access_token_duration} minutes`);
-              console.warn(`   Frontend: ${frontendAccessDuration} minutes`);
-              console.warn('   → Please update NEXT_PUBLIC_ACCESS_TOKEN_DURATION in .env.local');
-            }
-            
-            if (tokenConfigFromBackend.refresh_token_duration !== frontendRefreshDuration) {
-              console.warn('⚠️  WARNING: Refresh token duration mismatch!');
-              console.warn(`   Backend: ${tokenConfigFromBackend.refresh_token_duration} minutes`);
-              console.warn(`   Frontend: ${frontendRefreshDuration} minutes`);
-              console.warn('   → Please update NEXT_PUBLIC_REFRESH_TOKEN_DURATION in .env.local');
-            }
-            
-            // Success message jika config match
-            if (tokenConfigFromBackend.access_token_duration === frontendAccessDuration &&
-                tokenConfigFromBackend.refresh_token_duration === frontendRefreshDuration) {
-              console.log('✅ Token configuration is synchronized between frontend and backend');
-            }
-          } else {
-            console.warn('⚠️  Backend did not send token_config in response');
-            console.warn('   Using frontend configuration from .env.local');
-          }
-          
-          console.log('='.repeat(60));
-        }
-
-        // Fetch menu data setelah login berhasil
-        try {
-          await fetchMenuData();
-        } catch (menuError) {
-          console.error("Failed to fetch menu after login:", menuError);
-          // Tetap lanjutkan ke dashboard meskipun menu gagal dimuat
-        }
-
-        // Navigasi ke dashboard
-        router.push("/dashboard");
-
-      } else {
-        // ❌ Login gagal - tampilkan error dari backend
-        const errorMsg = data.responseDesc || "Login gagal. Silakan coba lagi.";
-        setErrorMessage(errorMsg);
-        
-        // Reset captcha input dan refresh captcha baru saat login gagal
-        setCaptchaInput("");
-        await fetchCaptcha();
-      }
-
-    } catch (error) {
-      console.error("Login error:", error);
-      
-      const errorMsg = error instanceof Error ? error.message : "Terjadi kesalahan. Silakan coba lagi.";
-      setErrorMessage(errorMsg);
-      
-      // Reset captcha input dan refresh captcha baru jika terjadi error
-      setCaptchaInput("");
-      await fetchCaptcha();
-
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  /**
-   * Function untuk download manual book - KONSISTEN DENGAN REFERENSI
-   */
-  const downloadManualBook = async () => {
-    setIsDownloading(true);
-    try {
-      // console.log('Downloading manual book from API: /auths/manual-book');
-      
-      // Menggunakan downloadFileRequest helper untuk konsistensi dengan referensi
-      const response = await downloadFileRequest("/auths/manual-book");
-      
-      // console.log('Download response status:', response.status);
-      
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Coba ambil detail error dari response
-          try {
-            const errorData = await response.json();
-            console.error('Manual book not found details:', errorData);
-            throw new Error('Manual book tidak ditemukan di server');
-          } catch (parseError) {
-            console.error('Error parsing error response:', parseError);
-            throw new Error('Manual book tidak ditemukan di server');
-          }
-        } else if (response.status === 400) {
-          try {
-            const errorData = await response.json();
-            console.error('Bad request details:', errorData);
-            throw new Error(errorData.ResponseDesc || 'Format permintaan tidak valid');
-          } catch (parseError) {
-            throw new Error('Format permintaan tidak valid');
-          }
-        } else {
-          throw new Error(`Error ${response.status}: Gagal mengunduh manual book`);
-        }
-      }
-
-      // Membuat blob dari response
-      const blob = await response.blob();
-      
-      if (blob.size === 0) {
-        throw new Error('File manual book kosong atau tidak dapat dibaca');
-      }
-      
-      // console.log('Blob size:', blob.size, 'bytes');
-      
-      // Membuat URL object untuk blob
-      const blobUrl = window.URL.createObjectURL(blob);
-      
-      // Tentukan nama file untuk download
-      let downloadFileName = 'Manual_Book.pdf';
-      
-      // Coba dapatkan nama file dari header Content-Disposition
-      const contentDisposition = response.headers.get('Content-Disposition');
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        if (fileNameMatch) {
-          downloadFileName = fileNameMatch[1].replace(/['"]/g, '');
-        }
-      }
-      
-      // console.log('Download filename:', downloadFileName);
-      
-      // Membuat link download
-      const link = document.createElement('a');
-      link.href = blobUrl;
-      link.download = downloadFileName;
-      link.style.display = 'none'; // Sembunyikan link
-      
-      // Tambahkan ke DOM, klik, lalu hapus
-      document.body.appendChild(link);
-      link.click();
-      
-      // Cleanup
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(blobUrl);
-      
-      // console.log('Manual book download completed successfully');
-      
-      // Tutup popup setelah berhasil download
-      setShowGuidePopup(false);
-      
-      // Tampilkan notifikasi sukses (opsional)
-      // alert(`Manual book "${downloadFileName}" berhasil diunduh!`);
-      
-    } catch (error) {
-      console.error('Error downloading manual book:', error);
-      
-      const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat mengunduh manual book';
-      alert(`Gagal mengunduh manual book: ${errorMessage}`);
-    } finally {
-      setIsDownloading(false);
-    }
+  // Handle manual book download and close popup
+  const handleDownloadAndClose = async () => {
+    await downloadManualBook();
+    updateUIState('showGuidePopup', false);
   };
 
   return (
@@ -334,73 +58,63 @@ const SectionRight = () => {
             {/* Login Form */}
             <section className="w-full">
               <form onSubmit={handleSubmitLogin}>
-                
                 {/* Username Input */}
                 <input
                   id="username"
                   type="text"
-                  value={username}
-                  onChange={(e) => {
-                    setUsername(e.target.value);
-                    setErrorMessage(null); // Clear error saat user mengetik
-                  }}
+                  value={formState.username}
+                  onChange={(e) => updateFormField('username', e.target.value)}
                   required
-                  disabled={isLoggingIn}
+                  disabled={uiState.isLoggingIn}
                   placeholder="Masukkan Username..."
                   autoComplete="username"
-                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-[15px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
                 />
 
-                {/* Password Input with Toggle */}
+                {/* Password Input */}
                 <div className="relative mt-[15px]">
                   <input
                     id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => {
-                      setPassword(e.target.value);
-                      setErrorMessage(null); // Clear error saat user mengetik
-                    }}
+                    type={uiState.showPassword ? "text" : "password"}
+                    value={formState.password}
+                    onChange={(e) => updateFormField('password', e.target.value)}
                     required
-                    disabled={isLoggingIn}
+                    disabled={uiState.isLoggingIn}
                     placeholder="Masukkan Password..."
                     autoComplete="current-password"
-                    className="block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
                   />
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoggingIn}
+                    onClick={() => updateUIState('showPassword', !uiState.showPassword)}
+                    disabled={uiState.isLoggingIn}
                     tabIndex={-1}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 transition-colors hover:text-gray-700 disabled:opacity-50"
-                    aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                    aria-label={uiState.showPassword ? "Sembunyikan password" : "Tampilkan password"}
                   >
-                    {showPassword ? (
-                      <FaEye size={20} />
-                    ) : (
-                      <FaEyeSlash size={20} />
-                    )}
+                    {uiState.showPassword ? <FaEye size={20} /> : <FaEyeSlash size={20} />}
                   </button>
                 </div>
 
-                {/* Error Message Display - MENGGUNAKAN ALERT COMPONENT */}
-                {errorMessage && (
-                  <Alert
-                    type="error"
-                    title="Terjadi Kesalahan"
-                    message={errorMessage}
-                    onRetry={errorMessage.includes('CAPTCHA') ? fetchCaptcha : undefined}
-                  />
-                )}
+                {/* Error Alert - IMMERSIVE 3D DESIGN */}
+                <AnimatePresence mode="wait">
+                  {uiState.errorMessage && (
+                    <LoginErrorAlert
+                      message={uiState.errorMessage}
+                      onRetry={uiState.errorMessage.includes('CAPTCHA') ? fetchCaptcha : undefined}
+                      onClose={() => updateUIState('errorMessage', null)}
+                    />
+                  )}
+                </AnimatePresence>
 
                 {/* CAPTCHA Section */}
                 <div className="mt-[15px]">
                   <div className="mt-2 flex items-center gap-2">
                     {/* CAPTCHA Image */}
-                    {captchaURL ? (
-                      <div className="flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 bg-white shadow-sm">
+                    {captchaState.url ? (
+                      <div className="flex-shrink-0 overflow-hidden rounded-lg border-2 border-gray-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
                         <Image
-                          src={captchaURL}
+                          src={captchaState.url}
                           alt="captcha"
                           width={240}
                           height={80}
@@ -411,16 +125,18 @@ const SectionRight = () => {
                       </div>
                     ) : (
                       <div className="flex h-[80px] w-[240px] flex-shrink-0 items-center justify-center rounded-lg border-2 border-gray-200 bg-gray-50">
-                        <span className="text-xs text-gray-400">Loading...</span>
+                        <div className="animate-pulse">
+                          <span className="text-xs text-gray-400">Memuat CAPTCHA...</span>
+                        </div>
                       </div>
                     )}
 
-                    {/* Refresh CAPTCHA Button with Tooltip */}
+                    {/* Refresh CAPTCHA Button */}
                     <div className="group relative inline-block">
                       <button
                         type="button"
-                        onClick={fetchCaptcha}
-                        disabled={isRefreshing || isLoggingIn}
+                        onClick={() => fetchCaptcha(true)}
+                        disabled={uiState.isRefreshing || uiState.isLoggingIn}
                         className="rounded-full bg-blue-100 p-2.5 text-blue-600 shadow-md transition-all duration-300 hover:bg-blue-200 hover:text-blue-800 hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-70"
                         aria-label="Refresh captcha"
                       >
@@ -435,13 +151,12 @@ const SectionRight = () => {
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           className={`transition-transform duration-500 ${
-                            isRefreshing ? "animate-spin" : "group-hover:rotate-180"
+                            uiState.isRefreshing ? "animate-spin" : "group-hover:rotate-180"
                           }`}
                         >
                           <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2" />
                         </svg>
                       </button>
-                      {/* Tooltip */}
                       <div className="absolute left-1/2 top-full z-10 mt-1 -translate-x-1/2 scale-0 rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap">
                         Refresh Captcha
                       </div>
@@ -453,22 +168,19 @@ const SectionRight = () => {
                     id="captcha"
                     name="captcha"
                     type="text"
-                    value={captchaInput}
-                    onChange={(e) => {
-                      setCaptchaInput(e.target.value);
-                      setErrorMessage(null); // Clear error saat user mengetik
-                    }}
+                    value={formState.captchaInput}
+                    onChange={(e) => updateFormField('captchaInput', e.target.value)}
                     required
-                    disabled={isLoggingIn || isRefreshing}
+                    disabled={uiState.isLoggingIn || uiState.isRefreshing}
                     placeholder="Masukkan CAPTCHA..."
                     autoComplete="off"
-                    className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-[10px] block w-full rounded-[7px] border-0 px-[30px] py-[17px] font-inter font-normal text-gray-900 shadow-sm ring-1 ring-inset ring-[#1D92F9] placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 md:text-[15px] lg:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 transition-all duration-200"
                   />
                 </div>
 
                 {/* Lupa Password Link */}
                 <div>
-                  <span className="float-right mt-[20px] mb-2 font-poppins text-[#1D92F9] hover:text-[#0C479F] md:text-[15px] lg:text-[16px]">
+                  <span className="float-right mt-[20px] mb-2 font-poppins text-[#1D92F9] hover:text-[#0C479F] transition-colors duration-200 md:text-[15px] lg:text-[16px]">
                     <Link href="/lupa-password">Lupa Password?</Link>
                   </span>
                 </div>
@@ -476,10 +188,10 @@ const SectionRight = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  disabled={isLoggingIn || isRefreshing}
+                  disabled={uiState.isLoggingIn || uiState.isRefreshing}
                   className="mt-[20px] w-full rounded-[7px] bg-[#0C479F] font-poppins font-normal text-white shadow-sm transition-all hover:bg-[#1775C7] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 md:py-[16px] lg:py-[16px] lg:text-[16px] xl:text-[16px] disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center active:scale-[0.98]"
                 >
-                  {isLoggingIn ? (
+                  {uiState.isLoggingIn ? (
                     <>
                       <svg
                         className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
@@ -530,8 +242,11 @@ const SectionRight = () => {
         {/* Floating Guide Button */}
         <div className="fixed bottom-6 right-[70px] z-50">
           <button
-            onClick={() => setShowGuidePopup(true)}
-            className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-green-500 text-white shadow-lg transition-all duration-300 hover:bg-green-600 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300"
+            onClick={() => updateUIState('showGuidePopup', true)}
+            className="group relative flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-green-600 text-white shadow-lg transition-all duration-300 hover:from-green-600 hover:to-green-700 hover:scale-110 focus:outline-none focus:ring-4 focus:ring-green-300 active:scale-95"
+            style={{
+              boxShadow: '0 8px 20px rgba(34, 197, 94, 0.4)',
+            }}
             aria-label="Panduan Penggunaan"
           >
             <svg
@@ -544,85 +259,123 @@ const SectionRight = () => {
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
+              className="transition-transform duration-300 group-hover:scale-110"
             >
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
               <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
             </svg>
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2 scale-0 rounded bg-gray-800 px-3 py-1 text-sm text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap">
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2 scale-0 rounded bg-gray-800 px-3 py-1 text-sm text-white opacity-0 transition-all duration-200 group-hover:scale-100 group-hover:opacity-100 whitespace-nowrap shadow-lg">
               Panduan Penggunaan
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
             </div>
           </button>
         </div>
 
         {/* Guide Popup */}
-        {showGuidePopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+        <AnimatePresence>
+          {uiState.showGuidePopup && (
             <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="relative max-w-sm w-full mx-4 rounded-lg bg-white p-6 text-center shadow-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+              onClick={() => updateUIState('showGuidePopup', false)}
             >
-              {/* Gambar Manual Book - sekarang button untuk download */}
-              <button
-                onClick={downloadManualBook}
-                disabled={isDownloading}
-                className="relative w-full group disabled:opacity-50 disabled:cursor-not-allowed"
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.8, opacity: 0, y: 20 }}
+                transition={{ type: "spring", duration: 0.5 }}
+                className="relative max-w-sm w-full mx-4 rounded-2xl bg-white p-6 text-center shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
+                }}
               >
-                <Image
-                  src="https://storage.googleapis.com/fastwork-static/d4d162c2-2ab3-4414-9827-4663627c807e.jpg"
-                  alt="Manual Book"
-                  width={150}
-                  height={150}
-                  className="mx-auto h-auto w-full cursor-pointer transition-all duration-200 group-hover:opacity-80 rounded-lg group-hover:scale-105"
-                />
-                {/* Overlay download icon */}
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-lg">
-                  {isDownloading ? (
-                    <svg
-                      className="animate-spin h-8 w-8 text-white opacity-0 group-hover:opacity-100"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
-                    </svg>
-                  ) : (
-                    <FaDownload className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  )}
-                </div>
-              </button>
+                {/* Close button di kanan atas */}
+                <button
+                  onClick={() => updateUIState('showGuidePopup', false)}
+                  disabled={isDownloading}
+                  className="absolute top-4 right-4 rounded-full p-2 text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-600 active:scale-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Tutup"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
 
-              <p className="mb-4 mt-4 text-center text-sm font-medium text-gray-700">
-                {isDownloading 
-                  ? "Sedang mendownload manual book..." 
-                  : "Klik gambar untuk mendownload Manual Book"
-                }
-              </p>
-              
-              <button
-                onClick={() => setShowGuidePopup(false)}
-                disabled={isDownloading}
-                className="mt-2 w-full rounded-md bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Tutup
-              </button>
+                <h3 className="text-xl font-bold text-gray-800 mb-4">
+                  Panduan Penggunaan
+                </h3>
+
+                {/* Gambar Manual Book sebagai tombol download */}
+                <button
+                  onClick={handleDownloadAndClose}
+                  disabled={isDownloading}
+                  className="relative w-full group disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+                >
+                  <div className="relative overflow-hidden rounded-xl shadow-lg transition-all duration-300 group-hover:shadow-2xl">
+                    <Image
+                      src="https://storage.googleapis.com/fastwork-static/d4d162c2-2ab3-4414-9827-4663627c807e.jpg"
+                      alt="Manual Book"
+                      width={400}
+                      height={400}
+                      className="mx-auto h-auto w-full transition-all duration-300 group-hover:scale-105"
+                    />
+                    {/* Overlay dengan efek gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-6">
+                      <div className="flex items-center gap-2 text-white font-semibold">
+                        <FaDownload className="h-5 w-5" />
+                        <span>Download Manual Book</span>
+                      </div>
+                    </div>
+                    {/* Loading spinner overlay */}
+                    {isDownloading && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <svg
+                          className="animate-spin h-10 w-10 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </button>
+
+                <p className="text-sm text-gray-600 mb-6">
+                  {isDownloading
+                    ? "Sedang mengunduh manual book..."
+                    : "Klik gambar di atas untuk mengunduh Manual Book dan pelajari cara menggunakan aplikasi"
+                  }
+                </p>
+
+                {/* Button Tutup di bawah */}
+                <button
+                  onClick={() => updateUIState('showGuidePopup', false)}
+                  disabled={isDownloading}
+                  className="w-full rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 font-semibold text-white shadow-lg transition-all hover:from-blue-700 hover:to-blue-800 hover:shadow-xl active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Tutup
+                </button>
+              </motion.div>
             </motion.div>
-          </div>
-        )}
+          )}
+        </AnimatePresence>
       </div>
     </>
   );
