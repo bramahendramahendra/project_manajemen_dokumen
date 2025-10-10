@@ -329,6 +329,8 @@ const UploadDokumen = () => {
               </div>
             )}
 
+            {isMasterDataComplete && (
+            <>
             {/* Tahun Combobox */}
             <div>
               <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
@@ -373,6 +375,8 @@ const UploadDokumen = () => {
               onFileChange={handleFileChangeWithValidation}
               onRemoveFile={handleRemoveFile}
             />
+            </>
+            )}
 
             {/* Submit Button */}
             <Button
@@ -385,10 +389,12 @@ const UploadDokumen = () => {
             >
               {isUploading
                 ? "Mengupload File..."
+                : !formState.jenis
+                ? "Pilih Data Jenis"
                 : !isMasterDataComplete
-                ? "Lengkapi Data Master"
+                ? "Lengkapi Data Subjenis"
                 : !formState.tahun || !formState.keterangan
-                ? "Lengkapi Semua Field"
+                ? "Lengkapi Semua Data"
                 : !isUploadComplete
                 ? "Upload File Terlebih Dahulu"
                 : loading

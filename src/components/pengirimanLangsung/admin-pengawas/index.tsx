@@ -9,7 +9,7 @@ import { Button } from "@/components/elements/ElementButton";
 import SuccessModal from "@/components/modals/successModal";
 import ErrorModal from "@/components/modals/errorModal";
 import DocumentList from "@/components/pengirimanLangsung/documentList";
-import SelectedDocumentsDisplay from "../selectedDocuments";
+import SelectedDocumentsDisplay from "@/components/pengirimanLangsung/selectedDocuments";
 import FileUploadSection from "@/components/pengirimanLangsung/fileUploadSection";
 
 import { useDinasAllDataPengirimanLangsung } from "@/hooks/useMasterData";
