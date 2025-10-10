@@ -19,6 +19,7 @@ import LaporanIcon from "@/components/Icons/LaporanIcon";
 import PergeseranIcon from "@/components/Icons/PergeseranIcon";
 import PesanMasukIcon from "@/components/Icons/PesanMasukIcon";
 import DokumenMasukIcon from "@/components/Icons/DokumenMasukIcon";
+import DokumenPergeseranIcon from "@/components/Icons/DokumenPergeseranIcon";
 import UserIcon from "@/components/Icons/UserIcon";
 import MenuIcon from "@/components/Icons/MenuIcon";
 import SettingIcon from "@/components/Icons/SettingIcon";
@@ -40,6 +41,7 @@ const iconMap: Record<string, JSX.Element> = {
   PergeseranIcon: <PergeseranIcon />,
   PesanMasukIcon: <PesanMasukIcon />,
   DokumenMasukIcon: <DokumenMasukIcon />,
+  DokumenPergeseranIcon: <DokumenPergeseranIcon />,
   UserIcon: <UserIcon />,
   MenuIcon: <MenuIcon />,
   SettingIcon: <SettingIcon />,

@@ -32,6 +32,7 @@ const iconMap: Record<string, string> = {
   PergeseranIcon: "PergeseranIcon",
   PesanMasukIcon: "PesanMasukIcon",
   DokumenMasukIcon: "DokumenMasukIcon",
+  DokumenPergeseranIcon: "DokumenPergeseranIcon",
   UserIcon: "UserIcon",
   MenuIcon: "MenuIcon",
   SettingIcon: "SettingIcon",

@@ -1,10 +1,10 @@
+import MainPage from "@/components/pengirimanLangsung/pengawas";
 import Breadcrumb from "@/components/breadcrumbs";
-import MainPage from "@/components/laporan_pergeseran/";
 
-const LaporanPergeseran = () => {
+const PengirimanLangsung = () => {
   const breadcrumbs = [
     { name: "Dashboard", href: "/" },
-    { name: "Laporan Pergeseran"},
+    { name: "Pengiriman Langsung Pengawas"},
   ];
 
   return (
@@ -17,4 +17,4 @@ const LaporanPergeseran = () => {
   );
 };
 
-export default LaporanPergeseran;
+export default PengirimanLangsung;

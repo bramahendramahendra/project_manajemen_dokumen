@@ -4,7 +4,7 @@ import { useSearchParams  } from "next/navigation";
 import Cookies from "js-cookie";
 import { decryptObject } from "@/utils/crypto";
 import Breadcrumb from "@/components/breadcrumbs";
-import LaporanPergeseranInstansiIndex from "@/components/laporan_pergeseran/detail_laporan_pergeseran/";
+import LaporanPergeseranInstansiIndex from "@/components/dokumen_pergeseran/detail";
 
 const formatTitle = (text: string) => {
   return text

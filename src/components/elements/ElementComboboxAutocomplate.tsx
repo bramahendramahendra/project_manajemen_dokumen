@@ -274,7 +274,6 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
             className={`absolute right-4 top-5 pointer-events-none flex items-center justify-center ${
               disabled ? 'opacity-50' : ''
             }`}
-            // style={{ transform: 'translateY(-50%)' }}
             animate={isFocused && searchTerm.length > 0 ? {
               scale: [1, 1.2, 1],
               rotate: [0, 360],
