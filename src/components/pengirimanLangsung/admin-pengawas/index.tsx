@@ -2,12 +2,14 @@
 import React, { useState } from "react";
 import Cookies from "js-cookie";
 import { apiRequest } from "@/helpers/apiClient";
+
 import ElementComboboxAutocomplete from "@/components/elements/ElementComboboxAutocomplate";
 import { Input } from "@/components/elements/ElementInput";
 import { Textarea } from "@/components/elements/ElementInput";
 import { Button } from "@/components/elements/ElementButton";
 import SuccessModal from "@/components/modals/successModal";
 import ErrorModal from "@/components/modals/errorModal";
+import { Alert, LoadingAlert } from "@/components/alerts/Alert";
 import DocumentList from "@/components/pengirimanLangsung/documentList";
 import SelectedDocumentsDisplay from "@/components/pengirimanLangsung/selectedDocuments";
 import FileUploadSection from "@/components/pengirimanLangsung/fileUploadSection";
@@ -19,6 +21,7 @@ import { usePengirimanLangsungFileUpload } from "@/hooks/useFileUpload";
 import type { 
   PengirimanLangsungFormState
 } from "@/types/formPengirimanLangsung";
+import type { UserCookie } from "@/types/userCookie";
 
 const FormPengirimanLangsung = () => {
   // Form State
@@ -38,7 +41,15 @@ const FormPengirimanLangsung = () => {
   const [errorTitle, setErrorTitle] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
 
-  // Custom Hooks
+  // Custom Hooks for Master Data
+  const {
+    data: optionDinas,
+    loading: loadingDinas,
+    isEmpty: isDinasEmpty,
+    refetch: refetchDinas,
+  } = useDinasAllDataPengirimanLangsung();
+
+  // Custom Hooks for Document Selection
   const {
     documents,
     selectedDocuments,
@@ -52,6 +63,7 @@ const FormPengirimanLangsung = () => {
     resetSelection,
   } = useDocumentSelection("/direct-shipping/");
 
+  // File Upload Hook
   const {
     file,
     uploadProgress,
@@ -63,23 +75,13 @@ const FormPengirimanLangsung = () => {
     resetFileState,
   } = usePengirimanLangsungFileUpload("/direct-shipping/upload-file");
 
-  const {
-    data: optionDinas,
-    loading: loadingDinas,
-    error: errorDinas,
-    isEmpty: isDinasEmpty,
-    refetch: refetchDinas,
-  } = useDinasAllDataPengirimanLangsung();
-
-  
   // Update form field helper
-  const pengirimanLangsungFormField = <K extends keyof PengirimanLangsungFormState>(
+  const updateFormField = <K extends keyof PengirimanLangsungFormState>(
     field: K,
     value: PengirimanLangsungFormState[K]
   ) => {
     setFormState(prev => ({ ...prev, [field]: value }));
   };
-  
 
   // Helper Functions
   const showErrorModal = (title: string, message: string) => {
@@ -91,6 +93,42 @@ const FormPengirimanLangsung = () => {
   const getDocumentDisplayName = (doc: any): string => {
     return `${doc.dinas} - ${doc.jenis} - ${doc.subjenis} - ${doc.tahun}`;
   };
+
+  // Computed values for form validation
+  const isBasicInfoComplete = formState.dinas !== 0 && formState.judul.trim() !== '';
+  const isSubmitDisabled = loading || isUploading || !isBasicInfoComplete;
+
+  // Form Status
+  const getFormStatus = (): { type: 'loading' | 'info' | 'success' | 'empty'; message: string } => {
+    if (loadingDinas) {
+      return { type: 'loading', message: 'Memuat data dinas...' };
+    }
+
+    if (isDinasEmpty) {
+      return { type: 'empty', message: '' };
+    }
+
+    if (!formState.dinas) {
+      return { 
+        type: 'info', 
+        message: 'Pilih Kepada Dinas terlebih dahulu untuk melanjutkan.' 
+      };
+    }
+
+    if (!formState.judul.trim()) {
+      return { 
+        type: 'info', 
+        message: 'Isi Judul untuk melanjutkan.' 
+      };
+    }
+
+    return { 
+      type: 'success', 
+      message: 'Form siap digunakan. Anda dapat memilih dokumen atau langsung mengirim.' 
+    };
+  };
+
+  const formStatus = getFormStatus();
 
   // Handle Form Submit
   const handleSubmitForm = async (e: React.FormEvent) => {
@@ -109,7 +147,8 @@ const FormPengirimanLangsung = () => {
     setLoading(true);
     
     try {
-      const user = JSON.parse(Cookies.get("user") || "{}");
+      const userCookie = Cookies.get("user");
+      const user: UserCookie = userCookie ? JSON.parse(userCookie) : {} as UserCookie;
 
       if (!user.userid || !user.name || !user.dinas || !user.nama_dinas) {
         showErrorModal("Error Session", "Data pengguna tidak valid. Silakan login ulang.");
@@ -189,21 +228,49 @@ const FormPengirimanLangsung = () => {
               Pengiriman Dokumen Langsung
             </h4>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              Kirim dokumen secara langsung
+              Kirim dokumen secara langsung ke dinas lain
             </p>
           </div>
+
+          {/* Form Status Messages */}
+          {formStatus.type === 'loading' && (
+            <LoadingAlert message={formStatus.message} />
+          )}
+          
+          {formStatus.type === 'info' && (
+            <Alert type="info" message={formStatus.message} />
+          )}
+          
+          {formStatus.type === 'success' && (
+            <Alert type="success" message={formStatus.message} />
+          )}
+
+          {/* Empty Data Alert */}
+          {isDinasEmpty && (
+            <Alert
+              type="warning"
+              title="Data Dinas Belum Tersedia"
+              message="Hubungi administrator untuk menambahkan data dinas terlebih dahulu."
+              onRetry={refetchDinas}
+            />
+          )}
 
           {/* Form */}
           <div className="rounded-xl border border-gray-200 bg-white-50 dark:border-dark-3 dark:bg-dark-2 p-6">
             <form onSubmit={handleSubmitForm}>
               <div className="grid grid-cols-12 gap-6">
-                {/* Left Column */}
+                {/* Left Column - Always col-span-6 on large screens */}
                 <div className="col-span-12 lg:col-span-6 space-y-5">
                   {/* Kepada Dinas */}
                   <div>
-                    <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
-                      Kepada Dinas <span className="text-red-500">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-sm font-semibold text-dark dark:text-white">
+                        Kepada Dinas <span className="text-red-500">*</span>
+                      </label>
+                      {loadingDinas && (
+                        <span className="text-xs text-blue-500 animate-pulse">Memuat data...</span>
+                      )}
+                    </div>
                     <ElementComboboxAutocomplete
                       label=""
                       placeholder={
@@ -214,8 +281,9 @@ const FormPengirimanLangsung = () => {
                           : "Ketik minimal 3 huruf untuk mencari dinas..."
                       }
                       options={optionDinas.map((t) => ({ name: t.dinas, id: t.id }))}
-                      onChange={(value) => pengirimanLangsungFormField('dinas', Number(value))}
+                      onChange={(value) => updateFormField('dinas', Number(value))}
                       resetKey={resetKey}
+                      disabled={loadingDinas || isDinasEmpty}
                     />
                   </div>
 
@@ -225,36 +293,42 @@ const FormPengirimanLangsung = () => {
                     required
                     type="text"
                     value={formState.judul}
-                    onChange={(e) => pengirimanLangsungFormField('judul', e.target.value)}
+                    onChange={(e) => updateFormField('judul', e.target.value)}
                     placeholder="Masukkan judul pengiriman..."
+                    disabled={!formState.dinas}
                   />
 
-                  {/* Selected Documents */}
-                  <SelectedDocumentsDisplay
-                    selectedDocuments={selectedDocuments}
-                    onRemove={handleRemoveDocument}
-                    getDisplayName={getDocumentDisplayName}
-                  />
+                  {/* Conditional Section - Only show when basic info is complete */}
+                  {isBasicInfoComplete && (
+                    <>
+                      {/* Selected Documents */}
+                      <SelectedDocumentsDisplay
+                        selectedDocuments={selectedDocuments}
+                        onRemove={handleRemoveDocument}
+                        getDisplayName={getDocumentDisplayName}
+                      />
 
-                  {/* Lampiran */}
-                  <Textarea
-                    label="Lampiran"
-                    rows={6}
-                    value={formState.lampiran}
-                    onChange={(e) => pengirimanLangsungFormField('lampiran', e.target.value)}
-                    placeholder="Isi keterangan tambahan jika diperlukan..."
-                    helpText="Opsional - Tambahkan keterangan jika diperlukan"
-                  />
+                      {/* Lampiran */}
+                      <Textarea
+                        label="Lampiran"
+                        rows={6}
+                        value={formState.lampiran}
+                        onChange={(e) => updateFormField('lampiran', e.target.value)}
+                        placeholder="Isi keterangan tambahan jika diperlukan..."
+                        helpText="Opsional - Tambahkan keterangan jika diperlukan"
+                      />
 
-                  {/* File Upload - Props error dan success dihapus */}
-                  <FileUploadSection
-                    file={file}
-                    uploadProgress={uploadProgress}
-                    isUploading={isUploading}
-                    isUploadComplete={isUploadComplete}
-                    onFileChange={handleFileChange}
-                    onRemoveFile={handleRemoveFile}
-                  />
+                      {/* File Upload */}
+                      <FileUploadSection
+                        file={file}
+                        uploadProgress={uploadProgress}
+                        isUploading={isUploading}
+                        isUploadComplete={isUploadComplete}
+                        onFileChange={handleFileChange}
+                        onRemoveFile={handleRemoveFile}
+                      />
+                    </>
+                  )}
 
                   {/* Submit Button */}
                   <Button
@@ -263,26 +337,63 @@ const FormPengirimanLangsung = () => {
                     size="lg"
                     fullWidth
                     isLoading={loading}
-                    disabled={loading || isUploading}
+                    disabled={isSubmitDisabled}
                   >
-                    {loading ? "Mengirim..." : "Kirim Dokumen"}
+                    {loading 
+                      ? "Mengirim..." 
+                      : !formState.dinas 
+                      ? "Pilih Kepada Dinas" 
+                      : !formState.judul.trim()
+                      ? "Isi Judul"
+                      : "Kirim Dokumen"}
                   </Button>
                 </div>
 
-                {/* Right Column - Document List */}
-                <div className="col-span-12 lg:col-span-6">
-                  <DocumentList
-                    documents={documents}
-                    selectedDocuments={selectedDocuments}
-                    loading={docsLoading}
-                    searchTerm={searchTerm}
-                    showAll={showAll}
-                    onSearchChange={setSearchTerm}
-                    onCheckboxChange={handleCheckboxChange}
-                    onShowAllToggle={() => setShowAll(true)}
-                    getDisplayName={getDocumentDisplayName}
-                  />
-                </div>
+                {/* Right Column - Document List - Animated Entry */}
+                {isBasicInfoComplete && (
+                  <div className="col-span-12 lg:col-span-6 animate-slideInRight">
+                    <DocumentList
+                      documents={documents}
+                      selectedDocuments={selectedDocuments}
+                      loading={docsLoading}
+                      searchTerm={searchTerm}
+                      showAll={showAll}
+                      onSearchChange={setSearchTerm}
+                      onCheckboxChange={handleCheckboxChange}
+                      onShowAllToggle={() => setShowAll(true)}
+                      getDisplayName={getDocumentDisplayName}
+                    />
+                  </div>
+                )}
+
+                {/* Right Column - Placeholder when form incomplete */}
+                {!isBasicInfoComplete && (
+                  <div className="hidden lg:flex col-span-6 items-center justify-center">
+                    <div className="text-center p-8 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-dark-3/50">
+                      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/30 mb-4">
+                        <svg
+                          className="w-8 h-8 text-blue-600 dark:text-blue-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                          />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Pilih Dokumen
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                        Lengkapi <span className="font-semibold">Kepada Dinas</span> dan <span className="font-semibold">Judul</span> terlebih dahulu untuk memilih dokumen
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </form>
           </div>
@@ -294,7 +405,7 @@ const FormPengirimanLangsung = () => {
         isOpen={isSuccessModalOpen}
         onClose={() => setIsSuccessModalOpen(false)}
         title="Berhasil!"
-        message="Dokumen berhasil dikirim ke Admin."
+        message="Dokumen berhasil dikirim."
         buttonText="Kembali ke Form"
         onButtonClick={handleSuccessButtonClick}
       />
@@ -305,6 +416,24 @@ const FormPengirimanLangsung = () => {
         title={errorTitle}
         message={errorMessage}
       />
+      
+      {/* Custom Styles for Animations */}
+      <style jsx>{`
+        @keyframes slideInRight {
+          from {
+            opacity: 0;
+            transform: translateX(30px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        .animate-slideInRight {
+          animation: slideInRight 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+      `}</style>
     </>
   );
 };
