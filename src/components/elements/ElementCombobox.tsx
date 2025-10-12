@@ -54,7 +54,7 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
   return (
     <div className="relative">
       {label && (
-        <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+        <label className="mb-2 block text-[20px] font-semibold text-dark dark:text-white">
           {label}
         </label>
       )}
@@ -64,7 +64,7 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
           value={selectedOption}
           onChange={handleChange}
           disabled={disabled}
-          className={`relative w-full appearance-none rounded-lg bg-transparent px-5 py-3 outline-none transition border focus:border-blue-500 dark:bg-dark-2 dark:text-white dark:focus:border-primary ${
+          className={`relative text-[18px] w-full appearance-none rounded-lg bg-transparent px-5 py-3 outline-none transition border focus:border-blue-500 dark:bg-dark-2 dark:text-white dark:focus:border-primary ${
             disabled
               ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
               : isOptionSelected 

@@ -20,13 +20,13 @@ export const Input: React.FC<InputProps> = ({
   return (
     <div className="mb-4.5">
       {label && (
-        <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+        <label className="mb-2 block text-[20px] font-semibold text-dark dark:text-white">
           {label}
           {required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <input
-        className={`w-full rounded-lg bg-transparent px-5 py-3 text-dark outline-none transition border focus:border-blue-500 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary ${
+        className={`w-full text-[18px] rounded-lg bg-transparent px-5 py-3 text-dark outline-none transition border focus:border-blue-500 dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary ${
           disabled
             ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
             : error 

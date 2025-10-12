@@ -128,9 +128,9 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative text-[18px]" ref={containerRef}>
       {label && (
-        <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+        <label className="mb-2 block text-[18px] font-semibold text-dark dark:text-white">
           {label}
         </label>
       )}
