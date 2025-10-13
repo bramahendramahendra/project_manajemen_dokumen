@@ -1,4 +1,3 @@
-// User cookie interface
 export interface UserCookie {
   userid: string;
   name: string;
