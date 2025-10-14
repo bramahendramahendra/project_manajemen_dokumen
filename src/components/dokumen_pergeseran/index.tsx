@@ -47,7 +47,7 @@ const MainPage = () => {
     return cleanup;
   }, [debounceSearch]);
 
-  const fetchData = async (page = 1, perPage = 10, filterParams = {}) => {
+  const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     setLoading(true);
     setError(null);
     
@@ -104,7 +104,7 @@ const MainPage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  };
+  },[]);
 
   // useEffect untuk fetch data
   useEffect(() => {
@@ -112,7 +112,7 @@ const MainPage = () => {
       setSearchLoading(true);
     }
     fetchData(currentPage, itemsPerPage, filters);
-  }, [searchTerm, currentPage, itemsPerPage, filters]);
+  }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
   // Auto hide success message after 5 seconds
   useEffect(() => {
@@ -136,9 +136,9 @@ const MainPage = () => {
   };
 
   // Handler untuk retry ketika error
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
-  };
+  }, [fetchData, currentPage, itemsPerPage, filters]);
 
   // Handler untuk clear search
   const handleClearSearch = () => {
@@ -171,7 +171,7 @@ const MainPage = () => {
       const encrypted = encryptObject({ id, nama }, user);
       const formattedUrl = nama.replace(/\s+/g, "-").toLowerCase();
       
-      router.push(`/laporan_pergeseran/${formattedUrl}?$${key}=${encrypted}`);
+      router.push(`/dokumen_pergeseran/${formattedUrl}?$${key}=${encrypted}`);
     } catch (error) {
       console.error("Error encrypting data:", error);
       alert("Terjadi kesalahan saat memproses data!");
