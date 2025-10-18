@@ -31,7 +31,7 @@ const Pagination = ({
       <div className="flex items-center space-x-4">
         {/* Dropdown untuk memilih jumlah item per halaman */}
         <div className="relative inline-block">
-          <span className="mr-2 text-sm text-gray-600 dark:text-gray-400">Show per page:</span>
+          <span className="mr-2 text-[15px] text-gray-600 dark:text-gray-400">Show per page:</span>
           <select
             value={itemsPerPage}
             onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
@@ -54,7 +54,7 @@ const Pagination = ({
         </div>
 
         {/* Records count */}
-        <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
+        <div className="text-[15px] text-gray-600 dark:text-gray-400 whitespace-nowrap">
           {!loading && totalRecords > 0 && (
             <>
               {isSearchActive && (

@@ -680,12 +680,12 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
         {/* Header dengan nama dinas */}
         <div className="mb-5 flex items-center justify-between border-b border-gray-100 pb-4">
           <div>
-            <span className="rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white">
+            <span className="rounded-full bg-blue-600 px-4 py-2 text-[18px] font-medium text-white">
               {namaDinas}
             </span>
             {/* <h2 className="text-2xl font-bold text-gray-800">{namaDinas}</h2> */}
-            <p className="mt-3 text-sm text-gray-500">
-              Dokumen Masuk: <span className="font-medium text-blue-600">{filteredData.length}</span> item
+            <p className="mt-3 text-[15px] text-gray-500">
+              Dokumen Masuk: <span className="font-medium text-[15px] text-blue-600">{filteredData.length}</span> item
             </p>
           </div>
           {searchLoading && (
@@ -704,7 +704,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Cari pesan..."
-                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+                className="w-full pl-10 pr-10 py-2.5 text-[17px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
@@ -777,7 +777,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
                       
                       {/* Badge Pesan Baru - Updated with condition */}
                       {showNewBadge && (
-                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200 animate-pulse">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[15px] font-medium bg-red-100 text-red-700 border border-red-200 animate-pulse">
                           <svg 
                             className="w-3 h-3 mr-1" 
                             fill="currentColor" 
@@ -796,7 +796,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
                       
                       {/* Badge Countdown dengan Tooltip */}
                       <div className="relative group">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${badgeColor} cursor-help`}>
+                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[15px] font-medium border ${badgeColor} cursor-help`}>
                           <svg 
                             className="w-3 h-3 mr-1" 
                             fill="none" 
@@ -826,19 +826,19 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
                     </div>
                     
                     <div className="flex items-center mt-1">
-                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                      <div className="h-7 w-7 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-600 mr-3">{item.dinas_pengirim}</span>
+                      <span className="text-[15px] text-gray-600 mr-3">{item.dinas_pengirim}</span>
                       
-                      <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                      <div className="h-7 w-7 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full mr-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                           <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
                         </svg>
                       </div>
-                      <span className="text-sm text-gray-600">{formatIndonesianDateOnly(item.tanggal_pengirim)}</span>
+                      <span className="text-[15px] text-gray-600">{formatIndonesianDateOnly(item.tanggal_pengirim)}</span>
                     </div>
                   </div>
                 
@@ -849,7 +849,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
                       <button
                         onClick={() => openMessageModal(item.id)}
                         disabled={loadingMessage}
-                        className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="rounded-lg bg-emerald-50 px-4 py-2 text-[15px] font-medium text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <div className="flex items-center">
                           {loadingMessage ? (

@@ -20,7 +20,7 @@ const Pagination9 = ({
     <div className="my-4 flex justify-between items-center xl:pr-7.5">
       {/* Dropdown untuk memilih jumlah item per halaman */}
       <div className="relative inline-block">
-  <span className="mr-2">Show per page:</span>
+  <span className="mr-2 text-[15px]">Show per page:</span>
   <select
     value={itemsPerPage}
     onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
