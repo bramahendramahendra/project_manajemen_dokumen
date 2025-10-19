@@ -13,9 +13,9 @@ const FileUploadSection: React.FC<FileUploadSingleSectionProps> = ({
 }) => {
   return (
     <div className="mb-5">
-      <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+      <label className="mb-2 block text-[20px] font-semibold text-dark dark:text-white">
         Upload File
-        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+        <span className="ml-2 text-[14px] text-gray-500 dark:text-gray-400">(opsional)</span>
       </label>
       
       {/* Upload Area */}
@@ -47,13 +47,13 @@ const FileUploadSection: React.FC<FileUploadSingleSectionProps> = ({
           </div>
           
           <div className="text-center">
-            <p className="text-sm font-medium text-dark dark:text-white">
+            <p className="text-[17px] font-medium text-dark dark:text-white">
               <span className="text-blue-600 dark:text-blue-400">Klik untuk upload</span> atau drag & drop
             </p>
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-[17px] text-gray-500 dark:text-gray-400">
               PNG, JPG, GIF, PDF, DOC, DOCX, ZIP, RAR
             </p>
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-[17px] text-gray-400">
               Max: 100MB (arsip) • 10MB (file lainnya)
             </p>
           </div>

@@ -224,7 +224,7 @@ const UploadDokumen = () => {
           <h4 className="text-2xl font-bold text-dark dark:text-white">
             Upload Dokumen
           </h4>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+          <p className="mt-2 text-[18px] text-gray-600 dark:text-gray-400">
             Lengkapi formulir di bawah ini untuk mengupload dokumen Anda
           </p>
         </div>
@@ -275,7 +275,7 @@ const UploadDokumen = () => {
             {/* Jenis Combobox */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-dark dark:text-white">
+                <label className="block text-[20px] font-semibold text-dark dark:text-white">
                   Jenis <span className="text-red-500">*</span>
                 </label>
                 {loadingJenis && (
@@ -302,7 +302,7 @@ const UploadDokumen = () => {
             {formState.jenis !== 0 && (
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-semibold text-dark dark:text-white">
+                  <label className="block text-[20px] font-semibold text-dark dark:text-white">
                     Sub Jenis
                     {!loadingSubjenis && !isSubjenisEmpty && optionSubjenis.length > 0 && (
                       <span className="text-red-500 ml-1">*</span>
@@ -331,7 +331,7 @@ const UploadDokumen = () => {
 
             {/* Tahun Combobox */}
             <div>
-              <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+              <label className="mb-2 block text-[20px] font-semibold text-dark dark:text-white">
                 Tahun <span className="text-red-500">*</span>
               </label>
               <ElementCombobox

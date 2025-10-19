@@ -645,7 +645,7 @@ const MainPage = () => {
             <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
-            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+            <p className="text-[18px] font-medium text-orange-800 dark:text-orange-200">
               Data master sedang dimuat atau belum tersedia.
             </p>
           </div>
@@ -660,7 +660,7 @@ const MainPage = () => {
             <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
-            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+            <p className="text-[18px] font-medium text-orange-800 dark:text-orange-200">
               Pilih Perihal terlebih dahulu untuk melanjutkan.
             </p>
           </div>
@@ -675,7 +675,7 @@ const MainPage = () => {
             <svg className="w-5 h-5 text-orange-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
-            <p className="text-sm font-medium text-orange-800 dark:text-orange-200">
+            <p className="text-[18px] font-medium text-orange-800 dark:text-orange-200">
               Pilih Sub Perihal untuk melanjutkan.
             </p>
           </div>
@@ -701,7 +701,7 @@ const MainPage = () => {
     <div className="col-span-12 xl:col-span-12">
       <div className="overflow-hidden rounded-[10px] bg-white shadow-md dark:bg-gray-dark dark:shadow-card">
         <div className="mb-4 flex items-center justify-between px-7.5 pt-7.5">
-          <h4 className="text-xl font-semibold text-black dark:text-white">
+          <h4 className="text-[24px] font-semibold text-black dark:text-white">
             Form Pergeseran
           </h4>
         </div>
@@ -737,7 +737,7 @@ const MainPage = () => {
             {/* Dropdown Level 1 - Kategori Utama */}
             <div className="relative">
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-[20px] font-medium text-gray-700">
                   Perihal Utama <span className="text-red-500">*</span>
                 </label>
                 {loadingPerihal && (
@@ -753,7 +753,7 @@ const MainPage = () => {
                 }
               >
                 <span
-                  className={`truncate ${kategoriUtama ? "text-gray-900" : "text-gray-400"}`}
+                  className={`truncate text-[18px] ${kategoriUtama ? "text-gray-900" : "text-gray-400"}`}
                 >
                   {loadingPerihal
                     ? "Memuat data perihal..."
@@ -912,7 +912,7 @@ const MainPage = () => {
                   ? "Lengkapi data master terlebih dahulu" 
                   : "Deskripsi alasan pergeseran"
               }
-              className={`h-28 w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`h-28 text-[18px] w-full rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                 !isMasterDataComplete()
                   ? "bg-gray-50 text-gray-500 cursor-not-allowed"
                   : ""

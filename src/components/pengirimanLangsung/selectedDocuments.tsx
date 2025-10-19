@@ -8,9 +8,9 @@ const SelectedDocumentsDisplay: React.FC<SelectedDocumentsDisplayProps> = ({
 }) => {
   return (
     <div className="mb-5">
-      <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+      <label className="mb-2 block text-[20px] font-semibold text-dark dark:text-white">
         Dokumen Yang Dipilih
-        <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+        <span className="ml-2 text-sm text-gray-500 dark:text-gray-400">(opsional)</span>
       </label>
       <div className="min-h-[80px] rounded-xl border border-gray-200 bg-gray-50 dark:border-dark-3 dark:bg-dark-2 p-4 transition-all">
         {selectedDocuments.length > 0 ? (
@@ -74,7 +74,7 @@ const SelectedDocumentsDisplay: React.FC<SelectedDocumentsDisplayProps> = ({
                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
-            <p className="text-sm leading-relaxed">
+            <p className="text-[16px] leading-relaxed">
               Belum ada dokumen yang dipilih. Anda bisa memilih dokumen atau lanjutkan tanpa memilih dokumen.
             </p>
           </div>
