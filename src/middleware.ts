@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Base path dari environment variable
-const BASE_PATH = process.env.NEXT_PUBLIC_APP_URL?.includes('/testing') ? '/testing' : '';
+// const BASE_PATH = process.env.NEXT_PUBLIC_APP_URL?.includes('/testing') ? '/testing' : '';
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 const DEBUG_MODE = process.env.NEXT_PUBLIC_DEBUG_MODE === 'true';
 
 // Helper function untuk normalize path (remove base path jika ada)
@@ -54,13 +55,6 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Jika user sudah login dan mencoba akses halaman login
-  // if (userCookie && normalizedPath === "/login") {
-  //   if (DEBUG_MODE) {
-  //     console.log('[Middleware] Redirecting authenticated user to dashboard');
-  //   }
-  //   return NextResponse.redirect(createURL("/dashboard1", request.url));
-  // }
 
   // Jika user belum login
   if (!userCookie) {
@@ -74,6 +68,14 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(createURL("/login", request.url));
     }
   }
+  
+  // Jika user sudah login dan mencoba akses halaman login
+  // if (userCookie && normalizedPath === "/login") {
+  //   if (DEBUG_MODE) {
+  //     console.log('[Middleware] Redirecting authenticated user to dashboard');
+  //   }
+  //   return NextResponse.redirect(createURL("/dashboard", request.url));
+  // }
 
   return NextResponse.next();
 }

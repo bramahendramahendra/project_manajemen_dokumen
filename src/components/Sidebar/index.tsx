@@ -19,6 +19,7 @@ import LaporanIcon from "@/components/Icons/LaporanIcon";
 import PergeseranIcon from "@/components/Icons/PergeseranIcon";
 import PesanMasukIcon from "@/components/Icons/PesanMasukIcon";
 import DokumenMasukIcon from "@/components/Icons/DokumenMasukIcon";
+import DokumenPergeseranIcon from "@/components/Icons/DokumenPergeseranIcon";
 import UserIcon from "@/components/Icons/UserIcon";
 import MenuIcon from "@/components/Icons/MenuIcon";
 import SettingIcon from "@/components/Icons/SettingIcon";
@@ -40,16 +41,10 @@ const iconMap: Record<string, JSX.Element> = {
   PergeseranIcon: <PergeseranIcon />,
   PesanMasukIcon: <PesanMasukIcon />,
   DokumenMasukIcon: <DokumenMasukIcon />,
+  DokumenPergeseranIcon: <DokumenPergeseranIcon />,
   UserIcon: <UserIcon />,
   MenuIcon: <MenuIcon />,
   SettingIcon: <SettingIcon />,
-};
-
-// Mapping code_menu ke code_notif
-const menuNotifMapping: Record<string, number> = {
-  "0105": 1, // Validation Upload -> code_notif 1
-  "0110": 2, // Dokumen Masuk -> code_notif 2
-  // Tambahkan mapping lain sesuai kebutuhan
 };
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
@@ -62,11 +57,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const [showGuidePopup, setShowGuidePopup] = useState<boolean>(false);
   const [isDownloading, setIsDownloading] = useState<boolean>(false);
   
-  // Gunakan menu context
-  const { menuGroups, loading: menuLoading, error: menuError } = useMenu();
+  // Gunakan menu context - sekarang dengan menuNotifMapping
+  const { menuGroups, loading: menuLoading, error: menuError, menuNotifMapping } = useMenu();
   
-  // Ref untuk tracking subscription
+  // Ref untuk tracking subscription dan prevent multiple fetch
   const subscriptionRefs = useRef<(() => void)[]>([]);
+  const hasFetchedInitial = useRef(false);
 
   // Helper function untuk mendapatkan dinas_id
   const getUserDinasId = (): number => {
@@ -149,17 +145,34 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     }
   };
 
-  // Initial fetch untuk notification count semua menu
+  // Initial fetch untuk notification count semua menu - HANYA SEKALI
   useEffect(() => {
     const fetchInitialNotifCounts = async () => {
+      // Prevent multiple fetches
+      if (hasFetchedInitial.current) {
+        console.log('[Sidebar] Already fetched initial counts, skipping...');
+        return;
+      }
+
+      // Tunggu sampai menuNotifMapping terload
+      if (Object.keys(menuNotifMapping).length === 0) {
+        console.log('[Sidebar] Waiting for menuNotifMapping to load...');
+        return;
+      }
+
       try {
+        hasFetchedInitial.current = true;
         setLoading(true);
         const counts: Record<string, number> = {};
         
+        // Dapatkan unique code_notif dari mapping
         const uniqueCodeNotifs = Array.from(new Set(Object.values(menuNotifMapping)));
         
         // Dapatkan dinas_id
         const dinasId = getUserDinasId();
+        
+        console.log('[Sidebar] Fetching initial counts for code_notifs:', uniqueCodeNotifs);
+        console.log('[Sidebar] Using menuNotifMapping:', menuNotifMapping);
         
         await Promise.all(uniqueCodeNotifs.map(async (codeNotif) => {
           try {
@@ -171,34 +184,49 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
             if (res.ok) {
               const json = await res.json();
               if (json.responseCode === 200) {
+                // Map ke code_menu yang sesuai
                 Object.entries(menuNotifMapping).forEach(([codeMenu, mappedCodeNotif]) => {
                   if (mappedCodeNotif === codeNotif) {
                     counts[codeMenu] = json.responseData.unread_count || 0;
+                    console.log(`[Sidebar] Mapped code_menu ${codeMenu} to count ${json.responseData.unread_count}`);
                   }
                 });
               }
             }
           } catch (err) {
-            console.error(`Failed to fetch notif count for code_notif ${codeNotif}:`, err);
+            console.error(`[Sidebar] Failed to fetch notif count for code_notif ${codeNotif}:`, err);
           }
         }));
         
+        console.log('[Sidebar] Initial notif counts:', counts);
         setNotifCounts(counts);
       } catch (err: any) {
         setError(err.message === "Failed to fetch" ? "Data tidak ditemukan" : err.message);
-        console.error("Failed to fetch initial notif counts:", err);
+        console.error("[Sidebar] Failed to fetch initial notif counts:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchInitialNotifCounts();
-  }, []);
+    // Only fetch if we have mapping and haven't fetched yet
+    if (Object.keys(menuNotifMapping).length > 0 && !hasFetchedInitial.current) {
+      fetchInitialNotifCounts();
+    }
+  }, [menuNotifMapping]); // Only depend on menuNotifMapping
 
-  // Setup SSE connection dan subscriptions
+  // Setup SSE connection dan subscriptions - HANYA SEKALI
   useEffect(() => {
+    // Tunggu sampai menuNotifMapping terload
+    if (Object.keys(menuNotifMapping).length === 0) {
+      console.log('[Sidebar] Waiting for menuNotifMapping to load for SSE...');
+      return;
+    }
+
+    // Cleanup existing subscriptions
     subscriptionRefs.current.forEach(unsubscribe => unsubscribe());
     subscriptionRefs.current = [];
+
+    console.log('[Sidebar] Setting up SSE subscriptions...');
 
     const unsubscribeSidebar = notificationClient.subscribe('sidebar', (data: any) => {
       if (DEBUG_MODE) console.log('[SSE] Received sidebar data:', data);
@@ -207,13 +235,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
         setNotifCounts(prevCounts => {
           const updatedCounts = { ...prevCounts };
           
+          // Update semua code_menu yang map ke code_notif ini
           Object.entries(menuNotifMapping).forEach(([codeMenu, codeNotif]) => {
             if (codeNotif === data.code_notif) {
               updatedCounts[codeMenu] = data.unread_count;
+              if (DEBUG_MODE) console.log(`[SSE] Updated ${codeMenu} to ${data.unread_count}`);
             }
           });
           
-          if (DEBUG_MODE) console.log('[SSE] Updated notif counts:', updatedCounts);
           return updatedCounts;
         });
         
@@ -222,7 +251,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     });
 
     const unsubscribeError = notificationClient.subscribe('error', (error: any) => {
-      if (DEBUG_MODE) console.error('SSE Error in sidebar:', error);
+      if (DEBUG_MODE) console.error('[SSE] Error in sidebar:', error);
     });
 
     const unsubscribeConnection = notificationClient.subscribe('connection', (data: any) => {
@@ -240,10 +269,11 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
     notificationClient.connect();
 
     return () => {
+      console.log('[Sidebar] Cleaning up SSE subscriptions...');
       subscriptionRefs.current.forEach(unsubscribe => unsubscribe());
       subscriptionRefs.current = [];
     };
-  }, []);
+  }, [menuNotifMapping]); // Only depend on menuNotifMapping
 
   // Update menu groups dengan notification count
   const updateMenuWithNotifications = (groups: any[]) => {
@@ -264,9 +294,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
   const displayMenuGroups = updateMenuWithNotifications(menuGroups);
 
+  // Debug log - controlled
   useEffect(() => {
-    if (DEBUG_MODE) console.log('[Sidebar] Current notifCounts:', notifCounts);
-  }, [notifCounts]);
+    if (DEBUG_MODE) {
+      console.log('[Sidebar] Current state:', {
+        notifCounts,
+        menuNotifMapping,
+        hasFetchedInitial: hasFetchedInitial.current,
+      });
+    }
+  }, [notifCounts, menuNotifMapping]);
 
   if (menuLoading || loading) {
     return (
@@ -386,6 +423,12 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     </p>
                     <p className="text-xs text-blue-600">
                       Dinas ID: {getUserDinasId()}
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Mapping: {JSON.stringify(menuNotifMapping)}
+                    </p>
+                    <p className="text-xs text-blue-600">
+                      Fetched: {hasFetchedInitial.current ? 'Yes' : 'No'}
                     </p>
                   </div>
                 </div>

@@ -1,4 +1,3 @@
-// src/components/upload/FileUpload.tsx
 import React from 'react';
 import Image from 'next/image';
 import { FileUploadMultiSectionProps } from '@/types/general';
