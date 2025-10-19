@@ -1,15 +1,17 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
-import { encryptObject } from "@/utils/crypto";
-import Cookies from "js-cookie";
 import { HiOutlineDocumentDownload, HiOutlineTrash } from "react-icons/hi";
 import { HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { LaporanPergeseranDocument, LaporanPergeseranDocumentResponse } from "@/types/laporanPergeseran";
 import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
 import Pagination from "@/components/pagination/Pagination";
 
-const MainPage = () => {
+interface Props {
+  idDinas: number | null;
+}
+
+const MainPage = ({ idDinas }: Props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -41,9 +43,6 @@ const MainPage = () => {
     search: ''
   });
 
-  const user = JSON.parse(Cookies.get("user") || "{}");
-  const userDinas = user.dinas || "";
-
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
     setCurrentPage(1);
@@ -71,19 +70,17 @@ const MainPage = () => {
     return cleanup;
   }, [debounceSearch]);
 
+  // Wrap fetchData dengan useCallback untuk mencegah re-render yang tidak perlu
   const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
-    setLoading(true);
-    setError(null);
-
-    if (!userDinas) {
-      setError("ID Dinas tidak ditemukan");
+    if (!idDinas) {
+      setError("ID tidak ditemukan");
       setLoading(false);
       return;
     }
-
+    
+    setLoading(true);
+    setError(null);
     try {
-      // const user = JSON.parse(Cookies.get("user") || "{}");
-
       // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -96,7 +93,7 @@ const MainPage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/reports/pergeseran/${user.dinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran-dokumen/${idDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data laporan pergeseran dokumen tidak ditemukan");
@@ -143,7 +140,7 @@ const MainPage = () => {
       setLoading(false);
       setSearchLoading(false);
     }
-  },[userDinas]);
+  }, [idDinas]); // Hanya idDinas yang menjadi dependency
 
   // Fetch data dari API
   useEffect(() => {
@@ -308,7 +305,6 @@ const MainPage = () => {
       //   id: id,
       //   deskripsi: deskripsi,
       // };
-
 
       try {
         const response = await apiRequest(`/direct-shipping/delete/${id}`, 'POST');
@@ -476,18 +472,6 @@ const MainPage = () => {
           </div>
         )}
 
-
-
-
-
-
-
-        
-
-
-
-
-
         <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
@@ -542,7 +526,7 @@ const MainPage = () => {
                       </button>
 
                       {/* Tombol Delete */}
-                      {/* <button
+                      <button
                         id={`delete-btn-${index}`}
                         className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
                         onClick={() => handleDeleteClick(item.id, item.deskripsi)}
@@ -553,7 +537,7 @@ const MainPage = () => {
                         <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
                           Delete
                         </span>
-                      </button> */}
+                      </button>
                     </div>
                   </td>
                 </tr>

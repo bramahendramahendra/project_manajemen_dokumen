@@ -223,7 +223,7 @@ const PengelolaanDokumen = () => {
           <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
             {filters.search ? "Tidak ada hasil pencarian" : "Data dokumen belum tersedia"}
           </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+          <p className="text-gray-400 text-[17px] dark:text-gray-500 mt-2">
             {filters.search 
               ? `Tidak ditemukan hasil untuk &quot;${filters.search}&quot;`
               : "Belum ada dokumen yang terupload"
@@ -279,7 +279,7 @@ const PengelolaanDokumen = () => {
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
-            <h2 className="text-xl font-semibold text-dark dark:text-white">
+            <h2 className="text-[22px] font-semibold text-dark dark:text-white">
               Dokumen yang sudah terupload
             </h2>
             {searchLoading && (
@@ -300,7 +300,7 @@ const PengelolaanDokumen = () => {
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Cari uraian, atau jumlah..."
-                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+                className="w-full pl-10 pr-10 py-2.5 text-[17px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
@@ -346,13 +346,13 @@ const PengelolaanDokumen = () => {
           <table className="w-full table-auto">
             <thead>
               <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
-                <th className="min-w-[220px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
+                <th className="min-w-[220px] text-[20px] px-4 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
                   Uraian
                 </th>
-                <th className="min-w-[120px] px-4 py-4 font-medium text-dark dark:text-white text-center">
+                <th className="min-w-[120px] text-[20px] px-4 py-4 font-medium text-dark dark:text-white text-center">
                   Jumlah
                 </th>
-                <th className="px-4 py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
+                <th className="px-4 text-[20px] py-4 text-right font-medium text-dark dark:text-white xl:pr-7.5">
                   Aksi
                 </th>
               </tr>

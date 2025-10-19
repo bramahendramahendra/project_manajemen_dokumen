@@ -1,4 +1,3 @@
-// src/components/upload/FileUpload.tsx
 import React from 'react';
 import Image from 'next/image';
 import { FileUploadMultiSectionProps } from '@/types/general';
@@ -17,7 +16,7 @@ export const FileUpload: React.FC<FileUploadMultiSectionProps> = ({
     <div className="space-y-4">
       {/* Upload Area */}
       <div className="mb-4.5">
-        <label className="mb-3 block text-sm font-semibold text-dark dark:text-white">
+        <label className="mb-3 block text-[20px] font-semibold text-dark dark:text-white">
           Upload File <span className="text-red-500">*</span>
         </label>
         <div
@@ -57,7 +56,7 @@ export const FileUpload: React.FC<FileUploadMultiSectionProps> = ({
             </div>
             
             <div className="text-center">
-              <p className={`text-sm font-medium ${disabled ? 'text-gray-500' : 'text-dark dark:text-white'}`}>
+              <p className={`text-[18px] font-medium ${disabled ? 'text-gray-500' : 'text-dark dark:text-white'}`}>
                 {disabled ? (
                   'Lengkapi data master terlebih dahulu'
                 ) : (
@@ -68,10 +67,10 @@ export const FileUpload: React.FC<FileUploadMultiSectionProps> = ({
               </p>
               {!disabled && (
                 <>
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p className="mt-1 text-[18px] text-gray-500 dark:text-gray-400">
                     PNG, JPG, JPEG, GIF, SVG, PDF, DOC, DOCX, ZIP, RAR
                   </p>
-                  <p className="mt-1 text-xs text-gray-400">
+                  <p className="mt-1 text-[18px] text-gray-400">
                     Max: 100MB (arsip) • 25MB (dokumen) • 10MB (gambar)
                   </p>
                 </>

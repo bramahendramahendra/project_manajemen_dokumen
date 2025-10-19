@@ -7,7 +7,7 @@ interface DinasCardProps {
 export const DinasCard: React.FC<DinasCardProps> = ({ namaDinas }) => {
   return (
     <div className="mb-5">
-      <label className="mb-2 block text-sm font-semibold text-dark dark:text-white">
+      <label className="mb-2 block text-[20px] font-semibold text-dark dark:text-white">
         Dinas <span className="text-red-500">*</span>
       </label>
       <div className="relative w-full overflow-hidden">
@@ -29,17 +29,17 @@ export const DinasCard: React.FC<DinasCardProps> = ({ namaDinas }) => {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <p className="text-[14px] font-medium text-gray-600 dark:text-gray-400 mb-1">
               Instansi Dinas
             </p>
-            <p className="text-base font-bold text-dark dark:text-white truncate">
+            <p className="text-[18px] font-bold text-dark dark:text-white truncate">
               {namaDinas || "Nama Instansi Dinas"}
             </p>
           </div>
           <div className="ml-3 flex-shrink-0">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900/30">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg ">
               <svg 
-                className="h-5 w-5 text-green-600 dark:text-green-400" 
+                className="h-6 w-6 text-green-600 dark:text-green-400" 
                 fill="currentColor" 
                 viewBox="0 0 20 20"
               >

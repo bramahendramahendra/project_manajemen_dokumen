@@ -21,9 +21,9 @@ const DocumentList: React.FC<DocumentListProps> = ({
   return (
     <div className="mb-4.5">
       <div className="flex items-center justify-between mb-3">
-        <label className="block text-sm font-semibold text-dark dark:text-white">
+        <label className="block text-[20] font-semibold text-dark dark:text-white">
           Pilih Dokumen
-          <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">(opsional)</span>
+          <span className="ml-2 text-[14px] text-gray-500 dark:text-gray-400">(opsional)</span>
         </label>
         <div className="relative">
           <input
@@ -31,7 +31,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
             placeholder="Cari dokumen..."
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-[200px] rounded-lg bg-transparent pl-10 pr-4 py-2 text-sm text-dark border border-gray-300 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-dark-3 dark:bg-dark-2 dark:text-white transition-all"
+            className="w-[200px] rounded-lg bg-transparent pl-10 pr-4 py-2 text-[17px] text-dark border border-gray-300 placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-dark-3 dark:bg-dark-2 dark:text-white transition-all"
           />
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
@@ -51,7 +51,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
       
       <div className="rounded-xl border border-gray-200 bg-white dark:border-dark-3 dark:bg-dark-2 overflow-hidden shadow-sm">
         <div className="p-4 bg-gray-50 dark:bg-dark-3 border-b border-gray-200 dark:border-dark-3">
-          <p className="text-xs text-gray-600 dark:text-gray-400">
+          <p className="text-[16px] text-gray-600 dark:text-gray-400">
             Pilih dokumen untuk disertakan dalam pengiriman, atau langsung kirim tanpa memilih dokumen.
           </p>
         </div>
@@ -80,7 +80,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
                       isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                     }`}
                   >
-                    <span className="flex-1 text-sm font-medium text-gray-700 dark:text-gray-300 pr-4">
+                    <span className="flex-1 text-[17x] font-medium text-gray-700 dark:text-gray-300 pr-4">
                       {getDisplayName(doc)}
                     </span>
                     <input

@@ -41,7 +41,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
 
   // Fetch dinas berdasarkan level_id (DNS atau PGW)
   useEffect(() => {
-    if ((accessUser === 'DNS' || accessUser === 'PGW') && optionOfficials.length === 0) {
+    if ((accessUser === 'DNS') && optionOfficials.length === 0) {
       const fetchOfficials = async () => {
         setLoadingDinas(true);
         setError(null);
@@ -150,7 +150,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     setAccessUser(value);
     
     // Reset department ketika access user berubah
-    if (value !== 'DNS' && value !== 'PGW') {
+    if (value !== 'DNS') {
       setDepartment(0);
       setOptionOfficials([]); // Clear data dinas jika bukan DNS/PGW
     }
@@ -167,8 +167,8 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     setError(null);
     setSuccess(false);
 
-    // Validasi tambahan untuk DNS dan PGW
-    if ((accessUser === 'DNS' || accessUser === 'PGW') && (!department || department === 0)) {
+    // Validasi tambahan untuk DNS 
+    if ((accessUser === 'DNS') && (!department || department === 0)) {
       setError(`Silakan pilih nama dinas untuk ${accessUser} terlebih dahulu`);
       setLoading(false);
       return;
@@ -177,12 +177,12 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
     let finalDinas = 0;
     let finalNamaDinas = "";
 
-    if (accessUser === 'DNS' || accessUser === 'PGW') {
+    if (accessUser === 'DNS') {
       // Untuk DNS dan PGW, gunakan dinas yang dipilih
       const selectedDepartment = optionOfficials.find((opt) => opt.id === department);
       finalDinas = department;
       finalNamaDinas = selectedDepartment?.dinas || "";
-    } else if (accessUser === 'ADM' || accessUser === 'DEV') {
+    } else if (accessUser === 'ADM' || accessUser === 'DEV' || accessUser === 'PGW') {
       // Untuk ADM dan DEV, ambil dinas otomatis berdasarkan level_id
       const dinasData = await getDinasByLevelId(accessUser);
       if (dinasData) {
@@ -341,7 +341,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
               </select>
             </div>
             {/* Nama Dinas - Hanya tampil ketika accessUser === 'DNS' atau 'PGW' */}
-            {(accessUser === 'DNS' || accessUser === 'PGW') && (
+            {(accessUser === 'DNS') && (
               <div className="mb-4.5">
                 <label className="mb-2 block text-body-sm font-medium text-dark dark:text-white">
                   Nama Dinas
@@ -368,7 +368,7 @@ const FormEditUser = ({ dataEdit }: { dataEdit?: any }) => {
               </div>
             )}
             {/* Info untuk ADM dan DEV */}
-            {(accessUser === 'ADM' || accessUser === 'DEV') && (
+            {(accessUser === 'ADM' || accessUser === 'DEV' || accessUser === 'PGW') && (
               <div className="mb-4.5 p-3 bg-blue-50 border border-blue-200 rounded-[7px] dark:bg-blue-900/20 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
                   <strong>Info:</strong> Dinas untuk {accessUser} akan diisi otomatis berdasarkan level akses.

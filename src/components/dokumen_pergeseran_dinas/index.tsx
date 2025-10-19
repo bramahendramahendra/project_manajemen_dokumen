@@ -1,17 +1,15 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
+import { encryptObject } from "@/utils/crypto";
+import Cookies from "js-cookie";
 import { HiOutlineDocumentDownload, HiOutlineTrash } from "react-icons/hi";
 import { HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { LaporanPergeseranDocument, LaporanPergeseranDocumentResponse } from "@/types/laporanPergeseran";
 import { formatIndonesianDateOnly } from "@/utils/dateFormatter";
 import Pagination from "@/components/pagination/Pagination";
 
-interface Props {
-  idDinas: number | null;
-}
-
-const MainPage = ({ idDinas }: Props) => {
+const MainPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -43,6 +41,9 @@ const MainPage = ({ idDinas }: Props) => {
     search: ''
   });
 
+  const user = JSON.parse(Cookies.get("user") || "{}");
+  const userDinas = user.dinas || "";
+
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
     setCurrentPage(1);
@@ -70,17 +71,19 @@ const MainPage = ({ idDinas }: Props) => {
     return cleanup;
   }, [debounceSearch]);
 
-  // Wrap fetchData dengan useCallback untuk mencegah re-render yang tidak perlu
   const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
-    if (!idDinas) {
-      setError("ID tidak ditemukan");
+    setLoading(true);
+    setError(null);
+
+    if (!userDinas) {
+      setError("ID Dinas tidak ditemukan");
       setLoading(false);
       return;
     }
-    
-    setLoading(true);
-    setError(null);
+
     try {
+      // const user = JSON.parse(Cookies.get("user") || "{}");
+
       // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
@@ -93,7 +96,7 @@ const MainPage = ({ idDinas }: Props) => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/reports/pergeseran/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran/${user.dinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data laporan pergeseran dokumen tidak ditemukan");
@@ -140,7 +143,7 @@ const MainPage = ({ idDinas }: Props) => {
       setLoading(false);
       setSearchLoading(false);
     }
-  }, [idDinas]); // Hanya idDinas yang menjadi dependency
+  },[userDinas]);
 
   // Fetch data dari API
   useEffect(() => {
@@ -306,6 +309,7 @@ const MainPage = ({ idDinas }: Props) => {
       //   deskripsi: deskripsi,
       // };
 
+
       try {
         const response = await apiRequest(`/direct-shipping/delete/${id}`, 'POST');
         if (!response.ok) {
@@ -410,7 +414,7 @@ const MainPage = ({ idDinas }: Props) => {
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
-            <h2 className="text-xl font-semibold text-dark dark:text-white">
+            <h2 className="text-[24px] font-semibold text-dark dark:text-white">
               Daftar Dokumen Laporan Pergeseran
             </h2>
             {searchLoading && (
@@ -430,8 +434,8 @@ const MainPage = ({ idDinas }: Props) => {
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Cari uraian, tanggal upload, total files, atau status..."
-                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+                placeholder="Cari uraian, tanggal upload, dll..."
+                className="w-full pl-10 pr-10 py-2.5 text-[17px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
@@ -472,10 +476,22 @@ const MainPage = ({ idDinas }: Props) => {
           </div>
         )}
 
+
+
+
+
+
+
+        
+
+
+
+
+
         <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
+              <tr className="bg-[#F7F9FC] text-[20px] text-left dark:bg-gray-800">
                 <th className="min-w-[200px] px-4 py-4 font-medium text-dark dark:text-white">
                   Deskripsi
                 </th>
@@ -499,13 +515,13 @@ const MainPage = ({ idDinas }: Props) => {
                 >
                   <td className="px-5 py-4">
                     <div className="flex items-center">
-                      <p className="font-medium text-dark dark:text-white" title={item.deskripsi}>
+                      <p className="font-medium text-[19px] text-dark dark:text-white" title={item.deskripsi}>
                         {truncateText(item.deskripsi, 8)}
                       </p>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-center">
-                    <span className="text-dark dark:text-white">
+                    <span className="text-dark text-[19px] dark:text-white">
                       {formatIndonesianDateOnly(item.tanggal)}
                     </span>
                   </td>
@@ -526,7 +542,7 @@ const MainPage = ({ idDinas }: Props) => {
                       </button>
 
                       {/* Tombol Delete */}
-                      <button
+                      {/* <button
                         id={`delete-btn-${index}`}
                         className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
                         onClick={() => handleDeleteClick(item.id, item.deskripsi)}
@@ -537,7 +553,7 @@ const MainPage = ({ idDinas }: Props) => {
                         <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
                           Delete
                         </span>
-                      </button>
+                      </button> */}
                     </div>
                   </td>
                 </tr>
