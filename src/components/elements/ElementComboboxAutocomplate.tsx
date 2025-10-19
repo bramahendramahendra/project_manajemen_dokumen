@@ -205,10 +205,10 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
   };
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className="relative text-[18px]" ref={containerRef}>
       {label && (
         <motion.label 
-          className="mb-2 block text-sm font-semibold text-dark dark:text-white"
+          className="mb-2 block text-[18px] font-semibold text-dark dark:text-white"
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}

@@ -264,7 +264,7 @@ const FormPengirimanLangsung = () => {
                   {/* Kepada Dinas */}
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-semibold text-dark dark:text-white">
+                      <label className="block text-[18px] font-semibold text-dark dark:text-white">
                         Kepada Dinas <span className="text-red-500">*</span>
                       </label>
                       {loadingDinas && (

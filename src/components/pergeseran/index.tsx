@@ -362,7 +362,7 @@ const PergeseranForm = () => {
         {/* Header with 3D Effect */}
         <div className="mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
           <motion.h4 
-            className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+            className="text-[24px] font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
@@ -447,7 +447,7 @@ const PergeseranForm = () => {
               transition={{ delay: 0.4 }}
             >
               <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-semibold text-dark dark:text-white">
+                <label className="block text-[20px] font-semibold text-dark dark:text-white">
                   Perihal Utama <span className="text-red-500">*</span>
                 </label>
                 {loadingPerihal && (

@@ -105,7 +105,7 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
     <div className="relative">
       {label && (
         <motion.label 
-          className="mb-2 block text-sm font-semibold text-dark dark:text-white"
+          className="mb-2 block text-[20px] font-semibold text-dark dark:text-white"
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -122,7 +122,7 @@ const ElementCombobox: React.FC<ElementComboboxProps> = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setTimeout(() => setIsFocused(false), 200)}
           disabled={disabled}
-          className={`relative w-full appearance-none rounded-xl px-5 py-3.5 outline-none transition-all duration-300 border-2 text-left ${
+          className={`relative text-[18px] w-full appearance-none rounded-xl px-5 py-3.5 outline-none transition-all duration-300 border-2 text-left ${
             disabled
               ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
               : isFocused || isOpen

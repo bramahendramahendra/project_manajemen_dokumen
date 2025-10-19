@@ -205,7 +205,7 @@ const TablePage = () => {
           <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
             {filters.search ? "Tidak ada hasil pencarian" : "Belum ada dokumen"}
           </p>
-          <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+          <p className="text-gray-400 dark:text-gray-500 text-[17px] mt-2">
             {filters.search 
               ? `Tidak ditemukan hasil untuk &quot;${filters.search}&quot;`
               : "Dokumen akan muncul di sini setelah diunggah"

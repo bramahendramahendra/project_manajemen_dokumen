@@ -414,7 +414,7 @@ const MainPage = () => {
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
-            <h2 className="text-xl font-semibold text-dark dark:text-white">
+            <h2 className="text-[24px] font-semibold text-dark dark:text-white">
               Daftar Dokumen Laporan Pergeseran
             </h2>
             {searchLoading && (
@@ -434,8 +434,8 @@ const MainPage = () => {
                 type="text"
                 value={searchTerm}
                 onChange={handleSearchChange}
-                placeholder="Cari uraian, tanggal upload, total files, atau status..."
-                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+                placeholder="Cari uraian, tanggal upload, dll..."
+                className="w-full pl-10 pr-10 py-2.5 text-[17px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
@@ -491,7 +491,7 @@ const MainPage = () => {
         <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
+              <tr className="bg-[#F7F9FC] text-[20px] text-left dark:bg-gray-800">
                 <th className="min-w-[200px] px-4 py-4 font-medium text-dark dark:text-white">
                   Deskripsi
                 </th>
@@ -515,13 +515,13 @@ const MainPage = () => {
                 >
                   <td className="px-5 py-4">
                     <div className="flex items-center">
-                      <p className="font-medium text-dark dark:text-white" title={item.deskripsi}>
+                      <p className="font-medium text-[19px] text-dark dark:text-white" title={item.deskripsi}>
                         {truncateText(item.deskripsi, 8)}
                       </p>
                     </div>
                   </td>
                   <td className="px-5 py-4 text-center">
-                    <span className="text-dark dark:text-white">
+                    <span className="text-dark text-[19px] dark:text-white">
                       {formatIndonesianDateOnly(item.tanggal)}
                     </span>
                   </td>

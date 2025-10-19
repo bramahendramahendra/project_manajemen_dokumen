@@ -32,7 +32,7 @@ export const Input: React.FC<InputProps> = ({
     <div className="mb-4.5">
       {label && (
         <motion.label 
-          className="mb-2 block text-sm font-semibold text-dark dark:text-white"
+          className="mb-2 block text-[20px] font-semibold text-dark dark:text-white"
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -103,7 +103,7 @@ export const Input: React.FC<InputProps> = ({
         )}
 
         <input
-          className={`w-full rounded-lg bg-transparent px-5 py-3 text-dark outline-none transition-all duration-300 border-2 ${
+          className={`w-full text-[18px] rounded-lg bg-transparent px-5 py-3 text-dark outline-none transition-all duration-300 border-2 ${
             disabled
               ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
               : error 
@@ -267,7 +267,7 @@ export const Textarea: React.FC<TextareaProps> = ({
     <div className="mb-4.5">
       {label && (
         <motion.label 
-          className="mb-2 block text-sm font-semibold text-dark dark:text-white"
+          className="mb-2 block text-[20px] font-semibold text-dark dark:text-white"
           initial={{ opacity: 0, y: -5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
@@ -339,7 +339,7 @@ export const Textarea: React.FC<TextareaProps> = ({
 
         <textarea
           rows={rows}
-          className={`w-full rounded-lg bg-transparent px-5 py-3 text-dark outline-none transition-all duration-300 border-2 resize-none ${
+          className={`w-full text-[18px] rounded-lg bg-transparent px-5 py-3 text-dark outline-none transition-all duration-300 border-2 resize-none ${
             disabled
               ? 'border-gray-300 bg-gray-50 text-gray-500 cursor-not-allowed dark:border-gray-600 dark:bg-gray-800 dark:text-gray-400'
               : error 
@@ -412,7 +412,7 @@ export const Textarea: React.FC<TextareaProps> = ({
       <AnimatePresence mode="wait">
         {helpText && !error && (
           <motion.p 
-            className="mt-1.5 text-xs text-gray-500 dark:text-gray-400"
+            className="mt-1.5 text-[17px] text-gray-500 dark:text-gray-400"
             initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
@@ -456,7 +456,7 @@ export const Textarea: React.FC<TextareaProps> = ({
               />
             </motion.svg>
             <motion.span 
-              className="text-xs text-red-500"
+              className="text-[17px] text-red-500"
               initial={{ opacity: 0, x: -5 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
