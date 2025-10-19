@@ -306,7 +306,7 @@ const PergeseranForm = () => {
       formData.append("pembuat_id_dinas", user.dinas.toString());
       formData.append("pembuat_dinas", user.nama_dinas);
 
-      const response = await apiRequest("/pergeseran/", "POST", formData);
+      const response = await apiRequest("/pergeseran/dokumen", "POST", formData);
 
       if (!response.ok) {
         const errorData = await response.json();

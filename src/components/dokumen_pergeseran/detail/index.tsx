@@ -93,7 +93,7 @@ const MainPage = ({ idDinas }: Props) => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/reports/pergeseran/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran-dokumen/${idDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data laporan pergeseran dokumen tidak ditemukan");

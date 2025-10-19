@@ -63,7 +63,7 @@ const MainPage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
       
-      const response = await apiRequest(`/reports/pergeseran?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran-dokumen?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Laporan pergeseran tidak ditemukan");
