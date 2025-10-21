@@ -6,6 +6,8 @@ import Cookies from "js-cookie";
 import { apiRequest, downloadFileRequest } from "@/helpers/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 
+import SuccessModal from "@/components/modals/successModal";
+import ErrorModal from "@/components/modals/errorModal";
 import ElementCombobox from "@/components/elements/ElementCombobox";
 import { Textarea } from "@/components/elements/ElementInput";
 import { Alert, LoadingAlert } from "@/components/alerts/Alert";
@@ -33,6 +35,12 @@ const PergeseranForm = () => {
   // UI State
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState<boolean>(false);
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState<boolean>(false);
+  const [errorTitle, setErrorTitle] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  
   const [success, setSuccess] = useState<boolean>(false);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState<boolean>(false);
   const [resetKey, setResetKey] = useState(0);
@@ -86,6 +94,14 @@ const PergeseranForm = () => {
   ) => {
     setFormState(prev => ({ ...prev, [field]: value }));
   };
+
+    // Helper Functions
+  const showErrorModal = (title: string, message: string) => {
+    setErrorTitle(title);
+    setErrorMessage(message);
+    setIsErrorModalOpen(true);
+  };
+
 
   // Reset subkategori when kategori changes
   useEffect(() => {
@@ -265,23 +281,25 @@ const PergeseranForm = () => {
 
   // Handle Simpan
   const handleSimpan = async () => {
+    // e.preventDefault();
+
     if (!isMasterDataComplete) {
-      alert("Data master belum lengkap.");
+      showErrorModal("Validasi Gagal", "Data master belum lengkap.");
       return;
     }
 
     if (!formState.kategoriUtamaId || !formState.kategoriUtama.trim()) {
-      alert("Perihal harus dipilih");
+      showErrorModal("Validasi Gagal", "Perihal harus dipilih.");
       return;
     }
 
     if (!formState.deskripsi.trim()) {
-      alert("Deskripsi alasan pergeseran harus diisi");
+      showErrorModal("Validasi Gagal", "Deskripsi alasan pergeseran harus diisi.");
       return;
     }
 
     if (!selectedFile) {
-      alert("File Excel harus diupload");
+      showErrorModal("Validasi Gagal", "File Excel harus diupload.");
       return;
     }
 
@@ -313,35 +331,48 @@ const PergeseranForm = () => {
         throw new Error(errorData.responseDesc || "Gagal menyimpan data pergeseran");
       }
 
-      setSuccess(true);
+      setIsSuccessModalOpen(true);
 
-      // Reset form
-      setFormState({
-        kategoriUtamaId: null,
-        kategoriUtama: "",
-        subKategoriId: null,
-        subKategori: "",
-        selectedDeskripsiDetail: "",
-        deskripsi: "",
-      });
-      
-      resetExcelState();
-      setResetKey(prev => prev + 1);
-
-      const fileInput = document.getElementById("file-upload") as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = "";
-      }
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage = error instanceof Error 
         ? error.message 
         : "Terjadi kesalahan saat menyimpan data";
+
       alert(`Penyimpanan Gagal: ${errorMessage}`);
+      showErrorModal(
+        "Penyimpanan Gagal", 
+        `${errorMessage}`
+      );
       setError(errorMessage);
       setSuccess(false);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle Success Modal Close
+  const handleSuccessButtonClick = async () => {
+    setIsSuccessModalOpen(false);
+
+    // Reset form
+    setFormState({
+      kategoriUtamaId: null,
+      kategoriUtama: "",
+      subKategoriId: null,
+      subKategori: "",
+      selectedDeskripsiDetail: "",
+      deskripsi: "",
+    });
+  
+    resetExcelState();
+    setResetKey(prev => prev + 1);
+
+    const fileInput = document.getElementById("file-upload") as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
+
+    setSuccess(true);
   };
 
   // Computed values
@@ -605,6 +636,23 @@ const PergeseranForm = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Modals */}
+      <SuccessModal
+        isOpen={isSuccessModalOpen}
+        onClose={() => setIsSuccessModalOpen(false)}
+        title="Berhasil!"
+        message="Dokumen berhasil dikirim."
+        buttonText="Kembali ke Form"
+        onButtonClick={handleSuccessButtonClick}
+      />
+      
+      <ErrorModal
+        isOpen={isErrorModalOpen}
+        onClose={() => setIsErrorModalOpen(false)}
+        title={errorTitle}
+        message={errorMessage}
+      />
 
       {/* Custom CSS untuk formatting HTML deskripsi */}
       <style jsx global>{`
