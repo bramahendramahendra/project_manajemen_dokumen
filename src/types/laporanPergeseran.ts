@@ -1,6 +1,7 @@
 export type LaporanPergeseran = {
   id: number;
   nama: string;
+  jumlah: number;
 };
 
 // Tambahkan response type untuk konsistensi dengan master_dinas
@@ -23,6 +24,7 @@ export type LaporanPergeseranDocument = {
   deskripsi: string;
   tanggal: Date;
   file_unduh: string;
+  status_open: number;
   // dateObject: Date; // Untuk sorting dan display
 };
 
