@@ -44,6 +44,7 @@ export const htmlToPlainText = (
     preserveLineBreaks?: boolean;
     convertLists?: boolean;
     bulletSymbol?: string;
+    preserveFormatting?: boolean;
   } = {}
 ): string => {
   if (!html) return '';
@@ -51,7 +52,8 @@ export const htmlToPlainText = (
   const {
     preserveLineBreaks = true,
     convertLists = true,
-    bulletSymbol = '• '
+    bulletSymbol = '• ',
+    preserveFormatting = false
   } = options;
   
   let text = html;
@@ -60,26 +62,59 @@ export const htmlToPlainText = (
   text = decodeHtmlEntities(text);
   
   if (convertLists) {
-    // Convert ordered lists
-    text = text.replace(/<ol[^>]*>/gi, '');
+    // Convert ordered lists dengan numbering
+    let olCounter = 1;
+    text = text.replace(/<ol[^>]*>/gi, () => {
+      olCounter = 1;
+      return '\n';
+    });
     text = text.replace(/<\/ol>/gi, '\n');
     
     // Convert unordered lists  
-    text = text.replace(/<ul[^>]*>/gi, '');
+    text = text.replace(/<ul[^>]*>/gi, '\n');
     text = text.replace(/<\/ul>/gi, '\n');
     
-    // Convert list items to bullet points
-    text = text.replace(/<li[^>]*>/gi, bulletSymbol);
-    text = text.replace(/<\/li>/gi, ',\n');
+    // Convert list items
+    // Untuk ordered list
+    text = text.replace(/<li[^>]*>/gi, () => {
+      const result = `${olCounter}. `;
+      olCounter++;
+      return result;
+    });
+    
+    // Fallback untuk unordered (jika tidak dalam ol)
+    text = text.replace(/(?<![\d]\. )<li[^>]*>/gi, bulletSymbol);
+    
+    text = text.replace(/<\/li>/gi, '\n');
+  }
+  
+  if (preserveFormatting) {
+    // Preserve some formatting indicators
+    text = text.replace(/<strong[^>]*>/gi, '**');
+    text = text.replace(/<\/strong>/gi, '**');
+    text = text.replace(/<em[^>]*>/gi, '_');
+    text = text.replace(/<\/em>/gi, '_');
+    text = text.replace(/<u[^>]*>/gi, '__');
+    text = text.replace(/<\/u>/gi, '__');
   }
   
   if (preserveLineBreaks) {
+    // Convert headers dengan emphasis
+    text = text.replace(/<h1[^>]*>/gi, '\n=== ');
+    text = text.replace(/<\/h1>/gi, ' ===\n');
+    text = text.replace(/<h2[^>]*>/gi, '\n== ');
+    text = text.replace(/<\/h2>/gi, ' ==\n');
+    text = text.replace(/<h3[^>]*>/gi, '\n= ');
+    text = text.replace(/<\/h3>/gi, ' =\n');
+    
     // Convert various line break elements
     text = text.replace(/<br[^>]*\/?>/gi, '\n');
-    text = text.replace(/<\/p>/gi, '\n');
+    text = text.replace(/<\/p>/gi, '\n\n');
     text = text.replace(/<p[^>]*>/gi, '');
     text = text.replace(/<\/div>/gi, '\n');
     text = text.replace(/<div[^>]*>/gi, '');
+    text = text.replace(/<blockquote[^>]*>/gi, '\n" ');
+    text = text.replace(/<\/blockquote>/gi, ' "\n');
   }
   
   // Remove remaining HTML tags
@@ -98,15 +133,18 @@ export const htmlToPlainText = (
  */
 export const cleanupTextFormatting = (text: string): string => {
   return text
-    // Remove excessive whitespace
+    // Remove excessive whitespace (tapi keep single space)
     .replace(/[ \t]+/g, ' ')
-    // Remove excessive line breaks
-    .replace(/\n\s*\n\s*\n/g, '\n\n')
-    // Clean up trailing commas and spaces
-    .replace(/,\s*$/gm, '')
-    .replace(/,\s*\n/g, ',\n')
+    // Remove excessive line breaks (max 2 consecutive)
+    .replace(/\n\s*\n\s*\n+/g, '\n\n')
+    // Clean up leading spaces on each line
+    .replace(/\n[ \t]+/g, '\n')
+    // Clean up trailing spaces on each line
+    .replace(/[ \t]+\n/g, '\n')
+    // Remove spaces before punctuation
+    .replace(/\s+([.,;:!?])/g, '$1')
     // Trim leading and trailing whitespace
-    .replace(/^\s+|\s+$/g, '');
+    .trim();
 };
 
 /**
@@ -126,23 +164,26 @@ export const smartTruncate = (
   const truncated = text.substring(0, limit);
   
   // Find natural cutting points
+  const lastNewline = truncated.lastIndexOf('\n');
   const lastBullet = truncated.lastIndexOf('• ');
-  const lastPeriod = truncated.lastIndexOf('.');
-  const lastComma = truncated.lastIndexOf(',');
+  const lastPeriod = truncated.lastIndexOf('. ');
+  const lastComma = truncated.lastIndexOf(', ');
   const lastSpace = truncated.lastIndexOf(' ');
   
   // Choose the best cutting point
-  const cutPoint = Math.max(lastBullet, lastPeriod, lastComma, lastSpace);
+  const cutPoint = Math.max(lastNewline, lastBullet, lastPeriod, lastComma, lastSpace);
   
   // Use natural cutting point if it's reasonable (not too short)
-  if (cutPoint > 0 && cutPoint > limit * 0.7) {
-    const cutText = text.substring(0, cutPoint + 1);
-    return cutText.endsWith('.') || cutText.endsWith(',') 
-      ? cutText + '\n' + suffix 
-      : cutText + suffix;
+  if (cutPoint > 0 && cutPoint > limit * 0.6) {
+    const cutText = text.substring(0, cutPoint);
+    // Cek apakah sudah ada punctuation di akhir
+    if (cutText.match(/[.!?]$/)) {
+      return cutText.trim() + ' ' + suffix;
+    }
+    return cutText.trim() + suffix;
   }
   
-  return truncated + suffix;
+  return truncated.trim() + suffix;
 };
 
 /**
@@ -160,6 +201,7 @@ export const htmlToReadableText = (
     convertLists?: boolean;
     bulletSymbol?: string;
     truncateSuffix?: string;
+    preserveFormatting?: boolean;
   } = {}
 ): string => {
   if (!html) return '-';
@@ -168,18 +210,41 @@ export const htmlToReadableText = (
     preserveLineBreaks = true,
     convertLists = true,
     bulletSymbol = '• ',
-    truncateSuffix = '...'
+    truncateSuffix = '...',
+    preserveFormatting = false
   } = options;
   
   // Convert HTML to plain text
   const plainText = htmlToPlainText(html, {
     preserveLineBreaks,
     convertLists,
-    bulletSymbol
+    bulletSymbol,
+    preserveFormatting
   });
   
   // Apply smart truncation
   return smartTruncate(plainText, limit, truncateSuffix);
+};
+
+/**
+ * Fungsi khusus untuk preview di tabel (tanpa formatting markers)
+ * @param html - HTML string
+ * @param limit - Batas karakter (default: 150)
+ * @returns Clean preview text
+ */
+export const htmlToTablePreview = (html: string, limit: number = 150): string => {
+  if (!html) return '-';
+  
+  // Convert tanpa formatting markers
+  const plainText = htmlToPlainText(html, {
+    preserveLineBreaks: false,
+    convertLists: true,
+    bulletSymbol: '• ',
+    preserveFormatting: false
+  });
+  
+  // Truncate dengan smart cutting
+  return smartTruncate(plainText, limit, '...');
 };
 
 /**
@@ -218,7 +283,8 @@ export const getTextPreview = (html: string, wordLimit: number = 20): string => 
   
   const plainText = htmlToPlainText(html, { 
     convertLists: false, 
-    preserveLineBreaks: false 
+    preserveLineBreaks: false,
+    preserveFormatting: false
   });
   
   const words = plainText.trim().split(/\s+/).filter(word => word.length > 0);
@@ -228,4 +294,20 @@ export const getTextPreview = (html: string, wordLimit: number = 20): string => 
   }
   
   return words.slice(0, wordLimit).join(' ') + '...';
+};
+
+/**
+ * Fungsi untuk mendapatkan full text tanpa truncate (untuk modal/detail view)
+ * @param html - HTML string
+ * @returns Full readable text
+ */
+export const htmlToFullText = (html: string): string => {
+  if (!html) return 'Tidak ada deskripsi';
+  
+  return htmlToPlainText(html, {
+    preserveLineBreaks: true,
+    convertLists: true,
+    bulletSymbol: '• ',
+    preserveFormatting: false
+  });
 };

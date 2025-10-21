@@ -26,7 +26,7 @@ const MainPage = () => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: 'id',
+    sort_by: 'total_open',
     sort_dir: 'DESC',
     search: ''
   });
@@ -35,8 +35,8 @@ const MainPage = () => {
   const debounceSearch = useCallback(() => {
     const timeoutId = setTimeout(() => {
       setFilters(prev => ({ ...prev, search: searchTerm }));
-      setCurrentPage(1); // Reset to first page when searching
-    }, 500); // 500ms delay
+      setCurrentPage(1);
+    }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [searchTerm]);
@@ -58,12 +58,11 @@ const MainPage = () => {
         ...filterParams
       });
 
-      // Hapus parameter kosong
       Array.from(queryParams.entries()).forEach(([key, value]) => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
       
-      const response = await apiRequest(`/reports/pergeseran-dokumen?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Laporan pergeseran tidak ditemukan");
@@ -84,6 +83,7 @@ const MainPage = () => {
       const res: LaporanPergeseran[] = result.responseData.items.map((item: any) => ({
         id: item.dinas,
         nama: item.nama_dinas,
+        jumlah: item.jumlah || 0, // Menambahkan total_open/jumlah
       }));
 
       setDataList(res);
@@ -106,7 +106,6 @@ const MainPage = () => {
     }
   },[]);
 
-  // useEffect untuk fetch data
   useEffect(() => {
     if (filters.search !== searchTerm) {
       setSearchLoading(true);
@@ -114,7 +113,6 @@ const MainPage = () => {
     fetchData(currentPage, itemsPerPage, filters);
   }, [searchTerm, currentPage, itemsPerPage, filters, fetchData]);
 
-  // Auto hide success message after 5 seconds
   useEffect(() => {
     if (success) {
       const timer = setTimeout(() => {
@@ -124,35 +122,29 @@ const MainPage = () => {
     }
   }, [success]);
 
-  // Handler untuk perubahan halaman
   const handlePageChange = (newPage: number) => {
     setCurrentPage(newPage);
   };
 
-  // Handler untuk perubahan items per page
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset ke halaman pertama
+    setCurrentPage(1);
   };
 
-  // Handler untuk retry ketika error
   const handleRetry = useCallback(() => {
     fetchData(currentPage, itemsPerPage, filters);
   }, [fetchData, currentPage, itemsPerPage, filters]);
 
-  // Handler untuk clear search
   const handleClearSearch = () => {
     setSearchTerm("");
     setFilters(prev => ({ ...prev, search: "" }));
     setCurrentPage(1);
   };
 
-  // Handler untuk search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  // Handler untuk tombol detail
   const handleDetailsClick = (id: number, nama: string) => {
     const key = process.env.NEXT_PUBLIC_APP_KEY;
     const user = Cookies.get("user");
@@ -178,7 +170,6 @@ const MainPage = () => {
     }
   };
 
-  // Render loading skeleton
   const renderLoadingSkeleton = () => (
     Array.from({ length: itemsPerPage }).map((_, index) => (
       <tr key={index} className="border-b border-stroke dark:border-dark-3">
@@ -189,25 +180,15 @@ const MainPage = () => {
           <div className="h-4 w-48 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
         </td>
         <td className="px-4 py-4">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-        </td>
-        <td className="px-4 py-4">
-          <div className="h-4 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
-        </td>
-        <td className="px-4 py-4">
-          <div className="h-6 w-20 animate-pulse rounded-full bg-gray-200 dark:bg-gray-600"></div>
-        </td>
-        <td className="px-4 py-4">
           <div className="h-8 w-20 animate-pulse rounded bg-gray-200 dark:bg-gray-600"></div>
         </td>
       </tr>
     ))
   );
 
-  // Render empty state
   const renderEmptyState = () => (
     <tr>
-      <td colSpan={6} className="px-4 py-20 text-center">
+      <td colSpan={3} className="px-4 py-20 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="text-gray-400 text-6xl mb-4">📄</div>
           <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
@@ -215,7 +196,7 @@ const MainPage = () => {
           </p>
           <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
             {filters.search 
-              ? `Tidak ditemukan hasil untuk &quot;${filters.search}&quot;`
+              ? `Tidak ditemukan hasil untuk "${filters.search}"`
               : "Belum ada dokumen yang diupload"
             }
           </p>
@@ -232,10 +213,9 @@ const MainPage = () => {
     </tr>
   );
 
-  // Render error state
   const renderErrorState = () => (
     <tr>
-      <td colSpan={6} className="px-4 py-20 text-center">
+      <td colSpan={3} className="px-4 py-20 text-center">
         <div className="flex flex-col items-center justify-center">
           <div className="text-red-500 text-4xl mb-4">⚠️</div>
           <p className="text-red-600 dark:text-red-400 font-medium mb-4">{error}</p>
@@ -252,7 +232,92 @@ const MainPage = () => {
   
   return (
     <div className="col-span-12 xl:col-span-12">
-      {/* Alert Messages */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes pulse-glow {
+          0%, 100% { box-shadow: 0 0 20px rgba(239, 68, 68, 0.4), 0 0 40px rgba(239, 68, 68, 0.2); }
+          50% { box-shadow: 0 0 30px rgba(239, 68, 68, 0.6), 0 0 60px rgba(239, 68, 68, 0.3); }
+        }
+        
+        @keyframes shimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+
+        .badge-3d {
+          position: relative;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 14px;
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          border-radius: 20px;
+          font-weight: 700;
+          font-size: 13px;
+          color: white;
+          box-shadow: 
+            0 4px 15px rgba(239, 68, 68, 0.4),
+            0 8px 25px rgba(239, 68, 68, 0.2),
+            inset 0 -2px 5px rgba(0, 0, 0, 0.2),
+            inset 0 1px 2px rgba(255, 255, 255, 0.3);
+          animation: float 3s ease-in-out infinite, pulse-glow 2s ease-in-out infinite;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          cursor: default;
+        }
+
+        .badge-3d::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent
+          );
+          animation: shimmer 3s infinite;
+        }
+
+        .badge-3d:hover {
+          transform: scale(1.1) translateY(-2px);
+          box-shadow: 
+            0 6px 20px rgba(239, 68, 68, 0.5),
+            0 10px 35px rgba(239, 68, 68, 0.3),
+            inset 0 -2px 5px rgba(0, 0, 0, 0.3),
+            inset 0 1px 2px rgba(255, 255, 255, 0.4);
+        }
+
+        .badge-icon {
+          width: 18px;
+          height: 18px;
+          background: rgba(255, 255, 255, 0.25);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 11px;
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+
+        .badge-count {
+          font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+          letter-spacing: 0.5px;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+      `}</style>
+
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 font-medium">{error}</p>
@@ -266,7 +331,6 @@ const MainPage = () => {
       )}
 
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-        {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
             <h2 className="text-xl font-semibold text-dark dark:text-white">
@@ -282,7 +346,6 @@ const MainPage = () => {
             )}
           </div>
           
-          {/* Search Box */}
           <div className="relative w-full sm:w-80">
             <div className="relative">
               <input
@@ -306,7 +369,6 @@ const MainPage = () => {
             </div>
           </div>
           
-          {/* Records count */}
           <div className="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
             {!loading && totalRecords > 0 && (
               <>
@@ -325,7 +387,6 @@ const MainPage = () => {
           </div>
         </div>
 
-        {/* Active Search Indicator */}
         {filters.search && (
           <div className="mb-4 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg p-3">
             <div className="flex items-center">
@@ -379,9 +440,17 @@ const MainPage = () => {
                   </td>
 
                   <td className="px-4 py-4">
-                    <p className="text-dark dark:text-white">
-                      {item.nama}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <p className="text-dark dark:text-white font-medium">
+                        {item.nama}
+                      </p>
+                      {item.jumlah > 0 && (
+                        <div className="badge-3d">
+                          <span className="badge-icon">+</span>
+                          <span className="badge-count">{item.jumlah} new</span>
+                        </div>
+                      )}
+                    </div>
                   </td>
 
                   <td className="px-4 py-4 xl:pr-7.5">
@@ -405,7 +474,6 @@ const MainPage = () => {
             </tbody>
           </table>
 
-          {/* Pagination hanya ditampilkan jika ada data */}
           {!loading && !error && totalPages > 0 && (
             <Pagination
               currentPage={currentPage}

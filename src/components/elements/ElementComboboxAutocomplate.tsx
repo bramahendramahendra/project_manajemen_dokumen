@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, ChangeEvent } from "react";
+import React, { useState, useEffect, useRef, ChangeEvent, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Option {
@@ -84,6 +84,20 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
     };
   }, []);
 
+  const handleSelectOption = useCallback((option: Option) => {
+    if (disabled) return;
+    
+    setSelectedOption(option);
+    setSearchTerm(String(option.name));
+    setIsDropdownOpen(false);
+    setIsFocused(false);
+    onChange(option.id !== undefined ? option.id : option.name);
+    
+    if (inputRef.current) {
+      inputRef.current.blur();
+    }
+  }, [disabled, onChange]);
+
   // Keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -115,21 +129,7 @@ const ElementComboboxAutocomplete: React.FC<ElementComboboxAutocompleteProps> = 
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isDropdownOpen, filteredOptions, highlightedIndex]);
-
-  const handleSelectOption = (option: Option) => {
-    if (disabled) return;
-    
-    setSelectedOption(option);
-    setSearchTerm(String(option.name));
-    setIsDropdownOpen(false);
-    setIsFocused(false);
-    onChange(option.id !== undefined ? option.id : option.name);
-    
-    if (inputRef.current) {
-      inputRef.current.blur();
-    }
-  };
+  }, [isDropdownOpen, filteredOptions, highlightedIndex, handleSelectOption]);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (disabled) return;

@@ -288,11 +288,17 @@ export const MenuProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('notif_mapping_timestamp');
   }, []);
 
+  const fetchMenuDataRef = useRef(fetchMenuData);
+
+  useEffect(() => {
+    fetchMenuDataRef.current = fetchMenuData;
+  });
+
   // Load menu data saat provider pertama kali dimount - HANYA SEKALI
   useEffect(() => {
     const user = Cookies.get("user");
     if (user) {
-      fetchMenuData();
+      fetchMenuDataRef.current();
     }
   }, []); // EMPTY array - hanya run sekali saat mount
 

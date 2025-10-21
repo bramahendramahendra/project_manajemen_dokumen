@@ -36,6 +36,10 @@ const MainPage = ({ idDinas }: Props) => {
   // State untuk loading download
   const [downloadingFile, setDownloadingFile] = useState(false);
 
+  // State untuk tracking hover dan timeout
+  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // Filters state
   const [filters, setFilters] = useState({
     sort_by: '',
@@ -53,16 +57,15 @@ const MainPage = ({ idDinas }: Props) => {
     if (searchTerm.trim() !== '') {
       const timeoutId = setTimeout(() => {
         setFilters(prev => ({ ...prev, search: searchTerm }));
-        setCurrentPage(1); // Reset to first page when searching
-      }, 500); // 500ms delay
+        setCurrentPage(1);
+      }, 500);
 
       return () => clearTimeout(timeoutId);
     } else {
-      // Jika searchTerm kosong, langsung clear search filter tanpa delay
       setFilters(prev => ({ ...prev, search: '' }));
       setCurrentPage(1);
     }
-  }, [searchTerm]); // Menambahkan searchTerm ke dependency array
+  }, [searchTerm]);
 
   // Effect untuk debounced search
   useEffect(() => {
@@ -70,7 +73,7 @@ const MainPage = ({ idDinas }: Props) => {
     return cleanup;
   }, [debounceSearch]);
 
-  // Wrap fetchData dengan useCallback untuk mencegah re-render yang tidak perlu
+  // Wrap fetchData dengan useCallback
   const fetchData = useCallback(async (page = 1, perPage = 10, filterParams = {}) => {
     if (!idDinas) {
       setError("ID tidak ditemukan");
@@ -81,19 +84,17 @@ const MainPage = ({ idDinas }: Props) => {
     setLoading(true);
     setError(null);
     try {
-      // Buat query parameters
       const queryParams = new URLSearchParams({
         page: page.toString(),
         per_page: perPage.toString(),
         ...filterParams
       });
 
-      // Hapus parameter kosong
       Array.from(queryParams.entries()).forEach(([key, value]) => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/reports/pergeseran-dokumen/${idDinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran/${idDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data laporan pergeseran dokumen tidak ditemukan");
@@ -111,14 +112,12 @@ const MainPage = ({ idDinas }: Props) => {
         throw new Error("Format meta tidak valid");
       }
       
-      // Format data sesuai dengan interface LaporanPergeseran
       const res: LaporanPergeseranDocument[] = result.responseData.items.map((item: any) => ({
-          id: item.pergeseran, // Generate ID untuk keperluan UI
+          id: item.pergeseran,
           deskripsi: item.deskripsi,
           tanggal: item.tanggal,
-          file_unduh: item.file_unduh
-          // tanggal: formatIndonesianDateOnly(item.tanggal),
-          // dateObject: dateObject
+          file_unduh: item.file_unduh,
+          status_open: item.status_open || 0
       }));
 
        setDataList(res);
@@ -140,7 +139,7 @@ const MainPage = ({ idDinas }: Props) => {
       setLoading(false);
       setSearchLoading(false);
     }
-  }, [idDinas]); // Hanya idDinas yang menjadi dependency
+  }, [idDinas]);
 
   // Fetch data dari API
   useEffect(() => {
@@ -168,7 +167,7 @@ const MainPage = ({ idDinas }: Props) => {
   // Handler untuk perubahan items per page
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
     setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Reset ke halaman pertama
+    setCurrentPage(1);
   };
 
   // Handler untuk retry ketika error
@@ -187,6 +186,60 @@ const MainPage = ({ idDinas }: Props) => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  // Fungsi untuk update status open via API
+  const updateStatusOpen = async (id: number) => {
+    if (!idDinas) return;
+    
+    try {
+      const response = await apiRequest(`/pergeseran/hover/${idDinas}/${id}`, "POST");
+      if (response.ok) {
+        // Update local state to reflect the change
+        setDataList(prevData => 
+          prevData.map(item => 
+            item.id === id ? { ...item, status_open: 1 } : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating status_open:", error);
+    }
+  };
+
+  // Handler untuk hover - dengan debounce
+  const handleItemHover = (itemId: number) => {
+    setHoveredItem(itemId);
+
+    // Clear existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+    }
+
+    // Set new timeout untuk update status
+    const timeout = setTimeout(() => {
+      updateStatusOpen(itemId);
+    }, 1000); // 1 detik delay
+
+    setHoverTimeout(timeout);
+  };
+
+  // Handler untuk mouse leave
+  const handleItemLeave = () => {
+    setHoveredItem(null);
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
 
   // Function untuk memotong string dan hanya mengambil 5 kata pertama
   const truncateText = (text: string, wordCount: number = 5) => {
@@ -224,20 +277,15 @@ const MainPage = ({ idDinas }: Props) => {
     try {
       setDownloadingFile(true);
       
-      // Pastikan filePath tidak kosong
       if (!selectedDownloadData.filePath || selectedDownloadData.filePath.trim() === '') {
         throw new Error('Path file tidak valid');
       }
 
-      // Hapus leading slash jika ada dan encode path
       const cleanFilePath = selectedDownloadData.filePath.startsWith('/') 
         ? selectedDownloadData.filePath.substring(1) 
         : selectedDownloadData.filePath;
       const encodedFilePath = encodeURIComponent(cleanFilePath);
       
-      console.log('Downloading file from path:', cleanFilePath);
-      
-      // Menggunakan downloadFileRequest helper untuk download
       const response = await downloadFileRequest(`/files/download/${encodedFilePath}`);
       
       if (!response.ok) {
@@ -255,33 +303,25 @@ const MainPage = ({ idDinas }: Props) => {
         }
       }
 
-      // Membuat blob dari response
       const blob = await response.blob();
       
       if (blob.size === 0) {
         throw new Error('File kosong atau tidak dapat dibaca');
       }
       
-      // Membuat URL object untuk blob
       const blobUrl = window.URL.createObjectURL(blob);
       
-      // Membuat link download
       const link = document.createElement('a');
       link.href = blobUrl;
       link.download = selectedDownloadData.fileName;
       link.style.display = 'none';
       
-      // Tambahkan ke DOM, klik, lalu hapus
       document.body.appendChild(link);
       link.click();
       
-      // Cleanup
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
       
-      console.log('Download completed successfully');
-      
-      // Tutup modal setelah download berhasil
       closeDownloadModal();
       
     } catch (error) {
@@ -295,17 +335,11 @@ const MainPage = ({ idDinas }: Props) => {
 
   // Function untuk handle delete
   const handleDeleteClick = async (id: number, deskripsi: string) => {
-    // Konfirmasi sebelum menghapus
     const isConfirmed = window.confirm(
       `Apakah Anda yakin ingin menghapus dokumen "${truncateText(deskripsi, 5)}"?`
     );
     
     if (isConfirmed) {
-      // const payload = {
-      //   id: id,
-      //   deskripsi: deskripsi,
-      // };
-
       try {
         const response = await apiRequest(`/direct-shipping/delete/${id}`, 'POST');
         if (!response.ok) {
@@ -315,7 +349,6 @@ const MainPage = ({ idDinas }: Props) => {
 
         setSuccess('Data pergeseran berhasil dihapus!');
         
-        // Refresh data setelah delete
         await fetchData(currentPage, itemsPerPage, filters);
 
       } catch (error) {
@@ -324,6 +357,11 @@ const MainPage = ({ idDinas }: Props) => {
         setLoading(false);
       }
     }
+  };
+
+  // Function to determine if "new" badge should be shown
+  const shouldShowNewBadge = (item: LaporanPergeseranDocument): boolean => {
+    return item.status_open === 0;
   };
   
   // Render loading skeleton
@@ -391,6 +429,23 @@ const MainPage = ({ idDinas }: Props) => {
   
   return (
     <div className="col-span-12 xl:col-span-12">
+      <style jsx>{`
+        @keyframes pulse-new {
+          0%, 100% { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.8;
+            transform: scale(1.05);
+          }
+        }
+        
+        .new-badge {
+          animation: pulse-new 2s ease-in-out infinite;
+        }
+      `}</style>
+
        {/* Alert Messages */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -405,7 +460,6 @@ const MainPage = ({ idDinas }: Props) => {
       )}
 
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
-         
 
         {/* Header Section with Search */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
@@ -492,62 +546,90 @@ const MainPage = ({ idDinas }: Props) => {
               {loading && renderLoadingSkeleton()}
               {!loading && error && renderErrorState()}
               {!loading && !error && dataList.length === 0 && renderEmptyState()}
-              {!loading && !error && dataList.length > 0 && dataList.map((item, index) => (
-                <tr
-                  key={index}
-                  className="border-b border-stroke dark:border-dark-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <td className="px-5 py-4">
-                    <div className="flex items-center">
-                      <p className="font-medium text-dark dark:text-white" title={item.deskripsi}>
-                        {truncateText(item.deskripsi, 8)}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    <span className="text-dark dark:text-white">
-                      {formatIndonesianDateOnly(item.tanggal)}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4" style={{ minWidth: '280px' }}>
-                    <div className="flex items-center justify-end gap-3 flex-nowrap">
-                      {/* Tombol Download */}
-                      <button
-                        id={`download-btn-${index}`}
-                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6 focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98]"
-                        onClick={() => openDownloadModal(item.deskripsi, item.file_unduh)}
-                      >
-                        <span className="text-[20px]">
-                          <HiOutlineDocumentDownload />
-                        </span>
-                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                          Download
-                        </span>
-                      </button>
+              {!loading && !error && dataList.length > 0 && dataList.map((item, index) => {
+                const showNewBadge = shouldShowNewBadge(item);
+                
+                return (
+                  <tr
+                    key={index}
+                    className={`border-b border-stroke dark:border-dark-3 transition-colors ${
+                      showNewBadge ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700' : ''
+                    } ${
+                      hoveredItem === item.id ? 'bg-gray-50 dark:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                    onMouseEnter={() => handleItemHover(item.id)}
+                    onMouseLeave={handleItemLeave}
+                  >
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        <p className="font-medium text-[19px] text-dark dark:text-white" title={item.deskripsi}>
+                          {truncateText(item.deskripsi, 8)}
+                        </p>
+                        
+                        {/* Badge New */}
+                        {showNewBadge && (
+                          <span className="new-badge inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                            <svg 
+                              className="w-3 h-3 mr-1" 
+                              fill="currentColor" 
+                              viewBox="0 0 20 20" 
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path 
+                                fillRule="evenodd" 
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
+                                clipRule="evenodd" 
+                              />
+                            </svg>
+                            New
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-dark dark:text-white">
+                        {formatIndonesianDateOnly(item.tanggal)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4" style={{ minWidth: '280px' }}>
+                      <div className="flex items-center justify-end gap-3 flex-nowrap">
+                        {/* Tombol Download */}
+                        <button
+                          id={`download-btn-${index}`}
+                          className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6 focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98]"
+                          onClick={() => openDownloadModal(item.deskripsi, item.file_unduh)}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineDocumentDownload />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Download
+                          </span>
+                        </button>
 
-                      {/* Tombol Delete */}
-                      <button
-                        id={`delete-btn-${index}`}
-                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
-                        onClick={() => handleDeleteClick(item.id, item.deskripsi)}
-                      >
-                        <span className="text-[20px]">
-                          <HiOutlineTrash />
-                        </span>
-                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                          Delete
-                        </span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {/* Tombol Delete */}
+                        <button
+                          id={`delete-btn-${index}`}
+                          className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
+                          onClick={() => handleDeleteClick(item.id, item.deskripsi)}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineTrash />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Delete
+                          </span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
-          {/* Pagination - hanya tampil jika ada data dan tidak loading */}
+          {/* Pagination */}
           {!loading && !error && totalPages > 0 && (
-            // <div className="bg-gray-50 px-5 py-3 dark:bg-gray-700 border-t border-gray-100 dark:border-gray-600">
             <Pagination
               currentPage={currentPage}
               totalPages={totalPages}
@@ -559,7 +641,6 @@ const MainPage = ({ idDinas }: Props) => {
               isSearchActive={!!filters.search}
               searchTerm={filters.search}
             />
-            // </div>
           )}
         </div>
 
@@ -594,7 +675,6 @@ const MainPage = ({ idDinas }: Props) => {
               {/* Konten Modal */}
               <div className="px-6 py-4">
                 <div className="space-y-4">
-                  {/* Informasi Dokumen */}
                   <div className="rounded-lg bg-gray-50 p-4">
                     <h4 className="text-sm font-semibold text-gray-700 mb-2">
                       Dokumen yang akan diunduh:

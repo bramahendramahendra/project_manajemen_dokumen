@@ -5,8 +5,9 @@ import { encryptObject } from "@/utils/crypto";
 import Cookies from "js-cookie";
 import { HiOutlinePencilSquare, HiOutlineTrash, HiMagnifyingGlass, HiOutlineXCircle } from "react-icons/hi2";
 import { Subperihal, SubperihalResponse } from "@/types/subperihal";
-import { htmlToReadableText } from "@/utils/htmlTextFormatter";
+import { htmlToTablePreview, htmlToFullText } from "@/utils/htmlTextFormatter";
 import Pagination from "@/components/pagination/Pagination";
+import DescriptionModal from '@/components/modals/DescriptionModal';
 
 const MainPage = () => {
   const router = useRouter();
@@ -33,6 +34,12 @@ const MainPage = () => {
     sort_dir: 'DESC,DESC',
     search: ''
   });
+
+  const [showDescModal, setShowDescModal] = useState(false);
+  const [selectedDescription, setSelectedDescription] = useState<{
+    title: string;
+    content: string;
+  } | null>(null);
 
   // Reset halaman ke 1 ketika melakukan pencarian
   useEffect(() => {
@@ -244,15 +251,17 @@ const MainPage = () => {
     setItemDelete(null);
   };
 
-  // Handler untuk show full description
-  const handleShowFullDescription = (description: string) => {
-    const fullText = htmlToReadableText(description, 2000, {
-      preserveLineBreaks: true,
-      convertLists: true,
-      bulletSymbol: '• ',
-      truncateSuffix: ''
+  const handleShowFullDescription = (subperihal: string, description: string) => {
+    setSelectedDescription({
+      title: `Deskripsi: ${subperihal}`,
+      content: description
     });
-    alert('Deskripsi Lengkap:\n\n' + fullText);
+    setShowDescModal(true);
+  };
+
+  const handleCloseDescModal = () => {
+    setShowDescModal(false);
+    setSelectedDescription(null);
   };
 
   // Render loading skeleton
@@ -443,20 +452,32 @@ const MainPage = () => {
                     <div className="text-dark dark:text-white">
                       {item.deskripsi ? (
                         <div className="relative">
-                          <pre className="text-sm leading-relaxed whitespace-pre-wrap font-sans">
-                            {htmlToReadableText(item.deskripsi, 180)}
-                          </pre>
-                          {item.deskripsi.length > 180 && (
-                            <button 
-                              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs mt-1 underline"
-                              onClick={() => handleShowFullDescription(item.deskripsi)}
-                            >
-                              Lihat selengkapnya
-                            </button>
-                          )}
+                          {/* Preview HTML dengan line-clamp */}
+                          <div
+                            className="formatted-description text-sm leading-relaxed line-clamp-3 overflow-hidden
+                                      [&_p]:mb-1 [&_p:last-child]:mb-0
+                                      [&_strong]:font-semibold 
+                                      [&_em]:italic 
+                                      [&_u]:underline
+                                      [&_s]:line-through [&_strike]:line-through
+                                      [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:my-1
+                                      [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:my-1
+                                      [&_li]:mb-0.5"
+                            dangerouslySetInnerHTML={{
+                              __html: item.deskripsi,
+                            }}
+                          />
+                          
+                          {/* Tombol Lihat selengkapnya */}
+                          <button 
+                            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 text-xs mt-2 underline inline-flex items-center gap-1"
+                            onClick={() => handleShowFullDescription(item.nama_subperihal, item.deskripsi)}
+                          >
+                            Lihat selengkapnya
+                          </button>
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic">Tidak ada deskripsi</span>
+                        <span className="text-gray-400 italic text-sm">Tidak ada deskripsi</span>
                       )}
                     </div>
                   </td>
@@ -510,6 +531,16 @@ const MainPage = () => {
           )}
         </div>
       </div>
+
+      {/* Description Modal */}
+      {selectedDescription && (
+        <DescriptionModal
+          isOpen={showDescModal}
+          onClose={handleCloseDescModal}
+          title={selectedDescription.title}
+          htmlContent={selectedDescription.content}
+        />
+      )}
 
       {/* Modal Konfirmasi Hapus */}
       {showDeleteModal && (
