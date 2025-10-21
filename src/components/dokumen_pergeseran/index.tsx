@@ -26,7 +26,7 @@ const MainPage = () => {
 
   // Filters state
   const [filters, setFilters] = useState({
-    sort_by: 'id',
+    sort_by: 'total_open',
     sort_dir: 'DESC',
     search: ''
   });
