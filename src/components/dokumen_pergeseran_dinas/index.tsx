@@ -34,6 +34,10 @@ const MainPage = () => {
   // State untuk loading download
   const [downloadingFile, setDownloadingFile] = useState(false);
 
+  // State untuk tracking hover dan timeout
+  const [hoveredItem, setHoveredItem] = useState<number | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+
   // Filters state
   const [filters, setFilters] = useState({
     sort_by: '',
@@ -96,7 +100,7 @@ const MainPage = () => {
         if (!value || value.trim() === '') queryParams.delete(key);
       });
 
-      const response = await apiRequest(`/reports/pergeseran/${user.dinas}?${queryParams.toString()}`, "GET");
+      const response = await apiRequest(`/reports/pergeseran/${userDinas}?${queryParams.toString()}`, "GET");
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error("Data laporan pergeseran dokumen tidak ditemukan");
@@ -119,12 +123,11 @@ const MainPage = () => {
           id: item.pergeseran, // Generate ID untuk keperluan UI
           deskripsi: item.deskripsi,
           tanggal: item.tanggal,
-          file_unduh: item.file_unduh
-          // tanggal: formatIndonesianDateOnly(item.tanggal),
-          // dateObject: dateObject
+          file_unduh: item.file_unduh,
+          status_open: item.status_open || 0
       }));
 
-       setDataList(res);
+      setDataList(res);
       setTotalPages(result.responseMeta.total_pages);
       setTotalRecords(result.responseMeta.total_records);
       
@@ -190,6 +193,60 @@ const MainPage = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  // Fungsi untuk update status open via API
+  const updateStatusOpen = async (id: number) => {
+    if (!userDinas) return;
+    
+    try {
+      const response = await apiRequest(`/pergeseran/hover/${userDinas}/${id}`, "POST");
+      if (response.ok) {
+        // Update local state to reflect the change
+        setDataList(prevData => 
+          prevData.map(item => 
+            item.id === id ? { ...item, status_open: 1 } : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Error updating status_open:", error);
+    }
+  };
+
+  // Handler untuk hover - dengan debounce
+  const handleItemHover = (itemId: number) => {
+    setHoveredItem(itemId);
+
+    // Clear existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+    }
+
+    // Set new timeout untuk update status
+    const timeout = setTimeout(() => {
+      updateStatusOpen(itemId);
+    }, 1000); // 1 detik delay
+
+    setHoverTimeout(timeout);
+  };
+
+  // Handler untuk mouse leave
+  const handleItemLeave = () => {
+    setHoveredItem(null);
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
 
   // Function untuk memotong string dan hanya mengambil 5 kata pertama
   const truncateText = (text: string, wordCount: number = 5) => {
@@ -297,37 +354,42 @@ const MainPage = () => {
   };
 
   // Function untuk handle delete
-  const handleDeleteClick = async (id: number, deskripsi: string) => {
-    // Konfirmasi sebelum menghapus
-    const isConfirmed = window.confirm(
-      `Apakah Anda yakin ingin menghapus dokumen "${truncateText(deskripsi, 5)}"?`
-    );
+  // const handleDeleteClick = async (id: number, deskripsi: string) => {
+  //   // Konfirmasi sebelum menghapus
+  //   const isConfirmed = window.confirm(
+  //     `Apakah Anda yakin ingin menghapus dokumen "${truncateText(deskripsi, 5)}"?`
+  //   );
     
-    if (isConfirmed) {
-      // const payload = {
-      //   id: id,
-      //   deskripsi: deskripsi,
-      // };
+  //   if (isConfirmed) {
+  //     // const payload = {
+  //     //   id: id,
+  //     //   deskripsi: deskripsi,
+  //     // };
 
 
-      try {
-        const response = await apiRequest(`/direct-shipping/delete/${id}`, 'POST');
-        if (!response.ok) {
-          const result = await response.json();
-          throw new Error(result.responseDesc || 'Gagal menghapus data dinas');
-        }
+  //     try {
+  //       const response = await apiRequest(`/direct-shipping/delete/${id}`, 'POST');
+  //       if (!response.ok) {
+  //         const result = await response.json();
+  //         throw new Error(result.responseDesc || 'Gagal menghapus data dinas');
+  //       }
 
-        setSuccess('Data pergeseran berhasil dihapus!');
+  //       setSuccess('Data pergeseran berhasil dihapus!');
         
-        // Refresh data setelah delete
-        await fetchData(currentPage, itemsPerPage, filters);
+  //       // Refresh data setelah delete
+  //       await fetchData(currentPage, itemsPerPage, filters);
 
-      } catch (error) {
-        setError("Terjadi kesalahan saat mengirim data penghapusan");
-      } finally {
-        setLoading(false);
-      }
-    }
+  //     } catch (error) {
+  //       setError("Terjadi kesalahan saat mengirim data penghapusan");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   }
+  // };
+
+  // Function to determine if "new" badge should be shown
+  const shouldShowNewBadge = (item: LaporanPergeseranDocument): boolean => {
+    return item.status_open === 0;
   };
   
   // Render loading skeleton
@@ -395,7 +457,24 @@ const MainPage = () => {
   
   return (
     <div className="col-span-12 xl:col-span-12">
-       {/* Alert Messages */}
+      <style jsx>{`
+        @keyframes pulse-new {
+          0%, 100% { 
+            opacity: 1;
+            transform: scale(1);
+          }
+          50% { 
+            opacity: 0.8;
+            transform: scale(1.05);
+          }
+        }
+        
+        .new-badge {
+          animation: pulse-new 2s ease-in-out infinite;
+        }
+      `}</style>
+
+      {/* Alert Messages */}
       {error && (
         <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 font-medium">{error}</p>
@@ -476,18 +555,6 @@ const MainPage = () => {
           </div>
         )}
 
-
-
-
-
-
-
-        
-
-
-
-
-
         <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
@@ -508,56 +575,84 @@ const MainPage = () => {
               {loading && renderLoadingSkeleton()}
               {!loading && error && renderErrorState()}
               {!loading && !error && dataList.length === 0 && renderEmptyState()}
-              {!loading && !error && dataList.length > 0 && dataList.map((item, index) => (
-                <tr
-                  key={index}
-                  className="border-b border-stroke dark:border-dark-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <td className="px-5 py-4">
-                    <div className="flex items-center">
-                      <p className="font-medium text-[19px] text-dark dark:text-white" title={item.deskripsi}>
-                        {truncateText(item.deskripsi, 8)}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4 text-center">
-                    <span className="text-dark text-[19px] dark:text-white">
-                      {formatIndonesianDateOnly(item.tanggal)}
-                    </span>
-                  </td>
-                  <td className="px-5 py-4" style={{ minWidth: '280px' }}>
-                    <div className="flex items-center justify-end gap-3 flex-nowrap">
-                      {/* Tombol Download */}
-                      <button
-                        id={`download-btn-${index}`}
-                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6 focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98]"
-                        onClick={() => openDownloadModal(item.deskripsi, item.file_unduh)}
-                      >
-                        <span className="text-[20px]">
-                          <HiOutlineDocumentDownload />
-                        </span>
-                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                          Download
-                        </span>
-                      </button>
+              {!loading && !error && dataList.length > 0 && dataList.map((item, index) => {
+                const showNewBadge = shouldShowNewBadge(item);
+                return (
+                   <tr
+                    key={index}
+                    className={`border-b border-stroke dark:border-dark-3 transition-colors ${
+                      showNewBadge ? 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-700' : ''
+                    } ${
+                      hoveredItem === item.id ? 'bg-gray-50 dark:bg-gray-800' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                    }`}
+                    onMouseEnter={() => handleItemHover(item.id)}
+                    onMouseLeave={handleItemLeave}
+                  >
+                    <td className="px-5 py-4">
+                      <div className="flex items-center">
+                        <p className="font-medium text-[19px] text-dark dark:text-white" title={item.deskripsi}>
+                          {truncateText(item.deskripsi, 8)}
+                        </p>
 
-                      {/* Tombol Delete */}
-                      {/* <button
-                        id={`delete-btn-${index}`}
-                        className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
-                        onClick={() => handleDeleteClick(item.id, item.deskripsi)}
-                      >
-                        <span className="text-[20px]">
-                          <HiOutlineTrash />
-                        </span>
-                        <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
-                          Delete
-                        </span>
-                      </button> */}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {/* Badge New */}
+                        {showNewBadge && (
+                          <span className="new-badge inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                            <svg 
+                              className="w-3 h-3 mr-1" 
+                              fill="currentColor" 
+                              viewBox="0 0 20 20" 
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <path 
+                                fillRule="evenodd" 
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
+                                clipRule="evenodd" 
+                              />
+                            </svg>
+                            New
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-center">
+                      <span className="text-dark text-[19px] dark:text-white">
+                        {formatIndonesianDateOnly(item.tanggal)}
+                      </span>
+                    </td>
+                    <td className="px-5 py-4" style={{ minWidth: '280px' }}>
+                      <div className="flex items-center justify-end gap-3 flex-nowrap">
+                        {/* Tombol Download */}
+                        <button
+                          id={`download-btn-${index}`}
+                          className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#0C479F] to-[#1D92F9] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#0C479F] hover:to-[#0C479F] hover:pr-6 focus:ring-2 focus:ring-blue-300 focus:ring-offset-1 active:scale-[.98]"
+                          onClick={() => openDownloadModal(item.deskripsi, item.file_unduh)}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineDocumentDownload />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Download
+                          </span>
+                        </button>
+
+                        {/* Tombol Delete */}
+                        {/* <button
+                          id={`delete-btn-${index}`}
+                          className="group flex items-center justify-center overflow-hidden rounded-[7px] bg-gradient-to-r from-[#DC2626] to-[#EF4444] px-4 py-[10px] text-[16px] text-white transition-all duration-300 ease-in-out hover:from-[#DC2626] hover:to-[#DC2626] hover:pr-6 focus:ring-2 focus:ring-red-300 focus:ring-offset-1 active:scale-[.98]"
+                          onClick={() => handleDeleteClick(item.id, item.deskripsi)}
+                        >
+                          <span className="text-[20px]">
+                            <HiOutlineTrash />
+                          </span>
+                          <span className="w-0 opacity-0 transition-all duration-300 ease-in-out group-hover:ml-2 group-hover:w-auto group-hover:opacity-100">
+                            Delete
+                          </span>
+                        </button> */}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 

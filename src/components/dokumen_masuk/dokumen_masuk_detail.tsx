@@ -156,7 +156,7 @@ const DokumenMasukDetailDokumen = ({ dinas, namaDinas }: { dinas: number | null,
       setLoading(false);
       setSearchLoading(false);
     }
-  },[userDinas, dinas]);
+  },[userDinas, dinas, namaDinas]);
 
   // useEffect untuk fetch data
   useEffect(() => {
