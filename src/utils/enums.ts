@@ -18,6 +18,10 @@ export const generateYearOptions = (): YearOption[] => {
   const currentYear = new Date().getFullYear();
   const years: YearOption[] = [];
   
+  // Tambah 1 tahun ke depan
+  years.push({ name: currentYear + 1 });
+  
+  // Tambah tahun sekarang sampai 17 tahun ke belakang
   for (let i = 0; i < 17; i++) {
     years.push({ name: currentYear - i });
   }

@@ -404,7 +404,7 @@ const FormPengirimanLangsung = () => {
                       <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Pilih Dokumen
                       </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                      <p className="text-[16px] text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
                         Lengkapi <span className="font-semibold">Kepada Dinas</span> dan <span className="font-semibold">Judul</span> terlebih dahulu untuk memilih dokumen
                       </p>
                     </div>

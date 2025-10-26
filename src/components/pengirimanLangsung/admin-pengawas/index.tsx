@@ -224,10 +224,10 @@ const FormPengirimanLangsung = () => {
         <div className="rounded-2xl bg-white px-8 pb-6 pt-8 shadow-lg dark:bg-gray-dark dark:shadow-card">
           {/* Header */}
           <div className="mb-6 border-b border-gray-200 dark:border-gray-700 pb-4">
-            <h4 className="text-2xl font-bold text-dark dark:text-white">
+            <h4 className="text-[26px] font-bold text-dark dark:text-white">
               Pengiriman Dokumen Langsung
             </h4>
-            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mt-2 text-[18px] text-gray-600 dark:text-gray-400">
               Kirim dokumen secara langsung ke dinas lain
             </p>
           </div>
@@ -388,7 +388,7 @@ const FormPengirimanLangsung = () => {
                       <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Pilih Dokumen
                       </h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
+                      <p className="text-[16px] text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
                         Lengkapi <span className="font-semibold">Kepada Dinas</span> dan <span className="font-semibold">Judul</span> terlebih dahulu untuk memilih dokumen
                       </p>
                     </div>
