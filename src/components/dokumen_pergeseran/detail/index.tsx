@@ -341,7 +341,7 @@ const MainPage = ({ idDinas }: Props) => {
     
     if (isConfirmed) {
       try {
-        const response = await apiRequest(`/direct-shipping/delete/${id}`, 'POST');
+        const response = await apiRequest(`/pergeseran/delete/${id}`, 'POST');
         if (!response.ok) {
           const result = await response.json();
           throw new Error(result.responseDesc || 'Gagal menghapus data dinas');
