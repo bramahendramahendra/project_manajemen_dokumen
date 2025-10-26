@@ -333,7 +333,7 @@ const MainPage = () => {
       <div className="rounded-[10px] border border-stroke bg-white p-4 shadow-md dark:border-dark-3 dark:bg-gray-dark dark:shadow-card sm:p-7.5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div className="flex items-center">
-            <h2 className="text-xl font-semibold text-dark dark:text-white">
+            <h2 className="text-[24px] font-semibold text-dark dark:text-white">
               Daftar dokumen
             </h2>
             {searchLoading && (
@@ -353,7 +353,7 @@ const MainPage = () => {
                 value={searchTerm}
                 onChange={handleSearchChange}
                 placeholder="Cari uraian, jenis, tanggal, files, atau status..."
-                className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
+                className="w-full pl-10 pr-10 py-2.5 text-[17px] border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400 transition-all duration-200"
               />
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <HiMagnifyingGlass className="h-5 w-5 text-gray-400" />
@@ -413,7 +413,7 @@ const MainPage = () => {
         <div className="max-w-full overflow-x-auto rounded-lg">
           <table className="w-full table-auto">
             <thead>
-              <tr className="bg-[#F7F9FC] text-left dark:bg-gray-800">
+              <tr className="bg-[#F7F9FC] text-[20px] text-left dark:bg-gray-800">
                 <th className="px-2 py-4 font-medium text-dark dark:text-white xl:pl-7.5">
                   No
                 </th>
@@ -434,14 +434,14 @@ const MainPage = () => {
                   className="border-b border-stroke dark:border-dark-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <td className="px-4 py-4 xl:pl-7.5">
-                    <p className="font-medium text-dark dark:text-white">
+                    <p className="font-medium text-[19px] text-dark dark:text-white">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </p>
                   </td>
 
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <p className="text-dark dark:text-white font-medium">
+                      <p className="text-dark text-[19px] dark:text-white font-medium">
                         {item.nama}
                       </p>
                       {item.jumlah > 0 && (
